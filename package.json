@@ -1,0 +1,19 @@
+{
+  "name": "roadnet-visualizer",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Multi-layer road network generator and visualizer using Web Workers and PixiJS",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@turf/turf": "^7.2.0",
+    "d3-delaunay": "^6.0.4",
+    "pixi.js": "^7.3.2"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}

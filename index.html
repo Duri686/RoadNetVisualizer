@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RoadNet Visualizer - 多层道路网络可视化</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <section>
+        <!-- Header -->
+
+        <!-- Control Panel -->
+        <div class="control-panel">
+          <h1>障碍物驱动导航图生成与可视化工具</h1>
+          <div class="input-section">
+            <h3>输入参数</h3>
+            <div class="input-group">
+              <label for="width-input">地图宽度 (Width):</label>
+              <input
+                autocomplete="off"
+                type="text"
+                id="width-input"
+                value="10"
+                placeholder="10-100000"
+              />
+            </div>
+            <div class="input-group">
+              <label for="height-input">地图高度 (Height):</label>
+              <input
+                autocomplete="off"
+                type="text"
+                id="height-input"
+                value="10"
+                placeholder="10-100000"
+              />
+            </div>
+            <div class="input-group">
+              <label for="layer-input">层数 (Layers):</label>
+              <input
+                autocomplete="off"
+                type="text"
+                id="layer-input"
+                value="1"
+                placeholder="1-10"
+              />
+            </div>
+            <div class="input-group">
+              <label for="obstacle-input">障碍物数量 (Obstacles):</label>
+              <input
+                autocomplete="off"
+                type="text"
+                id="obstacle-input"
+                value="1"
+                placeholder="0-800"
+              />
+            </div>
+            <!-- 模式选择：互斥复选框组（仅允许单选） -->
+            <div class="mode-group" id="mode-group" title="生成模式">
+              <label class="mode-item"
+                ><input
+                  type="checkbox"
+                  name="mode-option"
+                  class="mode-option"
+                  data-value="centroid"
+                  checked
+                />
+                质心网络</label
+              >
+              <label class="mode-item"
+                ><input
+                  type="checkbox"
+                  name="mode-option"
+                  class="mode-option"
+                  data-value="portal"
+                />
+                Portal 中点</label
+              >
+              <label class="mode-item"
+                ><input
+                  type="checkbox"
+                  name="mode-option"
+                  class="mode-option"
+                  data-value="voronoi"
+                />
+                Voronoi 骨架（实验）</label
+              >
+            </div>
+            <div id="mode-help" class="mode-help">
+              <div><strong>模式说明：</strong></div>
+              <div>
+                • <strong>质心网络</strong>：以 Delaunay
+                三角形的<strong>质心</strong>为可行节点，相邻三角形质心相连；连线避开障碍。
+              </div>
+              <div>
+                •
+                <strong>Portal 中点</strong
+                >：以相邻三角形<strong>共享边的中点</strong>为
+                Portal，同一三角形内的 Portal 两两相连；连线避开障碍。
+              </div>
+              <div>
+                • <strong>Voronoi 骨架（实验）</strong>：以 Voronoi
+                边为<strong>自由空间中线</strong>，需裁剪到可通行区域并过滤穿障边（后续提供）。
+              </div>
+            </div>
+            <div class="input-group">
+              <label class="input-group-label">
+                <input type="checkbox" id="use-spatial-index" checked />
+                启用空间索引优化
+              </label>
+            </div>
+            <div
+              class="input-group"
+              title="高级设置：用于空间索引的单元格大小（像素）。留空为自动。"
+            >
+              <label for="cell-size-input">索引单元大小 (cellSize)：</label>
+              <input
+                autocomplete="off"
+                type="text"
+                id="cell-size-input"
+                placeholder="auto"
+              />
+            </div>
+            <button id="generate-btn" class="btn-primary">生成导航图</button>
+            <div id="perf-info" class="perf-info">
+              本次计算：耗时 -- ms | 可行节点 -- 个 | 可行边 -- 条
+            </div>
+
+            <!-- Layer Control (merged) 暂时注释，后续多层优化再启用 -->
+            <!--
+        <div class="layer-control-section" id="layer-control-section" style="margin-top:10px;">
+          <h3>层控制</h3>
+          <div class="layer-controls">
+            <label for="layer-selector">当前层:</label>
+            <select id="layer-selector"></select>
+            <button id="show-all-btn" class="btn-secondary">显示所有层</button>
+          </div>
+          <div class="layer-info" id="layer-info"></div>
+          <div style="margin-top:6px; font-size:12px; color:#94a3b8;">当前专注第 1 层（L0），多层优化稍后提供。</div>
+        </div>
+        -->
+          </div>
+
+          <!-- Progress Section -->
+          <!-- <div class="progress-section" id="progress-section" style="display: none;">
+        <h3>生成进度</h3>
+        <div class="progress-bar-container">
+          <div class="progress-bar" id="progress-bar"></div>
+          <span class="progress-text" id="progress-text">0%</span>
+        </div>
+      </div> -->
+        </div>
+        <!-- Info Panel （替代 footer） -->
+        <div class="info-panel">
+          <div class="stats" id="stats">
+            <span id="node-count">节点: 0</span>
+            <span id="edge-count">边: 0</span>
+            <span id="layer-count">层数: 0</span>
+          </div>
+          <div class="canvas-info" id="canvas-info">
+            <p>💡 提示: 鼠标滚轮缩放，拖拽平移</p>
+            <div class="legend">
+              <span class="legend-item">
+                <span class="icon obstacle"></span>
+                障碍物
+              </span>
+              <span class="legend-item">
+                <span class="icon node"></span>
+                节点
+              </span>
+              <span class="legend-item">
+                <span class="icon base"></span>
+                基础三角化
+              </span>
+              <span class="legend-item">
+                <span class="icon path"></span>
+                自动寻路（橙色）
+              </span>
+            </div>
+            <div class="hint">
+              <p>• 悬停：显示白色十字星，定位最近节点</p>
+              <p>
+                • 点击：第一次为 <span class="hint-start">起点</span>，第二次为
+                <span class="hint-end">终点</span>
+              </p>
+              <p>
+                • 自动寻路：使用 A* 计算路径，显示为
+                <span class="hint-path">橙色连线</span
+                >；起点已选时移动鼠标显示半透明预览
+              </p>
+            </div>
+            <div id="path-info" class="path-info">
+              <div><strong>当前路径</strong>：无</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Visualization Canvas -->
+      <div class="canvas-container">
+        <div id="pixi-canvas"></div>
+        <button id="fullscreen-btn" class="fullscreen-btn" title="全屏切换">
+          ⛶
+        </button>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
