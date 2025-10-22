@@ -44,7 +44,10 @@ class App {
       // 初始化渲染器
       const pixiContainer = document.getElementById('pixi-canvas');
       const tInit0 = performance?.now ? performance.now() : Date.now();
-      renderer.init(pixiContainer, { width: pixiContainer.clientWidth, height: pixiContainer.clientHeight });
+      renderer.init(pixiContainer, {
+        width: pixiContainer.clientWidth,
+        height: pixiContainer.clientHeight,
+      });
       const tInit1 = performance?.now ? performance.now() : Date.now();
       this.perf.initRenderMs = Math.max(0, Math.round(tInit1 - tInit0));
 
@@ -52,9 +55,13 @@ class App {
       const fullscreenBtn = document.getElementById('fullscreen-btn');
       const canvasContainer = document.querySelector('.canvas-container');
       fullscreenBtn.addEventListener('click', () => {
-        console.log(`[UI] fullscreen button clicked. currentFS=${!!document.fullscreenElement}, pixiContainer=${pixiContainer.clientWidth}x${pixiContainer.clientHeight}`);
+        console.log(
+          `[UI] fullscreen button clicked. currentFS=${!!document.fullscreenElement}, pixiContainer=${
+            pixiContainer.clientWidth
+          }x${pixiContainer.clientHeight}`,
+        );
         if (!document.fullscreenElement) {
-          canvasContainer.requestFullscreen().catch(err => {
+          canvasContainer.requestFullscreen().catch((err) => {
             alert(`无法进入全屏模式: ${err.message}`);
           });
         } else {
@@ -66,7 +73,7 @@ class App {
       document.addEventListener('fullscreenchange', () => {
         const isFullscreen = !!document.fullscreenElement;
         const canvasInfo = document.getElementById('canvas-info');
-        
+
         // 延迟一小段时间再调整尺寸，以确保 DOM 更新完毕
         setTimeout(() => {
           let newWidth, newHeight;
@@ -78,7 +85,9 @@ class App {
             newWidth = pixiContainer.clientWidth;
             newHeight = pixiContainer.clientHeight;
           }
-          console.log(`[Resize][fullscreenchange] isFS=${isFullscreen} screen=${screen.width}x${screen.height} pixiContainer=${pixiContainer.clientWidth}x${pixiContainer.clientHeight} canvasInfoH=${canvasInfo?.offsetHeight} -> resize(${newWidth}x${newHeight})`);
+          console.log(
+            `[Resize][fullscreenchange] isFS=${isFullscreen} screen=${screen.width}x${screen.height} pixiContainer=${pixiContainer.clientWidth}x${pixiContainer.clientHeight} canvasInfoH=${canvasInfo?.offsetHeight} -> resize(${newWidth}x${newHeight})`,
+          );
           renderer.resize(newWidth, newHeight);
           console.log(`[Resize][fullscreenchange] renderer.resize done.`);
         }, 100); // 100ms 延迟
@@ -87,12 +96,35 @@ class App {
       // 绑定 UI 事件
       this.setupUIEventHandlers();
 
+      // 使用 ResizeObserver 监听 #pixi-canvas 实际尺寸变化，避免初次布局与自适应引发抖动
+      try {
+        const ro = new ResizeObserver((entries) => {
+          for (const entry of entries) {
+            const cr = entry.contentRect;
+            const newW = Math.max(1, Math.round(cr.width));
+            const newH = Math.max(1, Math.round(cr.height));
+            if (this.appLastW !== newW || this.appLastH !== newH) {
+              this.appLastW = newW; this.appLastH = newH;
+              renderer.resize(newW, newH);
+            }
+          }
+        });
+        ro.observe(pixiContainer);
+        this._pixiResizeObserver = ro;
+      } catch (e) {
+        console.warn('[ResizeObserver] not available:', e);
+      }
+
       this.isInitialized = true;
       console.log('✅ Application initialized successfully');
 
       // 显示欢迎信息
       this.showWelcomeMessage();
 
+      // 等待首屏布局稳定后再触发一次默认生成，避免初始测量抖动
+      setTimeout(() => {
+        this.autoGenerateOnce();
+      }, 120);
     } catch (error) {
       console.error('❌ Failed to initialize application:', error);
       this.showError('应用初始化失败: ' + error.message);
@@ -119,13 +151,18 @@ class App {
       },
 
       onProgress: (progress, currentLayer, totalLayers, layerNodeCount) => {
-        this.progressBar.updateProgress(progress, currentLayer, totalLayers, layerNodeCount);
+        this.progressBar.updateProgress(
+          progress,
+          currentLayer,
+          totalLayers,
+          layerNodeCount,
+        );
       },
 
       onComplete: (data) => {
         console.log('🎉 Generation completed:', data.metadata);
         this.roadNetData = data;
-        
+
         // 更新 UI
         this.progressBar.updateProgress(1);
         setTimeout(() => {
@@ -146,16 +183,24 @@ class App {
         this.showSuccess(`成功生成 ${data.metadata.layerCount} 层道路网络！`);
 
         // 展示性能与 L0 规模 + profiling 指标 + 渲染耗时/数据体积
-        const cost = Math.max(0, Math.round(performance.now() - this.perf.start));
+        const cost = Math.max(
+          0,
+          Math.round(performance.now() - this.perf.start),
+        );
         const perfInfo = document.getElementById('perf-info');
-        const l0 = (data && data.layers && data.layers[0]) ? data.layers[0] : null;
+        const l0 =
+          data && data.layers && data.layers[0] ? data.layers[0] : null;
         const nodeCount = l0 && l0.nodes ? l0.nodes.length : 0;
         const edgeCount = l0 && l0.edges ? l0.edges.length : 0;
         const meta = data && data.metadata ? data.metadata : {};
-        const prof = meta.profile || (l0 && l0.metadata && l0.metadata.profile) || null;
+        const prof =
+          meta.profile || (l0 && l0.metadata && l0.metadata.profile) || null;
         let profText = '';
         if (prof) {
-          const avgCandidates = prof.edgesChecked > 0 ? (prof.candidatesAccum / prof.edgesChecked).toFixed(1) : '-';
+          const avgCandidates =
+            prof.edgesChecked > 0
+              ? (prof.candidatesAccum / prof.edgesChecked).toFixed(1)
+              : '-';
           const onOff = meta.useSpatialIndex ? '启用' : '关闭';
           profText = ` | 索引:${onOff} | 索引构建 ${prof.indexBuildMs} ms | 候选均值 ${avgCandidates}/边`;
         }
@@ -169,9 +214,12 @@ class App {
           const payload = { layers: data.layers, obstacles: data.obstacles };
           const len = JSON.stringify(payload).length;
           dataKB = Math.round(len / 1024) + 'KB';
-        } catch (e) { /* ignore stringify errors */ }
+        } catch (e) {
+          /* ignore stringify errors */
+        }
         const initMs = this.perf.initRenderMs || 0;
-        if (perfInfo) perfInfo.textContent = `本次计算：耗时 ${cost} ms | 可行节点 ${nodeCount} 个 | 可行边 ${edgeCount} 条${profText} | 初始化渲染 ${initMs} ms | 数据体积 ${dataKB} | 渲染 ${renderMs} ms`;
+        if (perfInfo)
+          perfInfo.textContent = `本次计算：耗时 ${cost} ms | 可行节点 ${nodeCount} 个 | 可行边 ${edgeCount} 条${profText} | 初始化渲染 ${initMs} ms | 数据体积 ${dataKB} | 渲染 ${renderMs} ms`;
       },
 
       onError: (error) => {
@@ -181,7 +229,7 @@ class App {
         this.showError('生成失败: ' + error.message);
 
         // 仅恢复交互，无 Loading 弹窗
-      }
+      },
     });
   }
 
@@ -217,7 +265,9 @@ class App {
         if (!document.fullscreenElement) {
           const w = pixiContainer.clientWidth;
           const h = pixiContainer.clientHeight;
-          console.log(`[Resize][window] viewport=${window.innerWidth}x${window.innerHeight} pixiContainer=${w}x${h} -> resize(${w}x${h})`);
+          console.log(
+            `[Resize][window] viewport=${window.innerWidth}x${window.innerHeight} pixiContainer=${w}x${h} -> resize(${w}x${h})`,
+          );
           renderer.resize(w, h);
         }
       }, 250);
@@ -228,9 +278,19 @@ class App {
    * 处理生成请求
    */
   handleGenerate(values) {
-    const { width, height, layerCount, obstacleCount, mode, useSpatialIndex, cellSize } = values;
+    const {
+      width,
+      height,
+      layerCount,
+      obstacleCount,
+      mode,
+      useSpatialIndex,
+      cellSize,
+    } = values;
 
-    console.log(`🎯 Generating navigation graph: ${width}×${height}×${layerCount} layers, ${obstacleCount} obstacles`);
+    console.log(
+      `🎯 Generating navigation graph: ${width}×${height}×${layerCount} layers, ${obstacleCount} obstacles`,
+    );
 
     // 清空之前的数据
     // 先清理交互层（动画、路径线、起终点标记、提示面板）
@@ -250,8 +310,16 @@ class App {
     renderer.clearCanvas();
 
     // 开始生成
-    const success = workerManager.generateNavGraph(width, height, layerCount, obstacleCount, undefined, mode, { useSpatialIndex, cellSize });
-    
+    const success = workerManager.generateNavGraph(
+      width,
+      height,
+      layerCount,
+      obstacleCount,
+      undefined,
+      mode,
+      { useSpatialIndex, cellSize },
+    );
+
     if (!success) {
       this.showError('无法启动生成任务，请稍后重试');
     }
@@ -273,6 +341,28 @@ class App {
       if (nodeCount) nodeCount.textContent = '节点: 0';
       if (edgeCount) edgeCount.textContent = '边: 0';
       if (layerCount) layerCount.textContent = '层数: 0';
+    }
+  }
+
+  /**
+   * 首次自动生成一张地图（默认参数）
+   */
+  autoGenerateOnce() {
+    try {
+      const w = document.getElementById('width-input');
+      const h = document.getElementById('height-input');
+      const l = document.getElementById('layer-input');
+      const o = document.getElementById('obstacle-input');
+      const si = document.getElementById('use-spatial-index');
+      if (w) w.value = '500';
+      if (h) h.value = '300';
+      if (l) l.value = '1';
+      if (o) o.value = '200';
+      if (si) si.checked = true;
+      const values = this.inputForm.getValues();
+      this.handleGenerate(values);
+    } catch (e) {
+      console.warn('Auto generate failed:', e);
     }
   }
 

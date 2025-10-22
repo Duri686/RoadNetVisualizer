@@ -331,6 +331,7 @@ body {
   margin-bottom: 20px;
   min-height: 600px; /* 基本保底高度 */
   position: relative;
+  overflow: hidden; /* 避免初始加载时按钮或画布内容溢出 */
   flex: 1 1 auto; /* 占据剩余宽度 */
   min-width: 0; /* 避免溢出 */
   display: flex; /* 让内部 #pixi-canvas 拉伸占满 */
@@ -345,6 +346,7 @@ body {
   align-items: center;
   border-radius: 8px;
   overflow: hidden;
+  position: relative; /* 作为内部定位上下文，减少抖动 */
 }
 
 #pixi-canvas canvas {
