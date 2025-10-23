@@ -2,6 +2,8 @@
 
 基于 Web 技术（Vite + PixiJS + Web Workers）的多层道路网络生成与可视化工具。
 
+[deepwiki]([https://pixijs.com/](https://deepwiki.com/badge-maker?url=https%3A%2F%2Fdeepwiki.com%2FDuri686%2FRoadNetVisualizer))
+  
 ## 功能特性
 - 生成多层道路网络：质心网络、Portal 中点、Voronoi 骨架（实验）。
 - 障碍物驱动：可配置尺寸与数量，自动生成并裁剪穿障边。
