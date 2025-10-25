@@ -1,0 +1,159 @@
+/* 图例与提示、统计 */
+.footer {
+  display: none;
+}
+
+/* 信息面板基础样式 */
+.info-panel {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
+  border: none;
+}
+
+/* 统计卡片容器 */
+.stats {
+  display: flex;
+  gap: var(--space-md);
+  margin-top: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+/* 统计项样式 */
+.stats span {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(8px);
+}
+
+/* 统计图标（圆点样式） */
+/* .stats span::before {
+  content: '';
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+#node-count::before {
+  background: var(--stat-node-color);
+}
+
+#edge-count::before {
+  background: var(--stat-edge-color);
+}
+
+#layer-count::before {
+  background: var(--stat-layer-color);
+} */
+
+/* 图例容器 */
+.legend {
+  margin-top: var(--space-md);
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+/* 图例项 */
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* 图例图标 */
+.icon.obstacle {
+  width: 14px;
+  height: 14px;
+  background: var(--error-color);
+  opacity: 0.7;
+  border: 1px solid var(--error-color);
+  display: inline-block;
+  border-radius: 2px;
+}
+
+.icon.node {
+  width: 10px;
+  height: 10px;
+  background: var(--info-color);
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.icon.base {
+  width: 20px;
+  height: 0;
+  border-top: 2px solid var(--text-muted);
+  opacity: 0.4;
+  display: inline-block;
+}
+
+.icon.path {
+  width: 20px;
+  height: 0;
+  border-top: 3px solid var(--warning-color);
+  opacity: 0.9;
+  display: inline-block;
+}
+
+/* 提示文本 */
+.hint {
+  margin-top: var(--space-sm);
+  line-height: 1.6;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.hint p {
+  margin: var(--space-xs) 0;
+  color: var(--text-muted);
+}
+
+.hint-start {
+  color: var(--success-color);
+  font-weight: 600;
+}
+
+.hint-end {
+  color: var(--error-color);
+  font-weight: 600;
+}
+
+.hint-path {
+  color: var(--warning-color);
+  font-weight: 600;
+}
+
+/* 路径信息面板 */
+.path-info {
+  margin-top: var(--space-md);
+  padding: var(--space-md);
+  background: var(--bg-input);
+  border-radius: var(--radius-md);
+  text-align: left;
+  font-size: 12px;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-light);
+  border-left: 3px solid var(--primary-color);
+  line-height: 1.6;
+}
+
+.path-info div {
+  margin: var(--space-xs) 0;
+}

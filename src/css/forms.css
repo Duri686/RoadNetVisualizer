@@ -1,0 +1,244 @@
+/* 表单输入与选择器 */
+.input-group {
+  margin: 0 0 var(--space-lg) 0;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: var(--space-sm);
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.input-group input[type="text"],
+.input-group input[type="number"] {
+  width: 100%;
+  padding: var(--space-md) var(--space-lg);
+  background: var(--bg-input);
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-lg);
+  color: var(--text-primary);
+  font-size: 16px;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.input-group input[type="text"]:hover,
+.input-group input[type="number"]:hover {
+  background: var(--bg-input-hover);
+  border-color: var(--text-muted);
+}
+
+.input-group input[type="text"]:focus,
+.input-group input[type="number"]:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  background: var(--bg-card);
+  box-shadow: 0 0 0 3px rgba(91, 95, 239, 0.1);
+}
+
+.input-group input[type="text"]::placeholder,
+.input-group input[type="number"]::placeholder {
+  color: var(--text-muted);
+}
+
+/* 复选框组样式 */
+.input-group .input-group-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: 0;
+  cursor: pointer;
+}
+
+.input-group .input-group-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--primary-color);
+}
+
+/* 层控与选择器 */
+.layer-controls {
+  display: flex;
+  gap: var(--space-md);
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-lg);
+}
+
+.layer-controls label {
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.layer-controls select {
+  flex: 1;
+  min-width: 150px;
+  padding: var(--space-md) var(--space-lg);
+  background: var(--bg-input);
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-lg);
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.layer-controls select:hover {
+  background: var(--bg-input-hover);
+  border-color: var(--text-muted);
+}
+
+.layer-controls select:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(91, 95, 239, 0.1);
+}
+
+/* 模式选择组 */
+.mode-group {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  margin: var(--space-md) 0;
+}
+
+.mode-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  background: var(--bg-input);
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  color: var(--text-primary);
+  font-size: 14px;
+  user-select: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mode-item:hover {
+  background: var(--bg-input-hover);
+  border-color: var(--text-muted);
+}
+
+.mode-item input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--primary-color);
+}
+
+/* 状态提示增强样式 */
+.status-message {
+  margin-top: var(--space-xl);
+  padding: var(--space-lg);
+  background: var(--bg-input);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  border-left: 4px solid var(--info-color);
+}
+
+.status-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-xs);
+  font-weight: 500;
+}
+
+.status-value {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.status-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: var(--space-xs) 0 0 0;
+  line-height: 1.5;
+}
+
+/* 状态类型 */
+.status-message.loading {
+  border-left-color: var(--warning-color);
+}
+
+.status-message.loading .status-value {
+  color: var(--warning-color);
+}
+
+.status-message.success {
+  border-left-color: var(--success-color);
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.status-message.success .status-value {
+  color: var(--success-color);
+}
+
+.status-message.error {
+  border-left-color: var(--error-color);
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.status-message.error .status-value {
+  color: var(--error-color);
+}
+
+/* 高级参数折叠 */
+.advanced-section {
+  margin-top: var(--space-lg);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.advanced-section summary {
+  padding: var(--space-md) var(--space-lg);
+  background: var(--bg-input);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  user-select: none;
+  transition: all 0.2s ease;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.advanced-section summary::-webkit-details-marker {
+  display: none;
+}
+
+.advanced-section summary::after {
+  content: '▼';
+  font-size: 10px;
+  transition: transform 0.2s ease;
+}
+
+.advanced-section[open] summary::after {
+  transform: rotate(-180deg);
+}
+
+.advanced-section summary:hover {
+  background: var(--bg-input-hover);
+  color: var(--text-primary);
+}
+
+.advanced-section[open] {
+  background: var(--bg-card);
+}
+
+.advanced-section .input-group {
+  padding: var(--space-lg) var(--space-lg) 0 var(--space-lg);
+}
+
+.advanced-section .input-group:last-child {
+  padding-bottom: var(--space-lg);
+}

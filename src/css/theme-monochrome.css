@@ -1,0 +1,77 @@
+/* 单色极简主题覆盖（Low-contrast Monochrome UI） */
+:root {
+  --mono-0: #0b0c0e; --mono-10: #111317; --mono-15: #15181d; --mono-20: #1a1e24;
+  --mono-30: #20262d; --mono-40: #2a313a; --mono-60: #6e7681; --mono-80: #b6bcc3;
+  --mono-90: #d9dde1; --mono-98: #f2f3f5;
+  --primary-color: var(--mono-40);
+  --primary-hover: var(--mono-30);
+  --secondary-color: var(--mono-60);
+  --bg-dark: var(--mono-0);
+  --bg-card: var(--mono-10);
+  --bg-input: var(--mono-10);
+  --text-light: var(--mono-90);
+  --text-muted: var(--mono-80);
+  --border-color: var(--mono-30);
+  --success-color: var(--mono-80);
+  --shadow: none;
+  --focus-ring: var(--mono-98);
+  --btn-bg: var(--mono-15);
+  --btn-bg-hover: var(--mono-20);
+  --chip-bg: var(--mono-10);
+  --chip-bg-active: var(--mono-20);
+  --canvas-bg: var(--mono-0);
+}
+html, body { background: var(--mono-0); color: var(--text-light); letter-spacing: 0.2px; }
+h1, h2, h3, h4 { color: var(--text-light); font-weight: 500; }
+h3 { font-size: 15px; line-height: 1.4; }
+a { color: var(--mono-80); text-decoration: none; }
+a:hover { color: var(--mono-90); text-decoration: underline; }
+hr { border: 0; border-top: 1px solid var(--border-color); }
+:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+/* 滚动条弱化 */
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-track { background: var(--mono-10); }
+*::-webkit-scrollbar-thumb { background: var(--mono-30); border-radius: 8px; }
+*::-webkit-scrollbar-thumb:hover { background: var(--mono-40); }
+/* 左侧面板与表单覆盖 */
+.control-panel { background: var(--bg-card); border: 1px solid var(--border-color); box-shadow: none; }
+.input-section, .progress-section, .layer-control-section { background: var(--bg-card); box-shadow: none; border: 1px solid var(--border-color); }
+.input-section h3, .progress-section h3, .layer-control-section h3 { color: var(--text-light); }
+.input-group label, .input-group .input-group-label { color: var(--text-muted); font-size: 13px; }
+input[type="text"], input[type="number"], select { background: var(--bg-input); color: var(--text-light); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: none; transition: background .15s ease, border-color .15s ease; }
+input[type="text"]::placeholder { color: var(--text-muted); }
+input[type="text"]:hover, input[type="number"]:hover, select:hover { background: var(--mono-15); border-color: var(--mono-40); }
+input[type="text"]:focus, input[type="number"]:focus, select:focus { border-color: var(--mono-40); box-shadow: none; }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--mono-80); }
+.mode-group { border-top: 1px solid var(--border-color); padding-top: 10px; }
+.mode-item { background: var(--chip-bg); color: var(--text-muted); border: 1px solid var(--border-color); border-radius: 6px; padding: 6px 8px; transition: background .15s, border-color .15s, color .15s; }
+.mode-item:hover { background: var(--chip-bg-active); border-color: var(--mono-40); color: var(--text-light); }
+.mode-item:has(input:checked) { background: var(--chip-bg-active); border-color: var(--mono-40); color: var(--text-light); }
+.mode-help { color: var(--text-muted); }
+.perf-info { color: var(--text-muted); }
+/* 按钮 */
+.btn-primary, .btn-secondary { background: var(--btn-bg); color: var(--text-light); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: none; transition: background .15s ease, border-color .15s ease, color .15s ease, transform .15s ease; }
+.btn-primary:hover, .btn-secondary:hover { background: var(--btn-bg-hover); border-color: var(--mono-40); transform: none; box-shadow: none; }
+.btn-primary:active, .btn-secondary:active { background: var(--mono-10); }
+.fullscreen-btn { background: var(--btn-bg); color: var(--text-light); border: 1px solid var(--border-color); box-shadow: none; }
+.fullscreen-btn:hover { background: var(--btn-bg-hover); border-color: var(--mono-40); }
+/* 右侧面板 */
+.canvas-container { background: var(--canvas-bg); border: 1px solid var(--border-color); box-shadow: none; }
+#pixi-canvas { background: transparent; }
+#pixi-canvas canvas { box-shadow: none; }
+.info-panel { background: transparent; border-top: 1px solid var(--border-color); box-shadow: none; }
+.stats { color: var(--text-muted); }
+/* 图例灰阶 */
+.legend, .legend-item { color: var(--text-muted); }
+.icon.obstacle { background: var(--mono-10); border-color: var(--mono-40); }
+.icon.node { background: var(--mono-20); border-color: var(--mono-40); }
+.icon.base { border-top-color: var(--mono-30); }
+.icon.path { border-top-color: var(--mono-40); }
+.hint, .hint p { color: var(--text-muted); }
+.hint-start, .hint-end, .hint-path { color: var(--text-light); font-weight: 500; text-decoration: underline; text-decoration-color: var(--mono-40); }
+/* 统计与路径信息去彩色 */
+.stats span::before { color: var(--mono-60); }
+#node-count::before, #edge-count::before, #layer-count::before { color: var(--mono-60); }
+.path-info { border-left: 3px solid var(--mono-40); }
+/* 进度条灰阶 */
+.progress-bar { background: linear-gradient(90deg, var(--mono-30), var(--mono-40)); }

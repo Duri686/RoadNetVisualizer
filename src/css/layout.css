@@ -1,0 +1,150 @@
+/* 布局：三栏响应式布局 */
+.container {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  margin: 0;
+  padding: var(--space-lg);
+  display: flex;
+  gap: var(--space-lg);
+  align-items: stretch;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* 左栏：操作面板 (Operation Panel) */
+.operation-panel {
+  flex: 0 0 320px;
+  max-width: 340px;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* 中栏：可视化面板 (Visualization Panel) */
+.visualization-panel {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* 右栏：解读面板 (Interpretation Panel) */
+.interpretation-panel {
+  flex: 0 0 320px;
+  max-width: 340px;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* 自定义滚动条样式（左右面板） */
+.operation-panel::-webkit-scrollbar,
+.interpretation-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.operation-panel::-webkit-scrollbar-track,
+.interpretation-panel::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 4px;
+}
+
+.operation-panel::-webkit-scrollbar-thumb,
+.interpretation-panel::-webkit-scrollbar-thumb {
+  background: var(--border-input);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.operation-panel::-webkit-scrollbar-thumb:hover,
+.interpretation-panel::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* 响应式布局 - ≥1440px 三栏 */
+@media (min-width: 1440px) {
+  .operation-panel {
+    flex: 0 0 340px;
+  }
+  .interpretation-panel {
+    flex: 0 0 340px;
+  }
+}
+
+/* 响应式布局 - 1024-1440px 左右两栏 */
+@media (max-width: 1439px) and (min-width: 1024px) {
+  .interpretation-panel {
+    flex: 0 0 300px;
+    max-width: 320px;
+  }
+  .operation-panel {
+    flex: 0 0 300px;
+    max-width: 320px;
+  }
+}
+
+/* 响应式布局 - <1024px 移动端 */
+@media (max-width: 1023px) {
+  .container {
+    flex-direction: column;
+    padding: var(--space-md);
+    gap: var(--space-md);
+  }
+
+  .operation-panel {
+    flex: 0 0 auto;
+    max-width: 100%;
+    height: auto;
+    max-height: 40vh;
+  }
+
+  .visualization-panel {
+    flex: 1 1 auto;
+    min-height: 400px;
+  }
+
+  /* 可视化面板头部在移动端简化 */
+  .visualization-header {
+    flex-direction: column;
+    gap: var(--space-md);
+    align-items: stretch;
+  }
+
+  .visualization-header .canvas-toolbar {
+    justify-content: center;
+  }
+
+  .interpretation-panel {
+    flex: 0 0 auto;
+    max-width: 100%;
+    height: auto;
+    max-height: 50vh;
+  }
+
+  /* 缩略图导航在移动端缩小 */
+  .canvas-navigator {
+    width: 140px;
+    height: 90px;
+    bottom: var(--space-md);
+    left: var(--space-md);
+  }
+
+  /* 画布提示信息在移动端简化 */
+  .canvas-hint {
+    font-size: 11px;
+    padding: var(--space-xs) var(--space-md);
+  }
+
+  .canvas-hint p {
+    font-size: 11px;
+  }
+}

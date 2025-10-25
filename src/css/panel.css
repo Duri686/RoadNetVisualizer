@@ -1,0 +1,88 @@
+/* 控制面板与分组卡片 */
+.control-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  margin-bottom: 0;
+}
+
+/* 面板头部统一样式 */
+.control-panel .panel-header,
+.interpretation-panel .panel-header {
+  background: var(--bg-card);
+  padding: var(--space-xl) var(--space-lg);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-light);
+  text-align: center;
+}
+
+.control-panel .panel-header h2,
+.interpretation-panel .panel-header h2 {
+  margin: 0 0 var(--space-xs) 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.panel-subtitle {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 500;
+}
+
+/* 旧的主标题样式保留兼容 */
+.control-panel > p {
+  color: var(--text-primary);
+  font-size: 24px;
+  font-weight: 600;
+  background: var(--bg-card);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-2xl) var(--space-xl);
+  margin-bottom: var(--space-lg);
+  border: 1px solid var(--border-light);
+}
+
+/* 输入区块 */
+.input-section,
+.progress-section,
+.layer-control-section {
+  background: var(--bg-card);
+  padding: var(--space-2xl) var(--space-xl);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-light);
+}
+
+/* 副标题样式 */
+.input-section h3,
+.progress-section h3,
+.layer-control-section h3 {
+  margin-bottom: var(--space-lg);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* 模式帮助文字 */
+.mode-help {
+  margin-top: var(--space-sm);
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* 性能信息 */
+.perf-info {
+  margin-top: var(--space-md);
+  padding: var(--space-md);
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--bg-input);
+  border-radius: var(--radius-md);
+  line-height: 1.5;
+}

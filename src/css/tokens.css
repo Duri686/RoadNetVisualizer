@@ -1,0 +1,64 @@
+/* 设计令牌（变量）- 亮色主题 */
+:root {
+  /* 主色系 - 科技蓝 */
+  --primary-color: #0066FF;
+  --primary-hover: #0052CC;
+  --primary-active: #0047B3;
+  
+  /* 背景色 */
+  --bg-page: #F9FAFB;
+  --bg-card: #FFFFFF;
+  --bg-input: #F3F4F6;
+  --bg-input-hover: #E5E7EB;
+  
+  /* 文字色 */
+  --text-primary: #1F2937;
+  --text-secondary: #6B7280;
+  --text-muted: #9CA3AF;
+  --text-white: #FFFFFF;
+  
+  /* 边框色 */
+  --border-light: #E5E7EB;
+  --border-input: #D1D5DB;
+  --border-focus: #5B5FEF;
+  
+  /* 状态色 */
+  --success-color: #10B981;
+  --error-color: #EF4444;
+  --warning-color: #F59E0B;
+  --info-color: #3B82F6;
+  
+  /* 统计图标色 */
+  --stat-node-color: #EF4444;
+  --stat-edge-color: #3B82F6;
+  --stat-layer-color: #10B981;
+  
+  /* 可视化元素色（对应设计稿图例） */
+  --viz-start-point: #10B981;  /* 绿色 - 起点 */
+  --viz-end-point: #EF4444;    /* 红色 - 终点 */
+  --viz-path: #F59E0B;         /* 黄色 - 路径 */
+  --viz-network-edge: #3B82F6; /* 蓝色 - 网络边 */
+  --viz-obstacle: #DC2626;     /* 深红 - 障碍物 */
+  --viz-voronoi: #06B6D4;      /* 青色 - Voronoi */
+  --viz-canvas-bg: #0F172A;    /* 深蓝黑 - 画布背景 */
+  
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  
+  /* 圆角 */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+  
+  /* 间距 */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 20px;
+  --space-2xl: 24px;
+}

@@ -1,0 +1,114 @@
+/* 动效与响应式 */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.loading {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* 工具类 */
+
+/* 过渡动画 */
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 卡片悬停效果增强 */
+.interpretation-card,
+.input-section,
+.canvas-container,
+.control-panel .panel-header {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.interpretation-card:hover,
+.input-section:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* 焦点可见性优化 */
+*:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* 平滑滚动 */
+html {
+  scroll-behavior: smooth;
+}
+
+/* 禁用选择（仅工具按钮） */
+.toolbar-btn,
+.btn-action,
+.btn-primary,
+.btn-secondary {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+  .container {
+    padding: var(--space-md);
+    flex-direction: column;
+    height: auto;
+    overflow-y: auto;
+  }
+
+  .container > section:first-of-type,
+  .container > section:last-of-type {
+    flex: 1 1 auto;
+    max-width: none;
+    height: auto;
+    overflow-y: visible;
+  }
+
+  .canvas-container {
+    min-height: 400px;
+    height: auto;
+  }
+
+  .control-panel > p {
+    font-size: 20px;
+  }
+
+  .control-panel {
+    flex-direction: column;
+  }
+
+  .layer-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-secondary {
+    width: 100%;
+  }
+
+  .stats {
+    gap: var(--space-sm);
+  }
+
+  .legend {
+    gap: var(--space-md);
+  }
+}

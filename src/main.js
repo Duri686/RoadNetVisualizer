@@ -3,7 +3,6 @@
  * 主应用入口，协调各个模块
  */
 
-import './style.css';
 import workerManager from './core/workerManager.js';
 import renderer from './core/renderer.js';
 import InputForm from './components/InputForm.js';
@@ -43,10 +42,21 @@ class App {
 
       // 初始化渲染器
       const pixiContainer = document.getElementById('pixi-canvas');
+      
+      // 等待浏览器完成布局后再初始化 PixiJS
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      
       const tInit0 = performance?.now ? performance.now() : Date.now();
+      
+      // 获取实际容器尺寸
+      const containerWidth = pixiContainer.clientWidth || 800;
+      const containerHeight = pixiContainer.clientHeight || 600;
+      
+      console.log(`[Renderer] Initializing with size: ${containerWidth}x${containerHeight}`);
+      
       renderer.init(pixiContainer, {
-        width: pixiContainer.clientWidth,
-        height: pixiContainer.clientHeight,
+        width: containerWidth,
+        height: containerHeight,
       });
       const tInit1 = performance?.now ? performance.now() : Date.now();
       this.perf.initRenderMs = Math.max(0, Math.round(tInit1 - tInit0));
@@ -104,13 +114,16 @@ class App {
             const newW = Math.max(1, Math.round(cr.width));
             const newH = Math.max(1, Math.round(cr.height));
             if (this.appLastW !== newW || this.appLastH !== newH) {
-              this.appLastW = newW; this.appLastH = newH;
+              console.log(`[ResizeObserver] Container size changed: ${newW}x${newH}`);
+              this.appLastW = newW;
+              this.appLastH = newH;
               renderer.resize(newW, newH);
             }
           }
         });
         ro.observe(pixiContainer);
         this._pixiResizeObserver = ro;
+        console.log('[ResizeObserver] Started observing container');
       } catch (e) {
         console.warn('[ResizeObserver] not available:', e);
       }
