@@ -16,6 +16,7 @@ class LayerControl {
     this.onShowAllCallback = null;
     this.totalLayers = 0;
     this.currentLayer = 0;
+    this._headless = false; // 当 DOM 缺失时启用无界面模式
 
     this.init();
   }
@@ -25,7 +26,9 @@ class LayerControl {
    */
   init() {
     if (!this.elements.selector || !this.elements.showAllBtn) {
-      console.error('❌ Layer control elements not found');
+      // 进入无界面模式：不绑定任何 DOM，只提供回调能力
+      this._headless = true;
+      console.warn('⚠️ LayerControl running in headless mode (DOM elements not found).');
       return;
     }
 
@@ -69,8 +72,9 @@ class LayerControl {
     this.totalLayers = totalLayers;
 
     // 当 DOM 被注释或缺失时，直接返回，避免报错
-    if (!this.elements.selector) {
+    if (this._headless || !this.elements.selector) {
       this.currentLayer = 0;
+      console.debug('[LayerControl] setLayers(headless): total=', totalLayers);
       return;
     }
 
@@ -107,7 +111,7 @@ class LayerControl {
     }
 
     this.currentLayer = layerIndex;
-    if (this.elements.selector) {
+    if (!this._headless && this.elements.selector) {
       this.elements.selector.value = layerIndex;
     }
 
@@ -130,7 +134,7 @@ class LayerControl {
    * @param {Object} metadata - 网络元数据
    */
   updateLayerInfo(metadata) {
-    if (!this.elements.layerInfo || !metadata) return;
+    if (this._headless || !this.elements.layerInfo || !metadata) return;
 
     const currentLayerData = metadata.layers?.[this.currentLayer];
     

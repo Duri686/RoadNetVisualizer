@@ -16,7 +16,7 @@
             <h2>操作面板</h2>
             <p class="panel-subtitle">Operation</p>
           </div>
-          
+
           <div class="input-section">
             <h3>基础参数</h3>
             <div class="input-group">
@@ -95,13 +95,21 @@
             </div>
             <div id="mode-help" class="mode-help">
               <div><strong>模式说明：</strong></div>
-              <div>• <strong>质心网络</strong>：以 Delaunay 三角形的质心为可行节点</div>
-              <div>• <strong>Portal 中点</strong>：以相邻三角形共享边的中点为 Portal</div>
-              <div>• <strong>Voronoi 骨架</strong>：以 Voronoi 边为自由空间中线（实验）</div>
+              <div>
+                • <strong>质心网络</strong>：以 Delaunay 三角形的质心为可行节点
+              </div>
+              <div>
+                • <strong>Portal 中点</strong>：以相邻三角形共享边的中点为
+                Portal
+              </div>
+              <div>
+                • <strong>Voronoi 骨架</strong>：以 Voronoi
+                边为自由空间中线（实验）
+              </div>
             </div>
           </div>
 
-          <details class="advanced-section" open>
+          <details class="advanced-section">
             <summary>高级参数</summary>
             <div class="input-group">
               <label class="input-group-label">
@@ -109,7 +117,10 @@
                 启用空间索引优化
               </label>
             </div>
-            <div class="input-group" title="用于空间索引的单元格大小（像素）。留空为自动。">
+            <div
+              class="input-group"
+              title="用于空间索引的单元格大小（像素）。留空为自动。"
+            >
               <label for="cell-size-input">索引单元大小 (cellSize)</label>
               <input
                 autocomplete="off"
@@ -127,18 +138,34 @@
             </button>
             <div class="button-group">
               <button id="download-btn" class="btn-action" title="下载模型数据">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"
+                  />
                 </svg>
                 <span>Download</span>
               </button>
               <button id="share-btn" class="btn-action" title="分享当前配置">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="18" cy="5" r="3"/>
-                  <circle cx="6" cy="12" r="3"/>
-                  <circle cx="18" cy="19" r="3"/>
-                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <circle cx="18" cy="5" r="3" />
+                  <circle cx="6" cy="12" r="3" />
+                  <circle cx="18" cy="19" r="3" />
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
                 </svg>
                 <span>Share</span>
               </button>
@@ -146,7 +173,9 @@
           </div>
 
           <div id="status-message" class="status-message">
-            <p class="status-text">Status: <span class="status-value">Ready</span></p>
+            <p class="status-text">
+              Status: <span class="status-value">Ready</span>
+            </p>
             <p class="status-hint">Click "Generate" to start.</p>
           </div>
         </div>
@@ -163,35 +192,64 @@
           <!-- 画布工具栏 -->
           <div class="canvas-toolbar">
             <button class="toolbar-btn" id="layer-toggle-btn" title="图层控制">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                <path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                <path d="M2 17l10 5 10-5M2 12l10 5 10-5" />
               </svg>
             </button>
             <button class="toolbar-btn" id="zoom-in-btn" title="放大">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"/>
-                <path d="m21 21-4.35-4.35"/>
-                <path d="M11 8v6M8 11h6"/>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+                <path d="M11 8v6M8 11h6" />
               </svg>
             </button>
             <button class="toolbar-btn" id="zoom-out-btn" title="缩小">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"/>
-                <path d="m21 21-4.35-4.35"/>
-                <path d="M8 11h6"/>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+                <path d="M8 11h6" />
               </svg>
             </button>
             <button class="toolbar-btn" id="fullscreen-btn" title="全屏切换">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"
+                />
               </svg>
             </button>
           </div>
         </div>
 
         <div class="canvas-container">
-
           <!-- 画布区域 -->
           <div id="pixi-canvas"></div>
 
@@ -218,34 +276,44 @@
           </div>
 
           <!-- 图例模块 -->
-          <div class="interpretation-card">
+          <div class="interpretation-card" id="legend-card">
             <h3>图例</h3>
             <div class="legend-grid">
-              <div class="legend-item-new">
-                <span class="legend-icon obstacle-icon"></span>
+              <div class="legend-item-new" data-layer="obstacles">
+                <button class="legend-eye" aria-pressed="true" title="显示/隐藏"></button>
+                <span class="legend-icon obstacle-icon" aria-hidden="true"></span>
                 <span class="legend-label">障碍物</span>
               </div>
-              <div class="legend-item-new">
-                <span class="legend-icon node-icon"></span>
+              <div class="legend-item-new" data-layer="networkNodes">
+                <button class="legend-eye" aria-pressed="true" title="显示/隐藏"></button>
+                <span class="legend-icon node-icon" aria-hidden="true"></span>
                 <span class="legend-label">网络节点</span>
               </div>
-              <div class="legend-item-new">
-                <span class="legend-icon edge-icon"></span>
+              <div class="legend-item-new" data-layer="networkEdges">
+                <button class="legend-eye" aria-pressed="true" title="显示/隐藏"></button>
+                <span class="legend-icon edge-icon" aria-hidden="true"></span>
                 <span class="legend-label">网络边</span>
               </div>
-              <div class="legend-item-new">
-                <span class="legend-icon base-icon"></span>
+              <div class="legend-item-new" data-layer="baseTriangulation">
+                <button class="legend-eye" aria-pressed="true" title="显示/隐藏"></button>
+                <span class="legend-icon base-icon" aria-hidden="true"></span>
                 <span class="legend-label">基础三角化</span>
               </div>
-              <div class="legend-item-new">
+              <div class="legend-item-new" data-layer="voronoi">
+                <button class="legend-eye" aria-pressed="true" title="显示/隐藏"></button>
+                <span class="legend-icon voronoi-icon" aria-hidden="true"></span>
+                <span class="legend-label">Voronoi 骨架</span>
+              </div>
+              <div class="legend-sep"></div>
+              <div class="legend-item-new" aria-hidden="true">
                 <span class="legend-icon start-icon"></span>
                 <span class="legend-label">起点</span>
               </div>
-              <div class="legend-item-new">
+              <div class="legend-item-new" aria-hidden="true">
                 <span class="legend-icon end-icon"></span>
                 <span class="legend-label">终点</span>
               </div>
-              <div class="legend-item-new">
+              <div class="legend-item-new" aria-hidden="true">
                 <span class="legend-icon path-icon"></span>
                 <span class="legend-label">路径</span>
               </div>
@@ -253,8 +321,15 @@
           </div>
 
           <!-- 路径统计模块 -->
-          <div class="interpretation-card">
-            <h3>路径统计</h3>
+          <div class="interpretation-card" id="path-card">
+            <div class="card-header-row">
+              <h3>路径统计</h3>
+              <div class="card-actions">
+                <button id="path-refresh-btn" class="btn-secondary btn-compact" title="刷新上次路径">刷新</button>
+                <button id="path-clear-btn" class="btn-secondary btn-compact" title="清空当前路径">清空</button>
+                <button id="path-collapse-btn" class="btn-secondary btn-icon" title="折叠/展开" aria-expanded="true">▾</button>
+              </div>
+            </div>
             <div id="path-stats" class="stats-grid">
               <div class="stat-item">
                 <span class="stat-label">当前路径</span>
@@ -279,8 +354,11 @@
           </div>
 
           <!-- 性能数据模块 -->
-          <div class="interpretation-card">
-            <h3>性能数据</h3>
+          <div class="interpretation-card" id="perf-card">
+            <div class="card-header-row">
+              <h3>性能数据</h3>
+              <span id="perf-status-dot" class="status-dot ok" title="系统状态"></span>
+            </div>
             <div class="stats-grid">
               <div class="stat-item">
                 <span class="stat-label">总节点数</span>
@@ -310,19 +388,29 @@
             <div class="insights-list">
               <div class="insight-item">
                 <span class="insight-icon">•</span>
-                <span class="insight-text">悬停：显示白色十字星，定位最近节点</span>
+                <span class="insight-text"
+                  >悬停：显示白色十字星，定位最近节点</span
+                >
               </div>
               <div class="insight-item">
                 <span class="insight-icon">•</span>
-                <span class="insight-text">点击：第一次选择<strong>起点</strong>，第二次选择<strong>终点</strong></span>
+                <span class="insight-text"
+                  >点击：第一次选择<strong>起点</strong>，第二次选择<strong
+                    >终点</strong
+                  ></span
+                >
               </div>
               <div class="insight-item">
                 <span class="insight-icon">•</span>
-                <span class="insight-text">自动寻路：使用 A* 算法计算最短路径</span>
+                <span class="insight-text"
+                  >自动寻路：使用 A* 算法计算最短路径</span
+                >
               </div>
               <div class="insight-item">
                 <span class="insight-icon">•</span>
-                <span class="insight-text">鼠标滚轮：缩放画布；拖拽：平移视图</span>
+                <span class="insight-text"
+                  >鼠标滚轮：缩放画布；拖拽：平移视图</span
+                >
               </div>
             </div>
           </div>

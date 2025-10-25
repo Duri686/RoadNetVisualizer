@@ -8,6 +8,11 @@ import renderer from './core/renderer.js';
 import InputForm from './components/InputForm.js';
 import ProgressBar from './components/ProgressBar.js';
 import LayerControl from './components/LayerControl.js';
+import statusManager from './utils/statusManager.js';
+import exportManager from './utils/exportManager.js';
+import shareManager from './utils/shareManager.js';
+import layerToggleManager from './utils/layerToggleManager.js';
+import navigatorManager from './utils/navigatorManager.js';
 
 // #TODO: 添加错误边界处理
 // #TODO: 添加性能监控
@@ -19,9 +24,75 @@ class App {
     this.progressBar = null;
     this.layerControl = null;
     this.roadNetData = null;
+    this.renderer = renderer; // 暴露渲染器引用
     this.isInitialized = false;
     // 性能计时（仅记录耗时，不显示 Loading）
     this.perf = { start: 0 };
+  }
+
+  /**
+   * 图例显隐控制（右侧面板）
+   */
+  setupLegendControls() {
+    const card = document.getElementById('legend-card');
+    if (!card) return;
+
+    // 初始化：根据管理器状态同步“眼睛”按钮
+    try {
+      const states = layerToggleManager.getLayerStates();
+      card.querySelectorAll('.legend-item-new[data-layer]').forEach((item) => {
+        const key = item.getAttribute('data-layer');
+        const btn = item.querySelector('.legend-eye');
+        const on = states[key] !== false;
+        item.classList.toggle('off', !on);
+        if (btn) btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+    } catch (e) {
+      console.debug('[Legend] init sync skipped:', e);
+    }
+
+    // 事件委托：点击眼睛切换图层
+    card.addEventListener('click', (ev) => {
+      const btn = ev.target.closest('.legend-eye');
+      if (!btn) return;
+      const item = btn.closest('.legend-item-new');
+      const key = item && item.getAttribute('data-layer');
+      if (!key) return;
+      const current = btn.getAttribute('aria-pressed') === 'true';
+      const next = !current;
+      btn.setAttribute('aria-pressed', next ? 'true' : 'false');
+      item.classList.toggle('off', !next);
+      // 联动渲染器
+      layerToggleManager.toggleLayer(key, next);
+    });
+  }
+
+  /**
+   * 路径面板交互：清空/刷新/折叠
+   */
+  setupPathPanelControls() {
+    const clearBtn = document.getElementById('path-clear-btn');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        try { renderer.interaction && renderer.interaction.clearPath(); } catch (e) {}
+      });
+    }
+
+    const refreshBtn = document.getElementById('path-refresh-btn');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', () => {
+        try { renderer.interaction && renderer.interaction.redrawLastPath(); } catch (e) {}
+      });
+    }
+
+    const collapseBtn = document.getElementById('path-collapse-btn');
+    const pathCard = document.getElementById('path-card');
+    if (collapseBtn && pathCard) {
+      collapseBtn.addEventListener('click', () => {
+        const collapsed = pathCard.classList.toggle('collapsed');
+        collapseBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      });
+    }
   }
 
   /**
@@ -89,7 +160,8 @@ class App {
           let newWidth, newHeight;
           if (isFullscreen) {
             newWidth = screen.width;
-            newHeight = screen.height - canvasInfo.offsetHeight;
+            const infoH = canvasInfo && canvasInfo.offsetHeight ? canvasInfo.offsetHeight : 0;
+            newHeight = screen.height - infoH;
           } else {
             // 退出全屏时，强制使用容器的 clientWidth/Height
             newWidth = pixiContainer.clientWidth;
@@ -105,6 +177,13 @@ class App {
 
       // 绑定 UI 事件
       this.setupUIEventHandlers();
+      
+      // 绑定缩放工具栏按钮
+      this.setupZoomControls();
+
+      // 绑定侧栏交互
+      this.setupLegendControls();
+      this.setupPathPanelControls();
 
       // 使用 ResizeObserver 监听 #pixi-canvas 实际尺寸变化，避免初次布局与自适应引发抖动
       try {
@@ -133,10 +212,28 @@ class App {
 
       // 显示欢迎信息
       this.showWelcomeMessage();
+      statusManager.setReady();
+      // 记录 LayerControl 运行模式
+      try {
+        const headless = this.layerControl && this.layerControl._headless;
+        console.log(`[LayerControl] mode=${headless ? 'headless' : 'with-ui'}`);
+      } catch (e) {
+        console.debug('[LayerControl] mode log skipped:', e);
+      }
 
+      // 尝试从 URL 加载参数
+      const hasUrlParams = shareManager.loadFromUrl();
+      
       // 等待首屏布局稳定后再触发一次默认生成，避免初始测量抖动
       setTimeout(() => {
-        this.autoGenerateOnce();
+        if (hasUrlParams) {
+          // 如果有 URL 参数，使用 URL 参数生成
+          const values = this.inputForm.getValues();
+          this.handleGenerate(values);
+        } else {
+          // 否则使用默认参数
+          this.autoGenerateOnce();
+        }
       }, 120);
     } catch (error) {
       console.error('❌ Failed to initialize application:', error);
@@ -155,6 +252,9 @@ class App {
         this.progressBar.reset();
         this.progressBar.show();
         this.updateStats(null);
+        const genEl0 = document.getElementById('gen-time');
+        if (genEl0) genEl0.textContent = '-- ms';
+        statusManager.setLoading('Generating road network...');
         // 仅记录开始时间，不显示 Loading 弹窗
         this.perf.start = performance.now();
       },
@@ -194,12 +294,15 @@ class App {
 
         // 显示成功消息
         this.showSuccess(`成功生成 ${data.metadata.layerCount} 层道路网络！`);
+        statusManager.setSuccess('Generated', `${data.metadata.layerCount} layers created successfully.`);
 
         // 展示性能与 L0 规模 + profiling 指标 + 渲染耗时/数据体积
         const cost = Math.max(
           0,
           Math.round(performance.now() - this.perf.start),
         );
+        const genTimeEl = document.getElementById('gen-time');
+        if (genTimeEl) genTimeEl.textContent = `${cost} ms`;
         const perfInfo = document.getElementById('perf-info');
         const l0 =
           data && data.layers && data.layers[0] ? data.layers[0] : null;
@@ -222,6 +325,9 @@ class App {
         renderer.renderRoadNet(data);
         const tRender1 = performance?.now ? performance.now() : Date.now();
         const renderMs = Math.max(0, Math.round(tRender1 - tRender0));
+        
+        // 更新缩略图导航
+        navigatorManager.render(data);
         let dataKB = '-';
         try {
           const payload = { layers: data.layers, obstacles: data.obstacles };
@@ -240,10 +346,52 @@ class App {
         this.progressBar.hide();
         this.inputForm.enable();
         this.showError('生成失败: ' + error.message);
+        statusManager.setError(error.message || 'Generation failed.');
+        const genElErr = document.getElementById('gen-time');
+        if (genElErr) genElErr.textContent = '-- ms';
 
         // 仅恢复交互，无 Loading 弹窗
       },
     });
+  }
+
+  /**
+   * 设置缩放控制
+   */
+  setupZoomControls() {
+    const zoomInBtn = document.getElementById('zoom-in-btn');
+    const zoomOutBtn = document.getElementById('zoom-out-btn');
+    const zoomResetBtn = document.getElementById('zoom-reset-btn');
+
+    if (zoomInBtn) {
+      zoomInBtn.addEventListener('click', () => {
+        renderer.zoomIn();
+        const vp = renderer.getViewportRect && renderer.getViewportRect();
+        if (vp) console.debug('[Zoom] in, viewport=', vp);
+      });
+    } else {
+      console.warn('[UI] #zoom-in-btn not found');
+    }
+
+    if (zoomOutBtn) {
+      zoomOutBtn.addEventListener('click', () => {
+        renderer.zoomOut();
+        const vp = renderer.getViewportRect && renderer.getViewportRect();
+        if (vp) console.debug('[Zoom] out, viewport=', vp);
+      });
+    } else {
+      console.warn('[UI] #zoom-out-btn not found');
+    }
+
+    if (zoomResetBtn) {
+      zoomResetBtn.addEventListener('click', () => {
+        renderer.resetView();
+        const vp = renderer.getViewportRect && renderer.getViewportRect();
+        if (vp) console.debug('[Zoom] reset, viewport=', vp);
+      });
+    } else {
+      console.warn('[UI] #zoom-reset-btn not found');
+    }
   }
 
   /**
@@ -345,6 +493,7 @@ class App {
     const nodeCount = document.getElementById('node-count');
     const edgeCount = document.getElementById('edge-count');
     const layerCount = document.getElementById('layer-count');
+    const genTimeEl = document.getElementById('gen-time');
 
     if (metadata) {
       if (nodeCount) nodeCount.textContent = `节点: ${metadata.totalNodes}`;
@@ -354,6 +503,7 @@ class App {
       if (nodeCount) nodeCount.textContent = '节点: 0';
       if (edgeCount) edgeCount.textContent = '边: 0';
       if (layerCount) layerCount.textContent = '层数: 0';
+      if (genTimeEl) genTimeEl.textContent = '-- ms';
     }
   }
 

@@ -151,3 +151,45 @@
   flex-direction: column;
   margin-top: var(--space-xl);
 }
+
+/* 下载菜单样式 */
+.download-menu {
+  z-index: 1000;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-xs);
+  min-width: 160px;
+  animation: fadeIn 0.2s ease;
+}
+
+.download-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 13px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.download-option svg {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.download-option:hover {
+  background: var(--bg-input);
+  color: var(--primary-color);
+}
+
+.download-option:hover svg {
+  color: var(--primary-color);
+}

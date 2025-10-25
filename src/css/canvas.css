@@ -215,3 +215,91 @@
   top: var(--space-xl);
   right: var(--space-xl);
 }
+
+/* 图层菜单样式 */
+.layer-menu {
+  z-index: 1000;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  min-width: 200px;
+  overflow: hidden;
+  animation: fadeIn 0.2s ease;
+}
+
+.layer-menu-header {
+  padding: var(--space-md) var(--space-lg);
+  background: var(--bg-input);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.layer-menu-header strong {
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.layer-menu-body {
+  padding: var(--space-sm);
+}
+
+.layer-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.layer-item:hover {
+  background: var(--bg-input);
+}
+
+.layer-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--primary-color);
+  flex-shrink: 0;
+}
+
+.layer-icon {
+  width: 16px;
+  height: 12px;
+  flex-shrink: 0;
+  border-radius: 2px;
+}
+
+.obstacle-icon-small {
+  background: var(--viz-obstacle);
+  opacity: 0.8;
+}
+
+.network-icon-small {
+  background: var(--viz-network-edge);
+  border-radius: 50%;
+  width: 10px;
+  height: 10px;
+}
+
+.network-edge-icon-small {
+  width: 16px;
+  height: 2px;
+  background: var(--viz-network-edge);
+  border-radius: 1px;
+}
+
+.base-icon-small {
+  background: var(--text-muted);
+  height: 2px;
+  opacity: 0.4;
+}
+
+.voronoi-icon-small {
+  background: var(--viz-voronoi);
+  height: 2px;
+}

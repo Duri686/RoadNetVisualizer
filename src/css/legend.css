@@ -59,13 +59,107 @@
 } */
 
 /* 图例容器 */
-.legend {
+.legend { /* 旧样式保留 */
   margin-top: var(--space-md);
   display: flex;
   gap: var(--space-sm);
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-start;
+}
+
+/* 新版图例网格 */
+.legend-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-sm);
+}
+
+.legend-item-new {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.legend-item-new.off {
+  opacity: 0.45;
+}
+
+.legend-eye {
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.legend-eye::before {
+  content: '👁';
+  font-size: 14px;
+  line-height: 24px;
+  display: inline-block;
+}
+.legend-item-new.off .legend-eye::before,
+.legend-eye[aria-pressed="false"]::before {
+  content: '🙈';
+}
+
+.legend-icon {
+  display: inline-block;
+  flex-shrink: 0;
+}
+.legend-icon.obstacle-icon {
+  width: 14px;
+  height: 14px;
+  background: var(--viz-obstacle);
+  border: 1px solid var(--viz-obstacle);
+  border-radius: 2px;
+}
+.legend-icon.node-icon {
+  width: 10px;
+  height: 10px;
+  background: var(--viz-network-edge);
+  border-radius: 50%;
+}
+.legend-icon.edge-icon {
+  width: 18px;
+  height: 2px;
+  background: var(--viz-network-edge);
+  border-radius: 2px;
+}
+.legend-icon.base-icon {
+  width: 18px;
+  height: 2px;
+  background-color: transparent;
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--text-muted),
+    var(--text-muted) 6px,
+    transparent 6px,
+    transparent 12px
+  );
+  opacity: 0.6;
+  border-radius: 2px;
+}
+.legend-icon.voronoi-icon {
+  width: 18px;
+  height: 2px;
+  background: var(--viz-voronoi);
+  border-radius: 2px;
+}
+
+.legend-label {
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.legend-sep {
+  height: 1px;
+  background: var(--border-light);
+  margin: 4px 0;
 }
 
 /* 图例项 */
@@ -157,3 +251,34 @@
 .path-info div {
   margin: var(--space-xs) 0;
 }
+
+/* 卡片头部与按钮 */
+.card-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+.card-actions { display: inline-flex; gap: var(--space-sm); }
+.btn-compact {
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: var(--radius-sm);
+}
+.btn-icon { width: 28px; height: 28px; padding: 0; }
+
+/* 折叠状态 */
+#path-card.collapsed #path-stats,
+#path-card.collapsed #path-info {
+  display: none;
+}
+
+/* 性能状态点 */
+.status-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.status-dot.ok { background: var(--success-color); }
+.status-dot.warn { background: var(--warning-color); }
+.status-dot.err { background: var(--error-color); }

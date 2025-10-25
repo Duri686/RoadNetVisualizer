@@ -12,12 +12,82 @@ export class RendererDrawing {
   }
 
   /**
+   * 基于当前缩放计算虚线 dash/gap（保持屏幕视觉稳定）
+   * 目标：在屏幕上约等于 8px/6px，按 1/scale 线性缩放并限制范围
+   */
+  computeDashGapByScale(scale) {
+    const s = Math.max(0.1, Math.min(8, scale || 1));
+    const dash = Math.max(2, Math.min(24, Math.round(8 / s)));
+    const gap = Math.max(2, Math.min(20, Math.round(6 / s)));
+    return { dash, gap };
+  }
+
+  /**
+   * 重建基础三角化（虚线）图形
+   */
+  rebuildOverlayBase(overlayContainer, edges, offsetX, offsetY, cellSize) {
+    if (!overlayContainer || !Array.isArray(edges)) return;
+    overlayContainer.removeChildren();
+    const g = new PIXI.Graphics();
+    g.name = 'overlay-base-lines';
+    g.lineStyle({
+      width: Math.max(1, this.config.edgeWidth - 0.5),
+      color: 0x9ca3af,
+      alpha: 0.35,
+    });
+    const { dash, gap } = this.computeDashGapByScale(this.transform?.scale || 1);
+    for (const e of edges) {
+      const x1 = offsetX + e.x1 * cellSize;
+      const y1 = offsetY + e.y1 * cellSize;
+      const x2 = offsetX + e.x2 * cellSize;
+      const y2 = offsetY + e.y2 * cellSize;
+      this.drawDashedLine(g, x1, y1, x2, y2, dash, gap);
+    }
+    overlayContainer.addChild(g);
+  }
+
+  /**
    * 更新坐标转换参数
    * @param {Object} transform - 坐标转换参数
    */
   updateTransform(transform) {
     this.transform = transform;
     // 当缩放发生变化时，可以在这里进行额外处理
+  }
+
+  /**
+   * 绘制虚线段
+   * @param {PIXI.Graphics} g - Graphics 对象
+   * @param {number} x1 起点X
+   * @param {number} y1 起点Y
+   * @param {number} x2 终点X
+   * @param {number} y2 终点Y
+   * @param {number} dashLen 虚线段长度
+   * @param {number} gapLen 间隔长度
+   */
+  drawDashedLine(g, x1, y1, x2, y2, dashLen = 8, gapLen = 6) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const len = Math.hypot(dx, dy);
+    if (len === 0) return;
+    const ux = dx / len;
+    const uy = dy / len;
+    let dist = 0;
+    let draw = true;
+    while (dist < len) {
+      const seg = draw ? dashLen : gapLen;
+      const nx1 = x1 + ux * dist;
+      const ny1 = y1 + uy * dist;
+      const ndist = Math.min(dist + seg, len);
+      const nx2 = x1 + ux * ndist;
+      const ny2 = y1 + uy * ndist;
+      if (draw) {
+        g.moveTo(nx1, ny1);
+        g.lineTo(nx2, ny2);
+      }
+      dist = ndist;
+      draw = !draw;
+    }
   }
 
   /**
@@ -34,8 +104,8 @@ export class RendererDrawing {
 
     obstacles.forEach(obs => {
       const rect = new PIXI.Graphics();
-      rect.beginFill(0xff0000, 0.35);
-      rect.lineStyle(1, 0xff0000, 0.8);
+      rect.beginFill(0xdc2626, 0.5); // 深红填充，半透明
+      rect.lineStyle(1, 0xdc2626, 0.85); // 深红描边
       rect.drawRect(
         offsetX + obs.x * cellSize,
         offsetY + obs.y * cellSize,
@@ -65,31 +135,40 @@ export class RendererDrawing {
 
     const layerColor = this.config.layerColors[layerIndex % this.config.layerColors.length];
 
-    // 针对可行网络层（centroid-free/portal/voronoi-skeleton），使用更醒目的青色样式
-    const abstraction = layer?.metadata?.abstraction;
-    const isNetwork = abstraction === 'centroid-free' || abstraction === 'portal' || abstraction === 'voronoi-skeleton';
-    const edgeColor = isNetwork ? 0x22d3ee : this.config.edgeColor;
-    const edgeAlpha = isNetwork ? 0.9 : this.config.edgeAlpha;
-    const nodeColor = isNetwork ? 0x22d3ee : layerColor;
-    const nodeAlpha = isNetwork ? 0.9 : this.config.nodeAlpha;
-    const nodeRadius = isNetwork ? Math.max(2, this.config.nodeRadius - 1) : this.config.nodeRadius;
+    // 颜色常量（与图例对齐）
+    const COLORS = {
+      networkEdge: 0x3b82f6,   // 蓝色边
+      networkNode: 0x3b82f6,   // 蓝色节点
+      voronoi: 0x06b6d4,       // 青蓝色线
+      baseOverlay: 0x9ca3af,   // 灰色
+    };
+
+    // 针对不同抽象层类型，拆分子容器：overlay-base / network-edges / network-nodes / voronoi-skeleton
+    const abstractionRaw = layer?.metadata?.abstraction;
+    const abstraction = abstractionRaw ? String(abstractionRaw).toLowerCase() : '';
+    const isVoronoi = abstraction.includes('voronoi');
+    const isNetwork = !isVoronoi; // 其余层按网络处理（centroid-free/portal 等）
+    const edgeColor = isVoronoi ? COLORS.voronoi : COLORS.networkEdge;
+    const edgeAlpha = 0.95;
+    const nodeColor = COLORS.networkNode;
+    const nodeAlpha = 0.95;
+    const nodeRadius = 2.5;
+
+    const overlayContainer = new PIXI.Container();
+    overlayContainer.name = 'overlay-base';
+    const networkEdgesContainer = new PIXI.Container();
+    networkEdgesContainer.name = 'network-edges';
+    const networkNodesContainer = new PIXI.Container();
+    networkNodesContainer.name = 'network-nodes';
+    const voronoiContainer = new PIXI.Container();
+    voronoiContainer.name = 'voronoi-skeleton';
 
     // 绘制基础 Delaunay 覆盖层（灰色半透明），帮助理解可行点来源
     const overlay = layer.metadata && layer.metadata.overlayBase && Array.isArray(layer.metadata.overlayBase.edges)
       ? layer.metadata.overlayBase.edges
       : null;
     if (overlay && overlay.length) {
-      const overlayGraphics = new PIXI.Graphics();
-      overlayGraphics.lineStyle({ width: this.config.edgeWidth, color: 0x9ca3af, alpha: 0.25 });
-      for (const e of overlay) {
-        const x1 = offsetX + e.x1 * cellSize;
-        const y1 = offsetY + e.y1 * cellSize;
-        const x2 = offsetX + e.x2 * cellSize;
-        const y2 = offsetY + e.y2 * cellSize;
-        overlayGraphics.moveTo(x1, y1);
-        overlayGraphics.lineTo(x2, y2);
-      }
-      container.addChild(overlayGraphics);
+      this.rebuildOverlayBase(overlayContainer, overlay, offsetX, offsetY, cellSize);
     }
 
     // 渲染边（先渲染边，这样节点会显示在上层）
@@ -101,7 +180,7 @@ export class RendererDrawing {
 
       const line = new PIXI.Graphics();
       line.lineStyle({
-        width: this.config.edgeWidth,
+        width: isVoronoi ? Math.max(1.5, this.config.edgeWidth) : this.config.edgeWidth,
         color: edgeColor,
         alpha: edgeAlpha
       });
@@ -114,10 +193,14 @@ export class RendererDrawing {
       line.moveTo(x1, y1);
       line.lineTo(x2, y2);
 
-      container.addChild(line);
+      if (isVoronoi) {
+        voronoiContainer.addChild(line);
+      } else {
+        networkEdgesContainer.addChild(line);
+      }
     });
 
-    // 渲染节点
+    // 渲染节点（所有层统一绘制为蓝色圆点，受“网络节点”开关统一控制）
     layer.nodes.forEach(node => {
       const circle = new PIXI.Graphics();
       circle.beginFill(nodeColor, nodeAlpha);
@@ -127,9 +210,14 @@ export class RendererDrawing {
         nodeRadius
       );
       circle.endFill();
-
-      container.addChild(circle);
+      networkNodesContainer.addChild(circle);
     });
+
+    // 组装分组容器
+    container.addChild(overlayContainer);
+    container.addChild(networkEdgesContainer);
+    container.addChild(networkNodesContainer);
+    container.addChild(voronoiContainer);
 
     return container;
   }

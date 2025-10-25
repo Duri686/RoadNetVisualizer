@@ -19,6 +19,13 @@ class Renderer {
     this.roadNetData = null;
     this.currentLayer = null;
     this.showAllLayers = false;
+    this.flags = {
+      obstaclesVisible: true,
+      baseOverlayVisible: true,
+      networkNodesVisible: true,
+      networkEdgesVisible: true,
+      voronoiVisible: true
+    };
 
     // 交互图层引用
     this.interactionContainer = null;
@@ -73,6 +80,78 @@ class Renderer {
     // 初始化子模块
     this.drawing = new RendererDrawing(this.config, this.transform);
     this.interaction = new RendererInteraction(this.config, this.transform, this.drawing);
+  }
+
+  /**
+   * 按 flags 应用可见性
+   */
+  applyVisibilityFlags() {
+    // 障碍物
+    if (this.obstacleLayer) {
+      this.obstacleLayer.visible = this.flags.obstaclesVisible !== false;
+    }
+    // 每层子容器：overlay-base / network-edges / network-nodes / voronoi-skeleton
+    if (Array.isArray(this.layerContainers)) {
+      this.layerContainers.forEach((layerC, idx) => {
+        const layerVisible = this.currentLayer === null ? true : idx === this.currentLayer;
+        const overlay = layerC.children?.find(ch => ch.name === 'overlay-base');
+        const nEdges = layerC.children?.find(ch => ch.name === 'network-edges');
+        const nNodes = layerC.children?.find(ch => ch.name === 'network-nodes');
+        const voronoi = layerC.children?.find(ch => ch.name === 'voronoi-skeleton');
+
+        if (overlay) overlay.visible = layerVisible && (this.flags.baseOverlayVisible !== false);
+        if (nEdges) nEdges.visible = layerVisible && (this.flags.networkEdgesVisible !== false);
+        if (nNodes) nNodes.visible = layerVisible && (this.flags.networkNodesVisible !== false);
+        if (voronoi) voronoi.visible = layerVisible && (this.flags.voronoiVisible !== false);
+
+        // 层容器本身可见性 = 任一子容器可见
+        layerC.visible = !!(overlay?.visible || nEdges?.visible || nNodes?.visible || voronoi?.visible);
+      });
+    }
+  }
+
+  /** 设置障碍物显隐 */
+  setObstaclesVisible(visible) {
+    this.flags.obstaclesVisible = !!visible;
+    this.applyVisibilityFlags();
+    console.log(`[Renderer] obstacles visible = ${!!visible}`);
+  }
+
+  /** 设置网络显隐（所有层的节点与边） */
+  setNetworkVisible(visible) {
+    this.flags.networkNodesVisible = !!visible;
+    this.flags.networkEdgesVisible = !!visible;
+    this.applyVisibilityFlags();
+    console.log(`[Renderer] network (nodes+edges) visible = ${!!visible}`);
+  }
+
+  /** 仅设置网络节点显隐 */
+  setNetworkNodesVisible(visible) {
+    this.flags.networkNodesVisible = !!visible;
+    // 默认：边与节点一起联动（如需独立控制，请调用 setNetworkEdgesVisible）
+    this.applyVisibilityFlags();
+    console.log(`[Renderer] network nodes visible = ${!!visible}`);
+  }
+
+  /** 仅设置网络边显隐（可选） */
+  setNetworkEdgesVisible(visible) {
+    this.flags.networkEdgesVisible = !!visible;
+    this.applyVisibilityFlags();
+    console.log(`[Renderer] network edges visible = ${!!visible}`);
+  }
+
+  /** 设置基础三角化覆盖层显隐 */
+  setBaseTriangulationVisible(visible) {
+    this.flags.baseOverlayVisible = !!visible;
+    this.applyVisibilityFlags();
+    console.log(`[Renderer] base overlay visible = ${!!visible}`);
+  }
+
+  /** 设置 Voronoi 骨架显隐（当前与网络层合并绘制，仅日志提示） */
+  setVoronoiVisible(visible) {
+    this.flags.voronoiVisible = !!visible;
+    this.applyVisibilityFlags();
+    console.log(`[Renderer] voronoi visible = ${!!visible}`);
   }
 
   /**
@@ -160,6 +239,7 @@ class Renderer {
     // 先渲染障碍物层（底层）
     if (obstacles && obstacles.length > 0) {
       const obstacleContainer = this.drawing.renderObstacles(obstacles, offsetX, offsetY, cellSize);
+      this.obstacleLayer = obstacleContainer; // 保存引用供外部切换
       this.mainContainer.addChild(obstacleContainer);
     }
 
@@ -173,6 +253,9 @@ class Renderer {
     // 默认显示第一层
     this.showLayer(0);
 
+    // 初始应用可见性标志
+    this.applyVisibilityFlags();
+
     // 保存坐标转换参数并更新子模块（初始化后为默认视图）
     this.transform = { 
       offsetX, 
@@ -185,6 +268,8 @@ class Renderer {
     
     this.drawing.updateTransform(this.transform);
     this.interaction.updateTransform(this.transform);
+    // 缩放后重建基础三角化虚线
+    this.rebuildAllOverlays();
 
     // 设置导航图数据并启用交互
     this.interaction.setRoadNetData(navGraphData);
@@ -314,6 +399,8 @@ class Renderer {
     }
 
     console.log(`👁️ Showing layer: ${layerIndex === null ? 'All' : layerIndex}`);
+    // 应用可见性标志
+    this.applyVisibilityFlags();
   }
 
   /**
@@ -363,6 +450,8 @@ class Renderer {
         this.renderRoadNet(currentData);
         // 重新设置交互，确保事件监听器在新的视图上生效
         this.setupInteraction();
+        // 重新应用可见性
+        this.applyVisibilityFlags();
 
         // 恢复交互状态：保留起点，清除终点与动画，确保 hover 预览可用
         if (this.interaction) {
@@ -433,6 +522,8 @@ class Renderer {
         // 更新绘制模块的缩放参数
         this.drawing.updateTransform(this.transform);
         this.interaction.updateTransform(this.transform);
+        // 缩放后按视觉密度重建基础三角化虚线
+        this.rebuildAllOverlays();
         
         console.log(`🔍 Zoom: ${newScale.toFixed(2)}x`);
       }
@@ -478,6 +569,106 @@ class Renderer {
     view.style.cursor = 'grab';
     
     console.log('✅ Zoom and pan controls enabled');
+  }
+
+  /**
+   * 编程式缩放（以画布中心为基准）
+   * @param {number} scaleFactor 缩放因子，如 1.2 表示放大，0.8 表示缩小
+   */
+  zoom(scaleFactor = 1.0) {
+    if (!this.app || !this.mainContainer || !this.drawing) return;
+
+    const newScale = this.transform.scale * scaleFactor;
+    if (newScale < this.viewState.minScale || newScale > this.viewState.maxScale) {
+      console.debug(`[Renderer] zoom skipped: out of range ${newScale.toFixed(2)}`);
+      return;
+    }
+
+    // 以画布中心缩放
+    const view = this.app.view;
+    const centerX = view.getBoundingClientRect().left + this.app.screen.width / 2;
+    const centerY = view.getBoundingClientRect().top + this.app.screen.height / 2;
+
+    const mouseX = this.app.screen.width / 2;
+    const mouseY = this.app.screen.height / 2;
+
+    const worldPos = {
+      x: (mouseX - this.mainContainer.x) / this.transform.scale,
+      y: (mouseY - this.mainContainer.y) / this.transform.scale,
+    };
+
+    this.transform.scale = newScale;
+    this.mainContainer.scale.set(newScale);
+
+    const newX = mouseX - worldPos.x * newScale;
+    const newY = mouseY - worldPos.y * newScale;
+    this.mainContainer.x = newX;
+    this.mainContainer.y = newY;
+
+    this.drawing.updateTransform(this.transform);
+    this.interaction.updateTransform(this.transform);
+
+    console.log(`🔍 [Renderer] Zoom -> ${newScale.toFixed(2)}x (factor=${scaleFactor})`);
+  }
+
+  /**
+   * 放大
+   */
+  zoomIn() {
+    this.zoom(1.2);
+  }
+
+  /**
+   * 缩小
+   */
+  zoomOut() {
+    this.zoom(0.8);
+  }
+
+  /**
+   * 重置视图到初始状态（居中显示）
+   */
+  resetView() {
+    if (!this.app || !this.mainContainer) return;
+    this.transform.scale = 1;
+    this.transform.panX = 0;
+    this.transform.panY = 0;
+    this.mainContainer.scale.set(1, 1);
+    this.mainContainer.position.set(0, 0);
+    this.drawing.updateTransform(this.transform);
+    this.interaction.updateTransform(this.transform);
+    // 重置后重建基础三角化虚线
+    this.rebuildAllOverlays();
+    console.log('↺ [Renderer] View reset');
+  }
+
+  /**
+   * 重建所有层的基础三角化虚线（根据当前 scale 自适应 dash/gap）
+   */
+  rebuildAllOverlays() {
+    if (!this.roadNetData || !Array.isArray(this.layerContainers)) return;
+    const { offsetX, offsetY, cellSize } = this.transform || {};
+    this.layerContainers.forEach((layerC, idx) => {
+      const overlay = layerC.children?.find(ch => ch.name === 'overlay-base');
+      if (!overlay) return;
+      const edges = this.roadNetData.layers?.[idx]?.metadata?.overlayBase?.edges || [];
+      if (edges && edges.length && this.drawing && typeof this.drawing.rebuildOverlayBase === 'function') {
+        this.drawing.rebuildOverlayBase(overlay, edges, offsetX, offsetY, cellSize);
+      }
+    });
+  }
+
+  /**
+   * 获取当前视口的世界坐标矩形（用于缩略图同步）
+   */
+  getViewportRect() {
+    if (!this.app) return null;
+    const scale = this.transform.scale || 1;
+    const x = -this.mainContainer.x / scale;
+    const y = -this.mainContainer.y / scale;
+    const width = this.app.screen.width / scale;
+    const height = this.app.screen.height / scale;
+    return { x, y, width, height, scale };
   }
 
   /**

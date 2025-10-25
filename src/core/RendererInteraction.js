@@ -21,6 +21,8 @@ export class RendererInteraction {
       hoveredNode: null,
       path: null,
       isAnimating: false,
+      lastPath: null,
+      lastPathTotal: null,
     };
 
     // 交互图层引用
@@ -35,6 +37,43 @@ export class RendererInteraction {
     this.animBall = null; // 当前动画小球
     this.animRAF = null;  // requestAnimationFrame 句柄
     this.autoClearTimer = null; // 旧版自动清理计时器（不再使用）
+  }
+
+  /**
+   * 计算路径总长度
+   */
+  _calcTotalLength(path) {
+    if (!path || path.length < 2) return 0;
+    let total = 0;
+    for (let i = 0; i < path.length - 1; i++) {
+      const a = path[i];
+      const b = path[i + 1];
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      total += Math.sqrt(dx * dx + dy * dy);
+    }
+    return total;
+  }
+
+  /**
+   * 清空路径（图形与状态）
+   */
+  clearPath() {
+    this.cancelAnimationIfAny();
+    this.clearInteractionGraphics();
+    this.state.startNode = null;
+    this.state.endNode = null;
+    this.state.path = null;
+    this.resetPathInfo();
+  }
+
+  /**
+   * 使用 lastPath 重新绘制路径（例如在刷新或重渲染后）
+   */
+  redrawLastPath() {
+    if (!this.state.lastPath || !this.pathContainer) return;
+    this.drawing.drawPath(this.pathContainer, this.state.lastPath, false);
+    this.updatePathInfo(this.state.lastPath, false);
   }
 
   /**
@@ -286,6 +325,11 @@ export class RendererInteraction {
         console.log(`🛤️ Path found: ${path.length} nodes`);
         this.drawInteractionNodes();
         this.animatePath(path);
+
+        // 保存为“上次路径”
+        const total = this._calcTotalLength(path);
+        this.state.lastPath = path;
+        this.state.lastPathTotal = total;
       }
     }
   }
@@ -300,28 +344,34 @@ export class RendererInteraction {
     if (!panel) return;
 
     // 构造节点列表与段信息
-    const nodes = path.map((n) => `${n.id}(${n.x},${n.y})`);
-    const segments = [];
-    let total = 0;
-    for (let i = 0; i < path.length - 1; i++) {
-      const a = path[i];
-      const b = path[i + 1];
-      const dx = b.x - a.x;
-      const dy = b.y - a.y;
-      const d = Math.sqrt(dx * dx + dy * dy); // 单位：米
-      total += d;
-      segments.push(`${a.id} → ${b.id} (${d.toFixed(2)} m)`);
-    }
+    const total = this._calcTotalLength(path);
+    const turns = this._computeTurnsCount(path);
 
     const title = isPreview ? '当前路径（预览）' : '当前路径（最终）';
+    const last = this.state.lastPathTotal;
+    const compare =
+      !isPreview && typeof last === 'number'
+        ? `<div style="margin-top:6px;color:var(--text-secondary)">上次：<strong>${last.toFixed(
+            2,
+          )} m</strong> ｜ 差异：<strong>${(total - last).toFixed(
+            2,
+          )} m</strong></div>`
+        : '';
     panel.innerHTML = `
-      <div><strong>${title}</strong>：节点数 ${
-      path.length
-    }；总距离 <strong>${total.toFixed(2)} m</strong></div>
-      
+      <div><strong>${title}</strong>：节点数 ${path.length}；总距离 <strong>${total.toFixed(
+      2,
+    )} m</strong></div>
+      ${compare}
     `;
-    // <div style="margin-top:6px;"><strong>节点</strong>：${nodes.join(' , ')}</div>
-    //   <div style="margin-top:6px;"><strong>段</strong>：${segments.join('  |  ') || '无'}</div>
+    // 同步上方统计栅格
+    const setText = (id, txt) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = txt;
+    };
+    setText('path-status', isPreview ? '预览' : '已计算');
+    setText('path-length', `${total.toFixed(2)} m`);
+    setText('path-nodes', String(path.length));
+    setText('path-turns', String(turns));
   }
 
   /**
@@ -330,6 +380,40 @@ export class RendererInteraction {
   resetPathInfo() {
     const panel = document.getElementById('path-info');
     if (panel) panel.innerHTML = '<div><strong>当前路径</strong>：无</div>';
+    // 重置统计栅格
+    const setText = (id, txt) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = txt;
+    };
+    setText('path-status', '未选择');
+    setText('path-length', '--');
+    setText('path-nodes', '--');
+    setText('path-turns', '--');
+  }
+
+  /**
+   * 计算转折次数（简单角度变化统计）
+   */
+  _computeTurnsCount(path) {
+    if (!path || path.length < 3) return 0;
+    let turns = 0;
+    for (let i = 1; i < path.length - 1; i++) {
+      const a = path[i - 1];
+      const b = path[i];
+      const c = path[i + 1];
+      const v1x = b.x - a.x;
+      const v1y = b.y - a.y;
+      const v2x = c.x - b.x;
+      const v2y = c.y - b.y;
+      const len1 = Math.hypot(v1x, v1y) || 1;
+      const len2 = Math.hypot(v2x, v2y) || 1;
+      const nx1 = v1x / len1, ny1 = v1y / len1;
+      const nx2 = v2x / len2, ny2 = v2y / len2;
+      const dot = nx1 * nx2 + ny1 * ny2;
+      // cos(theta) 接近 ±1 认为直线，不计转折；阈值可调整
+      if (Math.abs(dot) < 0.98) turns++;
+    }
+    return turns;
   }
 
   /**
