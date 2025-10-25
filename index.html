@@ -8,6 +8,12 @@
   </head>
   <body>
     <div class="container">
+      <!-- 移动端：横向Tab导航（仅在小屏显示） -->
+      <nav id="mobile-tabs" aria-label="主模块切换" role="tablist">
+        <button class="tab-btn" role="tab" aria-selected="true" data-target="visualization-panel">地图</button>
+        <button class="tab-btn" role="tab" aria-selected="false" data-target="operation-panel">操作</button>
+        <button class="tab-btn" role="tab" aria-selected="false" data-target="interpretation-panel">解读</button>
+      </nav>
       <!-- 左栏：操作面板 (Operation Panel) -->
       <section class="operation-panel">
         <!-- Control Panel -->
@@ -272,7 +278,7 @@
 
           <!-- 画布提示信息（简化版） -->
           <div class="canvas-hint">
-            <p>💡 鼠标滚轮缩放，拖拽平移，点击节点进行路径规划</p>
+            <p id="canvas-hint-text">💡 鼠标滚轮缩放，拖拽平移，点击节点进行路径规划</p>
           </div>
         </div>
       </section>
@@ -480,5 +486,6 @@
     </div>
 
     <script type="module" src="/src/main.js"></script>
+    <script type="module" src="/src/utils/mobileUI.js"></script>
   </body>
 </html>

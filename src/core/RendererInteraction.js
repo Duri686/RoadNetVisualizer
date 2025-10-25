@@ -179,6 +179,10 @@ export class RendererInteraction {
 
     // 获取鼠标在画布上的原始坐标
     const mousePos = event.global;
+    // 仅在鼠标设备且非移动端时显示十字星
+    const pointerType = event && event.data && event.data.pointerType ? event.data.pointerType : 'mouse';
+    const isMobileView = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 1023px)').matches;
+    const allowCrosshair = pointerType === 'mouse' && !isMobileView;
 
     // 获取鼠标相对于交互容器的坐标（已考虑缩放和平移）
     const localPos = event.data.getLocalPosition(this.container);
@@ -200,13 +204,17 @@ export class RendererInteraction {
       const nearestNode = layer.nodes[nearestIndex];
       this.state.hoveredNode = nearestNode;
 
-      // 绘制十字星（使用鼠标在主容器内的坐标）
+      // 绘制十字星（仅桌面鼠标设备），移动端隐藏
       if (this.crosshairGraphics) {
-        this.drawing.drawCrosshair(
-          this.crosshairGraphics,
-          localPos.x,
-          localPos.y,
-        );
+        if (allowCrosshair) {
+          this.drawing.drawCrosshair(
+            this.crosshairGraphics,
+            localPos.x,
+            localPos.y,
+          );
+        } else {
+          this.crosshairGraphics.visible = false;
+        }
       }
 
       // 如果已选择起点且尚未选择终点，实时显示预览路径
@@ -219,7 +227,7 @@ export class RendererInteraction {
       }
     } else {
       this.state.hoveredNode = null;
-      this.crosshairGraphics.visible = false;
+      if (this.crosshairGraphics) this.crosshairGraphics.visible = false;
     }
   }
 

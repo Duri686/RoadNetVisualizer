@@ -12,6 +12,11 @@
   overflow: hidden;
 }
 
+/* 移动端横向Tab（默认隐藏，移动端显示） */
+#mobile-tabs {
+  display: none;
+}
+
 /* 左栏：操作面板 (Operation Panel) */
 .operation-panel {
   flex: 0 0 320px;
@@ -98,18 +103,56 @@
     flex-direction: column;
     padding: var(--space-md);
     gap: var(--space-md);
+    height: 100dvh; /* 锁定视口高度，便于内部滚动容器占满 */
+    min-height: 100dvh;
+  }
+
+  /* 去除底部留白，画布可贴近底部 */
+  .container { padding-bottom: 0; }
+
+  /* 显示移动端Tab */
+  #mobile-tabs {
+    display: flex;
+    gap: var(--space-sm);
+    padding: var(--space-sm);
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  #mobile-tabs .tab-btn {
+    flex: 1;
+    padding: 8px 10px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    background: var(--bg-input);
+    border: 1px solid var(--border-input);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+  }
+
+  #mobile-tabs .tab-btn[aria-selected="true"] {
+    background: var(--primary-color);
+    color: var(--text-white);
+    border-color: var(--primary-color);
   }
 
   .operation-panel {
     flex: 0 0 auto;
     max-width: 100%;
     height: auto;
-    max-height: 40vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
 
   .visualization-panel {
     flex: 1 1 auto;
-    min-height: 400px;
+    min-height: 0; /* 允许内部flex子项填满剩余高度 */
   }
 
   /* 可视化面板头部在移动端简化 */
@@ -127,7 +170,9 @@
     flex: 0 0 auto;
     max-width: 100%;
     height: auto;
-    max-height: 50vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
 
   /* 缩略图导航在移动端缩小 */
@@ -146,5 +191,34 @@
 
   .canvas-hint p {
     font-size: 11px;
+  }
+
+  /* 移动端下，使用类控制模块显示 */
+  .operation-panel.mobile-hidden,
+  .visualization-panel.mobile-hidden,
+  .interpretation-panel.mobile-hidden {
+    display: none !important;
+  }
+
+  /* 激活的操作/解读占满剩余高度，内部滚动 */
+  .operation-panel:not(.mobile-hidden),
+  .interpretation-panel:not(.mobile-hidden) {
+    flex: 1 1 auto;
+    min-height: 0; /* 关键：允许flex子项收缩，启用内部滚动 */
+    overflow: hidden; /* 由内部内容容器滚动 */
+  }
+
+  /* 内部内容容器：占满并滚动 */
+  .operation-panel:not(.mobile-hidden) .control-panel {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .interpretation-panel:not(.mobile-hidden) .interpretation-wrapper {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }

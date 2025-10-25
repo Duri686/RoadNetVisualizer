@@ -1,6 +1,7 @@
 /* 动效与响应式 */
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -249,6 +250,7 @@ html {
     max-width: none;
     height: auto;
     overflow-y: visible;
+    max-height: calc(100vh - 80px);
   }
 
   .canvas-container {

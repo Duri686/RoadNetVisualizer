@@ -136,6 +136,9 @@
   position: relative;
   background: var(--viz-canvas-bg);
   flex: 1;
+  /* 禁用默认触摸行为（移动端手势由 Pointer 事件接管） */
+  touch-action: none;
+  overscroll-behavior: contain;
 }
 
 /* 缩略图导航 */
@@ -201,6 +204,61 @@
   display: block;
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
+  /* 进一步防止浏览器对 canvas 的默认手势 */
+  touch-action: none;
+}
+
+/* 画布状态徽章（仅移动端显示） */
+@media (max-width: 1023px) {
+  /* 隐藏可视化面板头部（含工具栏） */
+  .visualization-header { display: none !important; }
+
+  /* 画布容器填满剩余高度 */
+  .canvas-container { flex: 1 1 auto; min-height: 0; }
+
+  /* 隐藏缩略图导航 */
+  .canvas-navigator { display: none !important; }
+
+  .canvas-status {
+    position: absolute;
+    top: var(--space-md);
+    right: var(--space-md);
+    z-index: 20;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-sm);
+    font-size: 12px;
+    color: var(--text-secondary);
+    user-select: none;
+    pointer-events: none; /* 不阻塞画布交互 */
+  }
+  .canvas-status .badge-item { color: var(--text-secondary); }
+  .canvas-status .badge-sep { opacity: 0.6; }
+
+  /* 底部X轴居中的层级提示 */
+  .canvas-layer-hint {
+    position: absolute;
+    bottom: var(--space-md);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-sm);
+    padding: 6px 10px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    user-select: none;
+  }
+
+  /* 舍弃状态徽章 */
+  .canvas-status { display: none !important; }
 }
 
 /* 移除旧的canvas-info样式，已移至右侧面板 */

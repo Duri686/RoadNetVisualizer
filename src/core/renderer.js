@@ -47,7 +47,16 @@ class Renderer {
       isDragging: false,
       lastPosition: null,
       minScale: 0.1,
-      maxScale: 5
+      maxScale: 5,
+      suppressClickUntil: 0
+    };
+
+    // 触控指针状态（用于移动端单指拖拽与双指捏合）
+    this.pointerState = {
+      pointers: new Map(),
+      lastDistance: null,
+      lastCenter: null,
+      dragThreshold: 4
     };
 
     // 渲染配置
@@ -185,6 +194,11 @@ class Renderer {
       
       // 使用 (0,0) 作为主容器原点，内容居中由 offsetX/offsetY 负责
       this.mainContainer.position.set(0, 0);
+
+      // 禁用浏览器默认触摸缩放/滚动，便于自定义手势
+      try {
+        this.app.view.style.touchAction = 'none';
+      } catch (e) {}
 
       // 初始化缩放和平移事件
       this.setupZoomAndPan();
@@ -359,11 +373,16 @@ class Renderer {
    * 鼠标点击事件
    */
   onPointerDown(event) {
+    // 双击手势触发时，短时间内抑制选点
+    if (Date.now() < (this.viewState.suppressClickUntil || 0)) {
+      return;
+    }
     if (this.currentLayer !== 0) {
       console.log('❌ Click ignored: layer=', this.currentLayer);
       return;
     }
     this.interaction.handlePointerDown(event);
+    try { window.dispatchEvent(new CustomEvent('renderer-selection-changed')); } catch (err) {}
   }
 
 
@@ -402,6 +421,7 @@ class Renderer {
     console.log(`👁️ Showing layer: ${layerIndex === null ? 'All' : layerIndex}`);
     // 应用可见性标志
     this.applyVisibilityFlags();
+    try { window.dispatchEvent(new CustomEvent('renderer-layer-changed')); } catch (err) {}
   }
 
   /**
@@ -571,6 +591,168 @@ class Renderer {
     view.style.cursor = 'grab';
     
     console.log('✅ Zoom and pan controls enabled');
+
+    // =====================
+    // 触控手势（Pointer Events）
+    // 单指：拖拽平移；双指：捏合缩放（以两指中心为锚点）
+    // =====================
+    let lastSingleTapTime = 0;
+    let lastSingleTapPos = { x: 0, y: 0 };
+    let lastTwoFingerTapTime = 0;
+    const getDistanceAndCenter = (p1, p2) => {
+      const dx = p2.clientX - p1.clientX;
+      const dy = p2.clientY - p1.clientY;
+      const distance = Math.hypot(dx, dy);
+      const center = {
+        clientX: (p1.clientX + p2.clientX) / 2,
+        clientY: (p1.clientY + p2.clientY) / 2
+      };
+      return { distance, center };
+    };
+
+    const onPtrDown = (e) => {
+      if (e.pointerType !== 'touch' && e.pointerType !== 'pen') return;
+      this.pointerState.pointers.set(e.pointerId, { clientX: e.clientX, clientY: e.clientY });
+      try { view.setPointerCapture(e.pointerId); } catch (err) {}
+      // 不立即进入拖拽，等待移动距离超过阈值，避免影响点击
+      this.viewState.isDragging = false;
+      this.viewState.lastPosition = { x: e.clientX, y: e.clientY };
+
+      const now = Date.now();
+      // 单指双击放大（以点为锚）
+      if (this.pointerState.pointers.size === 1) {
+        const dt = now - lastSingleTapTime;
+        const dx = Math.abs(e.clientX - lastSingleTapPos.x);
+        const dy = Math.abs(e.clientY - lastSingleTapPos.y);
+        if (dt > 0 && dt < 350 && dx < 30 && dy < 30) {
+          // 触发放大
+          e.preventDefault();
+          const rect = view.getBoundingClientRect();
+          const centerX = e.clientX - rect.left;
+          const centerY = e.clientY - rect.top;
+          const scaleFactor = 1.4;
+          const newScale = Math.min(this.viewState.maxScale, this.transform.scale * scaleFactor);
+          const worldPos = {
+            x: (centerX - this.mainContainer.x) / this.transform.scale,
+            y: (centerY - this.mainContainer.y) / this.transform.scale,
+          };
+          this.transform.scale = newScale;
+          this.mainContainer.scale.set(newScale);
+          this.mainContainer.x = centerX - worldPos.x * newScale;
+          this.mainContainer.y = centerY - worldPos.y * newScale;
+          this.drawing.updateTransform(this.transform);
+          this.interaction.updateTransform(this.transform);
+          this.rebuildAllOverlays();
+          try { window.dispatchEvent(new CustomEvent('renderer-viewport-changed')); } catch (err) {}
+          // 抑制随后短时间内的点击事件
+          this.viewState.suppressClickUntil = Date.now() + 250;
+        }
+        lastSingleTapTime = now;
+        lastSingleTapPos = { x: e.clientX, y: e.clientY };
+      }
+
+      // 双指双击重置视图（两次快速的双指点按）
+      if (this.pointerState.pointers.size === 2) {
+        const dt2 = now - lastTwoFingerTapTime;
+        if (dt2 > 0 && dt2 < 400) {
+          e.preventDefault();
+          this.resetView();
+          this.viewState.suppressClickUntil = Date.now() + 250;
+        }
+        lastTwoFingerTapTime = now;
+      }
+    };
+
+    const onPtrMove = (e) => {
+      if (e.pointerType !== 'touch' && e.pointerType !== 'pen') return;
+      if (this.pointerState.pointers.size === 0) return;
+      // 更新指针位置
+      if (this.pointerState.pointers.has(e.pointerId)) {
+        this.pointerState.pointers.set(e.pointerId, { clientX: e.clientX, clientY: e.clientY });
+      }
+
+      const rect = view.getBoundingClientRect();
+
+      // 双指捏合缩放
+      if (this.pointerState.pointers.size >= 2) {
+        e.preventDefault();
+        const it = this.pointerState.pointers.values();
+        const p1 = it.next().value;
+        const p2 = it.next().value;
+        if (!p1 || !p2) return;
+        const { distance, center } = getDistanceAndCenter(p1, p2);
+
+        if (this.pointerState.lastDistance && this.pointerState.lastCenter) {
+          const scaleFactor = distance / this.pointerState.lastDistance;
+          const newScale = this.transform.scale * scaleFactor;
+          if (newScale >= this.viewState.minScale && newScale <= this.viewState.maxScale) {
+            const centerX = center.clientX - rect.left;
+            const centerY = center.clientY - rect.top;
+            const worldPos = {
+              x: (centerX - this.mainContainer.x) / this.transform.scale,
+              y: (centerY - this.mainContainer.y) / this.transform.scale
+            };
+            this.transform.scale = newScale;
+            this.mainContainer.scale.set(newScale);
+            const newX = centerX - worldPos.x * newScale;
+            const newY = centerY - worldPos.y * newScale;
+            this.mainContainer.x = newX;
+            this.mainContainer.y = newY;
+            this.drawing.updateTransform(this.transform);
+            this.interaction.updateTransform(this.transform);
+            this.rebuildAllOverlays();
+            try { window.dispatchEvent(new CustomEvent('renderer-viewport-changed')); } catch (err) {}
+          }
+        }
+        this.pointerState.lastDistance = distance;
+        this.pointerState.lastCenter = center;
+        return;
+      }
+
+      // 单指拖拽平移
+      if (this.pointerState.pointers.size === 1) {
+        const p = this.pointerState.pointers.values().next().value;
+        if (!p) return;
+        const dx = p.clientX - (this.viewState.lastPosition?.x ?? p.clientX);
+        const dy = p.clientY - (this.viewState.lastPosition?.y ?? p.clientY);
+
+        if (!this.viewState.isDragging) {
+          if (Math.abs(dx) + Math.abs(dy) < this.pointerState.dragThreshold) return;
+          this.viewState.isDragging = true;
+          view.style.cursor = 'grabbing';
+        }
+        e.preventDefault();
+
+        this.transform.panX += dx / this.transform.scale;
+        this.transform.panY += dy / this.transform.scale;
+        this.mainContainer.position.x += dx;
+        this.mainContainer.position.y += dy;
+        this.viewState.lastPosition = { x: p.clientX, y: p.clientY };
+        try { window.dispatchEvent(new CustomEvent('renderer-viewport-changed')); } catch (err) {}
+      }
+    };
+
+    const onPtrUpOrCancel = (e) => {
+      if (e.pointerType !== 'touch' && e.pointerType !== 'pen') return;
+      if (this.pointerState.pointers.has(e.pointerId)) {
+        this.pointerState.pointers.delete(e.pointerId);
+      }
+      try { view.releasePointerCapture(e.pointerId); } catch (err) {}
+      if (this.pointerState.pointers.size < 2) {
+        this.pointerState.lastDistance = null;
+        this.pointerState.lastCenter = null;
+      }
+      if (this.pointerState.pointers.size === 0) {
+        this.viewState.isDragging = false;
+        this.viewState.lastPosition = null;
+        view.style.cursor = 'grab';
+      }
+    };
+
+    view.addEventListener('pointerdown', onPtrDown, { passive: false });
+    view.addEventListener('pointermove', onPtrMove, { passive: false });
+    view.addEventListener('pointerup', onPtrUpOrCancel, { passive: false });
+    view.addEventListener('pointercancel', onPtrUpOrCancel, { passive: false });
   }
 
   /**
