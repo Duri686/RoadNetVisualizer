@@ -255,6 +255,16 @@
 
           <!-- 缩略图导航 -->
           <div class="canvas-navigator">
+            <div class="navigator-controls">
+              <label for="nav-mode-select" class="sr-only"
+                >Navigator Mode</label
+              >
+              <select id="nav-mode-select" title="缩略图模式">
+                <option value="auto" selected>自动</option>
+                <option value="heatmap">热力</option>
+                <option value="detail">细节</option>
+              </select>
+            </div>
             <div class="navigator-viewport">
               <canvas id="navigator-canvas"></canvas>
             </div>
@@ -280,42 +290,70 @@
             <h3>图例</h3>
             <div class="legend-grid">
               <div class="legend-item-new" data-layer="obstacles">
-                <button class="legend-eye" aria-pressed="true" title="显示/隐藏"></button>
-                <span class="legend-icon obstacle-icon" aria-hidden="true"></span>
+                <button
+                  class="legend-eye"
+                  aria-pressed="true"
+                  title="显示/隐藏"
+                ></button>
+                <span
+                  class="legend-icon obstacle-icon"
+                  aria-hidden="true"
+                ></span>
                 <span class="legend-label">障碍物</span>
               </div>
               <div class="legend-item-new" data-layer="networkNodes">
-                <button class="legend-eye" aria-pressed="true" title="显示/隐藏"></button>
+                <button
+                  class="legend-eye"
+                  aria-pressed="true"
+                  title="显示/隐藏"
+                ></button>
                 <span class="legend-icon node-icon" aria-hidden="true"></span>
                 <span class="legend-label">网络节点</span>
               </div>
               <div class="legend-item-new" data-layer="networkEdges">
-                <button class="legend-eye" aria-pressed="true" title="显示/隐藏"></button>
+                <button
+                  class="legend-eye"
+                  aria-pressed="true"
+                  title="显示/隐藏"
+                ></button>
                 <span class="legend-icon edge-icon" aria-hidden="true"></span>
                 <span class="legend-label">网络边</span>
               </div>
               <div class="legend-item-new" data-layer="baseTriangulation">
-                <button class="legend-eye" aria-pressed="true" title="显示/隐藏"></button>
+                <button
+                  class="legend-eye"
+                  aria-pressed="true"
+                  title="显示/隐藏"
+                ></button>
                 <span class="legend-icon base-icon" aria-hidden="true"></span>
                 <span class="legend-label">基础三角化</span>
               </div>
               <div class="legend-item-new" data-layer="voronoi">
-                <button class="legend-eye" aria-pressed="true" title="显示/隐藏"></button>
-                <span class="legend-icon voronoi-icon" aria-hidden="true"></span>
+                <button
+                  class="legend-eye"
+                  aria-pressed="true"
+                  title="显示/隐藏"
+                ></button>
+                <span
+                  class="legend-icon voronoi-icon"
+                  aria-hidden="true"
+                ></span>
                 <span class="legend-label">Voronoi 骨架</span>
               </div>
               <div class="legend-sep"></div>
-              <div class="legend-item-new" aria-hidden="true">
-                <span class="legend-icon start-icon"></span>
-                <span class="legend-label">起点</span>
-              </div>
-              <div class="legend-item-new" aria-hidden="true">
-                <span class="legend-icon end-icon"></span>
-                <span class="legend-label">终点</span>
-              </div>
-              <div class="legend-item-new" aria-hidden="true">
-                <span class="legend-icon path-icon"></span>
-                <span class="legend-label">路径</span>
+              <div class="legend-item-new-wrap">
+                <div class="legend-item-new" aria-hidden="true">
+                  <span class="legend-icon start-icon"></span>
+                  <span class="legend-label">起点</span>
+                </div>
+                <div class="legend-item-new" aria-hidden="true">
+                  <span class="legend-icon end-icon"></span>
+                  <span class="legend-label">终点</span>
+                </div>
+                <div class="legend-item-new" aria-hidden="true">
+                  <span class="legend-icon path-icon"></span>
+                  <span class="legend-label">路径</span>
+                </div>
               </div>
             </div>
           </div>
@@ -325,9 +363,28 @@
             <div class="card-header-row">
               <h3>路径统计</h3>
               <div class="card-actions">
-                <button id="path-refresh-btn" class="btn-secondary btn-compact" title="刷新上次路径">刷新</button>
-                <button id="path-clear-btn" class="btn-secondary btn-compact" title="清空当前路径">清空</button>
-                <button id="path-collapse-btn" class="btn-secondary btn-icon" title="折叠/展开" aria-expanded="true">▾</button>
+                <button
+                  id="path-refresh-btn"
+                  class="btn-secondary btn-compact"
+                  title="刷新上次路径"
+                >
+                  刷新
+                </button>
+                <button
+                  id="path-clear-btn"
+                  class="btn-secondary btn-compact"
+                  title="清空当前路径"
+                >
+                  清空
+                </button>
+                <button
+                  id="path-collapse-btn"
+                  class="btn-secondary btn-icon"
+                  title="折叠/展开"
+                  aria-expanded="true"
+                >
+                  ▾
+                </button>
               </div>
             </div>
             <div id="path-stats" class="stats-grid">
@@ -357,7 +414,11 @@
           <div class="interpretation-card" id="perf-card">
             <div class="card-header-row">
               <h3>性能数据</h3>
-              <span id="perf-status-dot" class="status-dot ok" title="系统状态"></span>
+              <span
+                id="perf-status-dot"
+                class="status-dot ok"
+                title="系统状态"
+              ></span>
             </div>
             <div class="stats-grid">
               <div class="stat-item">

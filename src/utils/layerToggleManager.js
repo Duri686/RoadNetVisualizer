@@ -192,6 +192,12 @@ class LayerToggleManager {
     }
 
     console.log(`Layer "${layerName}" ${isVisible ? 'shown' : 'hidden'}`);
+    // 广播事件，通知其它模块（如缩略图导航）更新
+    try {
+      window.dispatchEvent(
+        new CustomEvent('layer-visibility-changed', { detail: { layerName, isVisible } })
+      );
+    } catch (e) { /* ignore */ }
   }
 
   /**

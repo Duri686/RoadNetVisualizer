@@ -152,15 +152,24 @@ class ExportManager {
     }
 
     try {
-      // 使用 PixiJS 的截图功能
-      const canvas = renderer.app.renderer.view;
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const url = URL.createObjectURL(blob);
-          const filename = `roadnet_${Date.now()}.png`;
-          this.downloadFile(url, filename);
-          console.log('✅ PNG exported:', filename);
+      const app = renderer.app;
+      // 确保最新帧已渲染
+      app.renderer.render(app.stage);
+      // 使用 Extract 从 stage 导出，避免 WebGL 画布 toBlob 黑屏
+      const snapshotCanvas = app.renderer.extract.canvas(app.stage);
+      if (!snapshotCanvas) throw new Error('extract.canvas failed');
+      // 导出 PNG Blob
+      snapshotCanvas.toBlob((blob) => {
+        if (!blob) {
+          alert('❌ PNG 导出失败（空图像）');
+          return;
         }
+        const url = URL.createObjectURL(blob);
+        const filename = `roadnet_${Date.now()}.png`;
+        this.downloadFile(url, filename);
+        console.log('✅ PNG exported:', filename);
+        // 尽快释放临时 canvas（防止内存占用）
+        try { snapshotCanvas.width = 0; snapshotCanvas.height = 0; } catch (e) { /* ignore */ }
       }, 'image/png');
     } catch (error) {
       console.error('PNG export failed:', error);
@@ -173,46 +182,114 @@ class ExportManager {
    */
   exportSVG(data) {
     const { width, height } = data.metadata;
-    let svgContent = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-  <rect width="100%" height="100%" fill="#0F172A"/>
-  <g id="obstacles">`;
+    const app = window.roadNetApp || {};
+    const r = app.renderer || {};
+    const flags = r.flags || {
+      obstaclesVisible: true,
+      baseOverlayVisible: true,
+      networkNodesVisible: true,
+      networkEdgesVisible: true,
+      voronoiVisible: true,
+    };
+    const currentLayer = (typeof r.currentLayer === 'number') ? r.currentLayer : null;
 
-    // 绘制障碍物
-    if (data.obstacles && data.obstacles.length > 0) {
-      data.obstacles.forEach(obs => {
-        svgContent += `\n    <rect x="${obs.x}" y="${obs.y}" width="${obs.width}" height="${obs.height}" fill="#DC2626" opacity="0.8"/>`;
-      });
+    const COLORS = {
+      bg: '#0F172A',
+      obstacle: '#DC2626',
+      network: '#3B82F6',
+      voronoi: '#06B6D4',
+      base: '#9CA3AF',
+    };
+
+    // 使用当前画布像素尺寸作为导出尺寸
+    const canvasW = (r.app && r.app.screen && r.app.screen.width) || Math.ceil(width);
+    const canvasH = (r.app && r.app.screen && r.app.screen.height) || Math.ceil(height);
+    // 使用渲染时的坐标变换
+    const tf = r.transform || { offsetX: 0, offsetY: 0, cellSize: 1 };
+    const offsetX = tf.offsetX || 0;
+    const offsetY = tf.offsetY || 0;
+    const cellSize = tf.cellSize || 1;
+    // 像素恒定的线宽/节点半径（导出目标：与当前屏幕视觉一致）
+    const pxStroke = 1; // 1px 线宽
+    const pxNodeRadius = 2.2; // 节点半径（像素）
+    const worldNodeRadius = pxNodeRadius / cellSize; // 逆缩放到世界半径
+
+    let parts = [];
+    parts.push(`<?xml version="1.0" encoding="UTF-8"?>`);
+    parts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${canvasW}" height="${canvasH}" viewBox="0 0 ${canvasW} ${canvasH}">`);
+    parts.push(`  <rect width="100%" height="100%" fill="${COLORS.bg}"/>`);
+    // 世界坐标组：应用 translate + scale，将所有几何以世界单位描述
+    parts.push(`  <g id="world" transform="translate(${offsetX}, ${offsetY}) scale(${cellSize})">`);
+
+    // 障碍物
+    if (flags.obstaclesVisible && Array.isArray(data.obstacles) && data.obstacles.length) {
+      parts.push(`    <g id="obstacles">`);
+      for (const obs of data.obstacles) {
+        const w = (obs.w ?? obs.width) || 0;
+        const h = (obs.h ?? obs.height) || 0;
+        // 注意：障碍物描边也随缩放，因此使用较小的世界线宽即可
+        const worldStroke = pxStroke / cellSize;
+        parts.push(`      <rect x="${obs.x}" y="${obs.y}" width="${w}" height="${h}" fill="${COLORS.obstacle}" fill-opacity="0.5" stroke="${COLORS.obstacle}" stroke-opacity="0.85" stroke-width="${worldStroke}"/>`);
+      }
+      parts.push(`    </g>`);
     }
 
-    svgContent += '\n  </g>\n  <g id="network">';
+    const layers = Array.isArray(data.layers) ? data.layers : [];
+    const indices = currentLayer === null ? layers.map((_, i) => i) : [currentLayer];
 
-    // 绘制第一层网络（简化）
-    if (data.layers && data.layers[0]) {
-      const layer = data.layers[0];
-      
-      // 绘制边
-      if (layer.edges) {
-        layer.edges.forEach(edge => {
-          const from = layer.nodes[edge.from];
-          const to = layer.nodes[edge.to];
-          if (from && to) {
-            svgContent += `\n    <line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}" stroke="#3B82F6" stroke-width="1" opacity="0.6"/>`;
-          }
-        });
+    // 基础三角化
+    if (flags.baseOverlayVisible) {
+      // 使用实线导出以避免连接处不完整；保持像素级线宽
+      parts.push(`    <g id="base-overlay" stroke="${COLORS.base}" stroke-opacity="0.35" fill="none" vector-effect="non-scaling-stroke" stroke-width="${pxStroke}" stroke-linecap="round" stroke-linejoin="round">`);
+      for (const li of indices) {
+        const layer = layers[li];
+        const edges = layer?.metadata?.overlayBase?.edges || [];
+        for (const e of edges) {
+          parts.push(`      <line x1="${e.x1}" y1="${e.y1}" x2="${e.x2}" y2="${e.y2}"/>`);
+        }
+      }
+      parts.push(`    </g>`);
+    }
+
+    // 网络与 Voronoi
+    for (const li of indices) {
+      const layer = layers[li];
+      if (!layer || !Array.isArray(layer.nodes)) continue;
+      const abstraction = String(layer?.metadata?.abstraction || '').toLowerCase();
+      const isVor = abstraction.includes('voronoi');
+
+      // id -> node 映射，避免用数组下标
+      const nodeMap = new Map();
+      for (const n of layer.nodes) nodeMap.set(n.id, n);
+
+      // Edges
+      const canDrawEdges = isVor ? flags.voronoiVisible : flags.networkEdgesVisible;
+      if (canDrawEdges && Array.isArray(layer.edges)) {
+        parts.push(`    <g id="${isVor ? 'voronoi' : 'network'}-edges-l${li}" stroke="${isVor ? COLORS.voronoi : COLORS.network}" stroke-opacity="${isVor ? '0.9' : '0.6'}" fill="none" vector-effect="non-scaling-stroke" stroke-width="${pxStroke}" stroke-linecap="round" stroke-linejoin="round">`);
+        for (const e of layer.edges) {
+          const from = nodeMap.get(e.from);
+          const to = nodeMap.get(e.to);
+          if (!from || !to) continue;
+          parts.push(`      <line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}"/>`);
+        }
+        parts.push(`    </g>`);
       }
 
-      // 绘制节点
-      if (layer.nodes) {
-        layer.nodes.forEach(node => {
-          svgContent += `\n    <circle cx="${node.x}" cy="${node.y}" r="2" fill="#3B82F6"/>`;
-        });
+      // Nodes（所有层统一蓝色）
+      if (flags.networkNodesVisible) {
+        parts.push(`    <g id="network-nodes-l${li}" fill="${COLORS.network}" fill-opacity="0.95">`);
+        for (const n of layer.nodes) {
+          parts.push(`      <circle cx="${n.x}" cy="${n.y}" r="${worldNodeRadius}"/>`);
+        }
+        parts.push(`    </g>`);
       }
     }
 
-    svgContent += '\n  </g>\n</svg>';
+    // 关闭世界组和 svg
+    parts.push(`  </g>`);
+    parts.push(`</svg>`);
 
-    const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+    const blob = new Blob([parts.join('\n')], { type: 'image/svg+xml' });
     const url = URL.createObjectURL(blob);
     const filename = `roadnet_${Date.now()}.svg`;
     this.downloadFile(url, filename);

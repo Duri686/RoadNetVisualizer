@@ -268,8 +268,9 @@ class Renderer {
     
     this.drawing.updateTransform(this.transform);
     this.interaction.updateTransform(this.transform);
-    // 缩放后重建基础三角化虚线
+    // 缩放后按视觉密度重建基础三角化虚线
     this.rebuildAllOverlays();
+    try { window.dispatchEvent(new CustomEvent('renderer-viewport-changed')); } catch (err) {}
 
     // 设置导航图数据并启用交互
     this.interaction.setRoadNetData(navGraphData);
@@ -552,6 +553,7 @@ class Renderer {
         
         // 更新最后位置
         this.viewState.lastPosition = { x: e.clientX, y: e.clientY };
+        try { window.dispatchEvent(new CustomEvent('renderer-viewport-changed')); } catch (err) {}
       }
     });
     
@@ -639,7 +641,25 @@ class Renderer {
     this.interaction.updateTransform(this.transform);
     // 重置后重建基础三角化虚线
     this.rebuildAllOverlays();
+    try { window.dispatchEvent(new CustomEvent('renderer-viewport-changed')); } catch (err) {}
     console.log('↺ [Renderer] View reset');
+  }
+
+  /**
+   * 将视图中心移动到指定世界坐标（不改变缩放）
+   */
+  centerOn(worldX, worldY) {
+    if (!this.app || !this.mainContainer) return;
+    const scale = this.transform.scale || 1;
+    const canvasCenterX = this.app.screen.width / 2;
+    const canvasCenterY = this.app.screen.height / 2;
+    this.mainContainer.x = canvasCenterX - worldX * scale;
+    this.mainContainer.y = canvasCenterY - worldY * scale;
+    this.transform.panX = -this.mainContainer.x / scale; // 仅做记录，无强一致要求
+    this.transform.panY = -this.mainContainer.y / scale;
+    this.drawing.updateTransform(this.transform);
+    this.interaction.updateTransform(this.transform);
+    try { window.dispatchEvent(new CustomEvent('renderer-viewport-changed')); } catch (err) {}
   }
 
   /**

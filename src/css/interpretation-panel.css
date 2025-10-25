@@ -51,10 +51,19 @@
   letter-spacing: 0.5px;
 }
 
+/* 修复：在带操作区的头部行中，取消 h3 外边距以便 align-items:center 生效 */
+.card-header-row h3 {
+  margin: 0; /* 覆盖上面通用的 bottom margin */
+}
+
 /* 图例网格布局 */
 .legend-grid {
   display: grid;
   grid-template-columns: 1fr;
+  gap: var(--space-md);
+}
+.legend-item-new-wrap {
+  display: flex;
   gap: var(--space-md);
 }
 

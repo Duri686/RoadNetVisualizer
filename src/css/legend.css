@@ -59,7 +59,8 @@
 } */
 
 /* 图例容器 */
-.legend { /* 旧样式保留 */
+.legend {
+  /* 旧样式保留 */
   margin-top: var(--space-md);
   display: flex;
   gap: var(--space-sm);
@@ -103,7 +104,7 @@
   display: inline-block;
 }
 .legend-item-new.off .legend-eye::before,
-.legend-eye[aria-pressed="false"]::before {
+.legend-eye[aria-pressed='false']::before {
   content: '🙈';
 }
 
@@ -258,14 +259,22 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-md);
+  padding-bottom: var(--space-sm);
 }
-.card-actions { display: inline-flex; gap: var(--space-sm); }
+.card-actions {
+  display: inline-flex;
+  gap: var(--space-sm);
+}
 .btn-compact {
   padding: 4px 8px;
   font-size: 12px;
   border-radius: var(--radius-sm);
 }
-.btn-icon { width: 28px; height: 28px; padding: 0; }
+.btn-icon {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+}
 
 /* 折叠状态 */
 #path-card.collapsed #path-stats,
@@ -275,10 +284,17 @@
 
 /* 性能状态点 */
 .status-dot {
-  width: 10px; height: 10px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   display: inline-block;
 }
-.status-dot.ok { background: var(--success-color); }
-.status-dot.warn { background: var(--warning-color); }
-.status-dot.err { background: var(--error-color); }
+.status-dot.ok {
+  background: var(--success-color);
+}
+.status-dot.warn {
+  background: var(--warning-color);
+}
+.status-dot.err {
+  background: var(--error-color);
+}

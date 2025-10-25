@@ -9,6 +9,7 @@
 @import "./progress.css";
 @import "./canvas.css";
 @import "./legend.css";
+@import "./interpretation-panel.css";
 @import "./utilities.css";
 
 /* 暗色主题已禁用，使用默认亮色主题 */
