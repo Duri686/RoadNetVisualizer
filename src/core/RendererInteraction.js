@@ -6,6 +6,8 @@
 import * as PIXI from 'pixi.js';
 import { Delaunay } from 'd3-delaunay';
 import { findPathAStar } from '../utils/pathfinding.js';
+import { smoothPathVisibility } from '../utils/pathSmoothing.js';
+import { orthogonalizePath } from '../utils/pathOrthogonalize.js';
 
 export class RendererInteraction {
   constructor(config, transform, drawing) {
@@ -23,6 +25,7 @@ export class RendererInteraction {
       isAnimating: false,
       lastPath: null,
       lastPathTotal: null,
+      smoothMs: null,
     };
 
     // 交互图层引用
@@ -64,6 +67,7 @@ export class RendererInteraction {
     this.state.startNode = null;
     this.state.endNode = null;
     this.state.path = null;
+    this.state.smoothMs = null;
     this.resetPathInfo();
   }
 
@@ -318,9 +322,58 @@ export class RendererInteraction {
   findAndDrawPath(startNode, endNode, isPreview = false) {
     const layer = this.roadNetData.layers[0];
     if (!layer) return;
+    if (!isPreview) this.state.smoothMs = 0;
 
     // 使用 A* 算法查找路径
-    const path = findPathAStar(layer, startNode, endNode);
+    let path = findPathAStar(layer, startNode, endNode);
+
+    // 路径平滑（可见性捷径），根据配置在预览态可选跳过
+    try {
+      const sm = this.config?.interaction?.smoothing || {};
+      const shouldSmooth = sm.enabled && (!isPreview || sm.useInPreview);
+      if (shouldSmooth && path && path.length > 1) {
+        const meta = this.roadNetData?.metadata || {};
+        const obstacles = Array.isArray(this.roadNetData?.obstacles) ? this.roadNetData.obstacles : [];
+        const t0 = performance?.now ? performance.now() : Date.now();
+        path = smoothPathVisibility(path, obstacles, {
+          width: meta.width || 0,
+          height: meta.height || 0,
+          useSpatialIndex: sm.useSpatialIndex !== false,
+          maxLookahead: sm.maxLookahead || 24,
+          clearance: sm.clearance || 0,
+        });
+        const t1 = performance?.now ? performance.now() : Date.now();
+        const used = Math.max(0, Math.round(t1 - t0));
+        this.state.smoothMs = (this.state.smoothMs || 0) + used;
+        if (!isPreview) console.log(`[Smoothing] 可见性平滑: 节点 ${path.length}，耗时 ${used} ms`);
+      }
+    } catch (e) {
+      console.debug('[Smoothing] 跳过，原因：', e);
+    }
+
+    // 直角化（仅最终路径，且靠近障碍再处理）
+    try {
+      const ortho = this.config?.interaction?.orthogonal || {};
+      const shouldOrtho = ortho.enabled && !isPreview;
+      if (shouldOrtho && path && path.length > 1) {
+        const meta = this.roadNetData?.metadata || {};
+        const obstacles = Array.isArray(this.roadNetData?.obstacles) ? this.roadNetData.obstacles : [];
+        const t0o = performance?.now ? performance.now() : Date.now();
+        path = orthogonalizePath(path, obstacles, {
+          width: meta.width || 0,
+          height: meta.height || 0,
+          clearance: (this.config?.interaction?.smoothing?.clearance) || 0,
+          onlyNearObstacles: ortho.onlyNearObstacles !== false,
+          useSpatialIndex: ortho.useSpatialIndex !== false,
+        });
+        const t1o = performance?.now ? performance.now() : Date.now();
+        const usedO = Math.max(0, Math.round(t1o - t0o));
+        this.state.smoothMs = (this.state.smoothMs || 0) + usedO;
+        console.log(`[Smoothing] 直角化: 节点 ${path.length}，耗时 ${usedO} ms`);
+      }
+    } catch (e) {
+      console.debug('[Orthogonal] 跳过，原因：', e);
+    }
 
     if (path && path.length > 0) {
       // 移除高频路径日志（尤其是预览模式）
@@ -354,6 +407,7 @@ export class RendererInteraction {
     // 构造节点列表与段信息
     const total = this._calcTotalLength(path);
     const turns = this._computeTurnsCount(path);
+    const smoothMs = typeof this.state.smoothMs === 'number' ? this.state.smoothMs : null;
 
     const title = isPreview ? '当前路径（预览）' : '当前路径（最终）';
     const last = this.state.lastPathTotal;
@@ -365,11 +419,15 @@ export class RendererInteraction {
             2,
           )} m</strong></div>`
         : '';
+    const smoothInfo = !isPreview && smoothMs != null
+      ? `<div style="margin-top:6px;color:var(--text-secondary)">平滑耗时：<strong>${smoothMs} ms</strong></div>`
+      : '';
     panel.innerHTML = `
       <div><strong>${title}</strong>：节点数 ${path.length}；总距离 <strong>${total.toFixed(
       2,
     )} m</strong></div>
       ${compare}
+      ${smoothInfo}
     `;
     // 同步上方统计栅格
     const setText = (id, txt) => {
@@ -380,6 +438,7 @@ export class RendererInteraction {
     setText('path-length', `${total.toFixed(2)} m`);
     setText('path-nodes', String(path.length));
     setText('path-turns', String(turns));
+    if (!isPreview) setText('path-smooth-ms', smoothMs != null ? `${smoothMs} ms` : '-- ms');
   }
 
   /**
@@ -397,6 +456,7 @@ export class RendererInteraction {
     setText('path-length', '--');
     setText('path-nodes', '--');
     setText('path-turns', '--');
+    setText('path-smooth-ms', '-- ms');
   }
 
   /**
