@@ -71,6 +71,24 @@ class Renderer {
     this.drawing = new RendererDrawing(this.config, this.transform);
     this.interaction = new RendererInteraction(this.config, this.transform, this.drawing);
   }
+ 
+  /**
+   * 在执行 fn 期间临时开启动画快照保留，结束后恢复原状态
+   * @param {Function} fn 回调函数
+   */
+  preserveAnimationDuring(fn) {
+    const itx = this.interaction;
+    if (!itx || !itx.state) {
+      return typeof fn === 'function' ? fn() : undefined;
+    }
+    const prev = !!itx.state.keepAnimSnapshot;
+    itx.state.keepAnimSnapshot = true;
+    try {
+      return typeof fn === 'function' ? fn() : undefined;
+    } finally {
+      itx.state.keepAnimSnapshot = prev;
+    }
+  }
 
   /**
    * 按 flags 应用可见性
@@ -244,9 +262,7 @@ class Renderer {
         const wasAnimating = !!(this.interaction && this.interaction.state && this.interaction.state.isAnimating);
         try {
           if (this.interaction && wasAnimating) {
-            // 保留快照后再取消
-            this.interaction.state.keepAnimSnapshot = true;
-            this.interaction.cancelAnimationIfAny();
+            this.preserveAnimationDuring(() => this.interaction.cancelAnimationIfAny());
           }
         } catch (_) {}
         // 记录现有的交互起点 ID，用于渲染后恢复
@@ -281,9 +297,7 @@ class Renderer {
           // 若之前已有路径，则在尺寸/全屏变化后重绘路径，避免路径被清空
           if (hadLastPath && typeof this.interaction.redrawLastPath === 'function') {
             try {
-              // redrawLastPath 内部会再次 cancel，一样需要保留快照
-              if (wasAnimating) this.interaction.state.keepAnimSnapshot = true;
-              this.interaction.redrawLastPath();
+              this.preserveAnimationDuring(() => this.interaction.redrawLastPath());
             } catch (e) { console.debug('[Resize] redrawLastPath skipped:', e); }
           }
           // 若之前正在播放动画，则在路径重绘后恢复动画

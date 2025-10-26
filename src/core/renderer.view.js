@@ -3,10 +3,17 @@
 export function getViewportRectImpl(renderer) {
   if (!renderer.app) return null;
   const scale = renderer.transform.scale || 1;
-  const x = -renderer.mainContainer.x / scale;
-  const y = -renderer.mainContainer.y / scale;
-  const width = renderer.app.screen.width / scale;
-  const height = renderer.app.screen.height / scale;
+  const { offsetX = 0, offsetY = 0, cellSize = 1 } = renderer.transform || {};
+  // 将屏幕左上角与尺寸从"内容像素"转为"世界坐标（网格单位）"
+  const leftContentPx = -renderer.mainContainer.x / scale; // 取消缩放后的内容像素
+  const topContentPx = -renderer.mainContainer.y / scale;
+  const viewWidthContentPx = renderer.app.screen.width / scale;
+  const viewHeightContentPx = renderer.app.screen.height / scale;
+  const x = (leftContentPx - offsetX) / cellSize;
+  const y = (topContentPx - offsetY) / cellSize;
+  const width = viewWidthContentPx / cellSize;
+  const height = viewHeightContentPx / cellSize;
+  // 注意：返回未裁剪视口，允许出现负值或超过世界范围，用于在缩略图上准确反映“画布可视区域”与内容边距关系
   return { x, y, width, height, scale };
 }
 
@@ -67,15 +74,18 @@ export function resetViewImpl(renderer) {
 export function centerOnImpl(renderer, worldX, worldY) {
   if (!renderer.app || !renderer.mainContainer) return;
   const scale = renderer.transform.scale || 1;
+  const { offsetX = 0, offsetY = 0, cellSize = 1 } = renderer.transform || {};
   const canvasCenterX = renderer.app.screen.width / 2;
   const canvasCenterY = renderer.app.screen.height / 2;
-  renderer.mainContainer.x = canvasCenterX - worldX * scale;
-  renderer.mainContainer.y = canvasCenterY - worldY * scale;
+  // 目标点在内容像素坐标（未乘缩放）
+  const targetContentX = offsetX + worldX * cellSize;
+  const targetContentY = offsetY + worldY * cellSize;
+  renderer.mainContainer.x = canvasCenterX - targetContentX * scale;
+  renderer.mainContainer.y = canvasCenterY - targetContentY * scale;
   renderer.transform.panX = -renderer.mainContainer.x / scale;
   renderer.transform.panY = -renderer.mainContainer.y / scale;
   renderer.drawing.updateTransform(renderer.transform);
   renderer.interaction.updateTransform(renderer.transform);
-  updateAnimBallPosition(renderer);
   try { window.dispatchEvent(new CustomEvent('renderer-viewport-changed')); } catch (_) {}
 }
 

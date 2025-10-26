@@ -361,8 +361,11 @@ class NavigatorManager {
       const vp = (typeof renderer.getViewportRect === 'function') ? renderer.getViewportRect() : null;
       const vw = vp ? vp.width : maxW;
       const vh = vp ? vp.height : maxH;
-      const minCX = vw / 2, maxCX = Math.max(minCX, maxW - vw / 2);
-      const minCY = vh / 2, maxCY = Math.max(minCY, maxH - vh / 2);
+      // 当视口大于内容时，应将目标中心约束为世界中心，避免左上漂移
+      const minCX = (vw >= maxW) ? (maxW / 2) : (vw / 2);
+      const maxCX = (vw >= maxW) ? (maxW / 2) : Math.max(minCX, maxW - vw / 2);
+      const minCY = (vh >= maxH) ? (maxH / 2) : (vh / 2);
+      const maxCY = (vh >= maxH) ? (maxH / 2) : Math.max(minCY, maxH - vh / 2);
       const damp = 0.2; // 阻尼系数（越小越软）
       const softClamp = (v, min, max) => {
         if (v < min) return min - (min - v) * damp; // 允许少量越界
@@ -388,8 +391,11 @@ class NavigatorManager {
       const maxH = this.roadNetData?.metadata?.height || 0;
       const vw = vp ? vp.width : maxW;
       const vh = vp ? vp.height : maxH;
-      const minCX = vw / 2, maxCX = Math.max(minCX, maxW - vw / 2);
-      const minCY = vh / 2, maxCY = Math.max(minCY, maxH - vh / 2);
+      // 当视口大于内容时，将合法中心约束为世界中心，避免居中回弹漂移
+      const minCX = (vw >= maxW) ? (maxW / 2) : (vw / 2);
+      const maxCX = (vw >= maxW) ? (maxW / 2) : Math.max(minCX, maxW - vw / 2);
+      const minCY = (vh >= maxH) ? (maxH / 2) : (vh / 2);
+      const maxCY = (vh >= maxH) ? (maxH / 2) : Math.max(minCY, maxH - vh / 2);
       // 当前中心 = 视口左上 + 半宽高
       const curCX = vp.x + vw / 2;
       const curCY = vp.y + vh / 2;
@@ -430,8 +436,9 @@ class NavigatorManager {
     this.ctx.save();
     this.ctx.translate(offsetX, offsetY);
     
-    this.ctx.strokeStyle = '#0066FF';
-    this.ctx.lineWidth = 2;
+    // 使用高对比度颜色以提升可见性（深色背景与蓝色要素下更清晰）
+    this.ctx.strokeStyle = '#F59E0B';
+    this.ctx.lineWidth = 2.5;
     this.ctx.setLineDash([4, 4]);
     
     const vx = viewport.x * this.scale;
