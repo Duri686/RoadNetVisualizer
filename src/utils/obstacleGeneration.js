@@ -49,6 +49,36 @@ export function generateObstacles(width, height, obstacleCount, rng, opts = {}) 
   const minSize = Math.max(2, Math.floor(minWH * minSizeRatio));
   const maxSize = Math.max(minSize + 1, Math.floor(minWH * maxSizeRatio));
 
+  // 轻量网格索引（仅在避免重叠时启用）：将重叠判定从 O(N) 降为 O(常数)
+  const grid = new Map(); // key: "ix,iy" -> Array<index>
+  const cell = Math.max(8, Math.floor((minSize + maxSize) / 2));
+  const put = (x, y, w, h, idx) => {
+    const x0 = Math.floor(Math.max(0, x - padding) / cell);
+    const x1 = Math.floor(Math.min(width, x + w + padding) / cell);
+    const y0 = Math.floor(Math.max(0, y - padding) / cell);
+    const y1 = Math.floor(Math.min(height, y + h + padding) / cell);
+    for (let ix = x0; ix <= x1; ix++) {
+      for (let iy = y0; iy <= y1; iy++) {
+        const k = `${ix},${iy}`;
+        const a = grid.get(k); if (a) a.push(idx); else grid.set(k, [idx]);
+      }
+    }
+  };
+  const query = (x, y, w, h) => {
+    const x0 = Math.floor(Math.max(0, x - padding) / cell);
+    const x1 = Math.floor(Math.min(width, x + w + padding) / cell);
+    const y0 = Math.floor(Math.max(0, y - padding) / cell);
+    const y1 = Math.floor(Math.min(height, y + h + padding) / cell);
+    const seen = new Set(); const out = [];
+    for (let ix = x0; ix <= x1; ix++) {
+      for (let iy = y0; iy <= y1; iy++) {
+        const a = grid.get(`${ix},${iy}`); if (!a) continue;
+        for (let t = 0; t < a.length; t++) { const id = a[t]; if (!seen.has(id)) { seen.add(id); out.push(id); } }
+      }
+    }
+    return out;
+  };
+
   let placed = 0;
   while (placed < obstacleCount) {
     let ok = false;
@@ -61,8 +91,11 @@ export function generateObstacles(width, height, obstacleCount, rng, opts = {}) 
       const newObstacle = { id: obstacles.length, x, y, w, h };
 
       if (avoidOverlap) {
-        const hasOverlap = obstacles.some(obs => {
-          // 扩张用于安全间隔
+        // 使用网格索引快速检查重叠
+        const candIdx = query(newObstacle.x, newObstacle.y, newObstacle.w, newObstacle.h);
+        let hasOverlap = false;
+        for (let ci = 0; ci < candIdx.length; ci++) {
+          const obs = obstacles[candIdx[ci]];
           const aL = newObstacle.x - padding;
           const aR = newObstacle.x + newObstacle.w + padding;
           const aT = newObstacle.y - padding;
@@ -71,12 +104,13 @@ export function generateObstacles(width, height, obstacleCount, rng, opts = {}) 
           const bR = obs.x + obs.w;
           const bT = obs.y;
           const bB = obs.y + obs.h;
-          return !(aR < bL || bR < aL || aB < bT || bB < aT);
-        });
+          if (!(aR < bL || bR < aL || aB < bT || bB < aT)) { hasOverlap = true; break; }
+        }
         if (hasOverlap) continue;
       }
 
       obstacles.push(newObstacle);
+      if (avoidOverlap) put(newObstacle.x, newObstacle.y, newObstacle.w, newObstacle.h, newObstacle.id);
       placed++;
       ok = true;
       break;

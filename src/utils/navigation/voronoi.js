@@ -3,7 +3,7 @@
 import { Delaunay } from 'd3-delaunay';
 import { extractAllObstacleVertices, getBoundaryVertices, lineIntersectsObstacleWithTurf } from '../obstacleGeometry.js';
 import { isPointInObstacles } from '../obstacleGeneration.js';
-import { createSpatialIndex, getPotentialObstacles } from '../spatialIndex.js';
+import { createSpatialIndex, getPotentialObstacles, getObstaclesAlongLineDDA } from '../spatialIndex.js';
 
 export function buildVoronoiSkeleton(width, height, obstacles, options = { useSpatialIndex: true }) {
   // 计时：提取顶点/边界
@@ -98,9 +98,15 @@ export function buildVoronoiSkeleton(width, height, obstacles, options = { useSp
     const [S, T] = clipped;
 
     let blocked = false;
-    // 候选查询
+    // 候选查询（优先 DDA 沿线格子遍历）
     const tPool0 = performance?.now ? performance.now() : Date.now();
-    const pool = useSI ? getPotentialObstacles(sIndex, S.x, S.y, T.x, T.y) : obstacles;
+    let pool;
+    if (useSI) {
+      pool = getObstaclesAlongLineDDA(sIndex, S.x, S.y, T.x, T.y);
+      if (!pool || pool.length === 0) pool = getPotentialObstacles(sIndex, S.x, S.y, T.x, T.y);
+    } else {
+      pool = obstacles;
+    }
     const tPool1 = performance?.now ? performance.now() : Date.now();
     profile.tPoolQueryMs += (tPool1 - tPool0);
     profile.edgesChecked += 1;

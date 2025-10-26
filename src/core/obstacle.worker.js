@@ -35,22 +35,32 @@ function buildLayer(width, height, obstacles, layerIndex, baseZones, mode = 'cen
       result = buildCentroidFreeSpaceNetwork(width, height, obstacles, { useSpatialIndex: options.useSpatialIndex !== false });
       abstractionType = 'centroid-free';
     }
-    // 生成基础的障碍顶点网络，用于叠加展示（灰色半透明）
-    const baseForOverlay = buildObstacleConnectionNetwork(width, height, obstacles);
-    const idToNode = new Map(baseForOverlay.nodes.map(n => [n.id, n]));
-    const overlayEdges = baseForOverlay.edges.map(e => {
-      const a = idToNode.get(e.from);
-      const b = idToNode.get(e.to);
-      return { x1: a.x, y1: a.y, x2: b.x, y2: b.y };
-    });
+    // 生成基础的障碍顶点网络（叠加展示），大规模时按需跳过以提升生成速度
+    const overlayMode = options && options.overlayMode ? String(options.overlayMode) : 'auto';
+    const overlaySkip = overlayMode === 'none' || (overlayMode === 'auto' && obstacles.length > 300);
+    let overlayEdges = [];
+    let overlayBuildMs = 0;
+    let overlayActualMode = overlaySkip ? 'skipped' : 'delaunay';
+    if (!overlaySkip) {
+      const tOv0 = performance?.now ? performance.now() : Date.now();
+      const baseForOverlay = buildObstacleConnectionNetwork(width, height, obstacles);
+      const idToNode = new Map(baseForOverlay.nodes.map(n => [n.id, n]));
+      overlayEdges = baseForOverlay.edges.map(e => {
+        const a = idToNode.get(e.from);
+        const b = idToNode.get(e.to);
+        return { x1: a.x, y1: a.y, x2: b.x, y2: b.y };
+      });
+      const tOv1 = performance?.now ? performance.now() : Date.now();
+      overlayBuildMs = Math.max(0, Math.round(tOv1 - tOv0));
+    }
     
     return {
       layerIndex: 0,
       nodes: result.nodes,
       edges: result.edges,
-      // triangles 信息可用于调试/后续展示
-      triangles: result.triangles,
-      delaunay: result.delaunay,
+      // 精简：省略大体积的 triangles/delaunay，后续需要可按需开启
+      triangles: [],
+      delaunay: null,
       metadata: {
         nodeCount: result.nodes.length,
         edgeCount: result.edges.length,
@@ -58,7 +68,9 @@ function buildLayer(width, height, obstacles, layerIndex, baseZones, mode = 'cen
         profile: result.profile || null,
         overlayBase: {
           edgeCount: overlayEdges.length,
-          edges: overlayEdges
+          edges: overlayEdges,
+          buildMs: overlayBuildMs,
+          mode: overlayActualMode
         }
       }
     };
@@ -193,16 +205,22 @@ self.onmessage = function(e) {
 
         self.postMessage({ type: 'START', payload });
 
-        // 生成障碍物
+        // 计时：生成障碍物
+        const tOb0 = performance?.now ? performance.now() : Date.now();
         const obstacles = generateObstacles(width, height, obstacleCount || 0, rng);
+        const tOb1 = performance?.now ? performance.now() : Date.now();
+        const obstaclesMs = Math.max(0, Math.round(tOb1 - tOb0));
         self.postMessage({
           type: 'OBSTACLE_READY',
           obstacles,
           count: obstacles.length
         });
 
-        // 构建导航图
+        // 计时：构建导航图
+        const tBuild0 = performance?.now ? performance.now() : Date.now();
         const layers = buildLayers(width, height, obstacles, layerCount, mode || 'centroid', options || {});
+        const tBuild1 = performance?.now ? performance.now() : Date.now();
+        const buildMs = Math.max(0, Math.round(tBuild1 - tBuild0));
 
         // 计算总统计
         const totalNodes = layers.reduce((sum, l) => sum + l.nodes.length, 0);
@@ -222,7 +240,12 @@ self.onmessage = function(e) {
               totalEdges,
               profile: (layers && layers[0] && layers[0].metadata) ? layers[0].metadata.profile : null,
               useSpatialIndex: options && options.useSpatialIndex !== false,
-              generatedAt: new Date().toISOString()
+              generatedAt: new Date().toISOString(),
+              workerProfile: {
+                obstaclesMs,
+                buildMs,
+                overlayMs: (layers && layers[0] && layers[0].metadata && layers[0].metadata.overlayBase && typeof layers[0].metadata.overlayBase.buildMs === 'number') ? layers[0].metadata.overlayBase.buildMs : 0
+              }
             }
           }
         });

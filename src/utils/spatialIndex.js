@@ -26,12 +26,16 @@ export function getObstacleBBox(ob) {
  * @param {number} [cellSize] 单元格边长
  */
 export function createSpatialIndex(width, height, obstacles, cellSize) {
-  // 估计一个合理 cellSize（取平均较大一侧尺寸，保底 16）
+  // 估计一个合理 cellSize：综合“障碍平均尺寸”与“密度估计”的较小者
   if (!cellSize) {
     let acc = 0;
     for (const ob of obstacles) { const b = getObstacleBBox(ob); acc += Math.max(b.w, b.h); }
     const avg = obstacles.length ? acc / obstacles.length : 32;
-    cellSize = Math.max(16, Math.floor(avg));
+    // 基于密度的估计：sqrt(面积/数量) 的 0.8 倍，范围 [8, 96]
+    const area = Math.max(1, width * height);
+    const dens = obstacles.length > 0 ? Math.sqrt(area / obstacles.length) * 0.8 : 32;
+    const est = Math.min(avg, dens);
+    cellSize = Math.max(8, Math.min(96, Math.floor(est)));
   }
   const grid = new Map(); // key:"ix,iy" -> Array<obstacle>
 
@@ -83,4 +87,70 @@ export function getPotentialObstacles(index, x1, y1, x2, y2) {
     }
   }
   return result;
+}
+
+/**
+ * DDA：沿线逐格遍历查询潜在障碍（更窄的候选集）
+ */
+export function getObstaclesAlongLineDDA(index, x1, y1, x2, y2) {
+  const { cellSize, grid } = index;
+  const ix0 = Math.floor(x1 / cellSize);
+  const iy0 = Math.floor(y1 / cellSize);
+  const ix1 = Math.floor(x2 / cellSize);
+  const iy1 = Math.floor(y2 / cellSize);
+  let ix = ix0, iy = iy0;
+  const stepX = (x2 > x1) ? 1 : (x2 < x1) ? -1 : 0;
+  const stepY = (y2 > y1) ? 1 : (y2 < y1) ? -1 : 0;
+  const dx = x2 - x1, dy = y2 - y1;
+  const invDx = dx !== 0 ? 1 / dx : 0;
+  const invDy = dy !== 0 ? 1 / dy : 0;
+  const cellBoundX = (i) => (i + (stepX > 0 ? 1 : 0)) * cellSize;
+  const cellBoundY = (j) => (j + (stepY > 0 ? 1 : 0)) * cellSize;
+  let tMaxX = stepX !== 0 ? (cellBoundX(ix) - x1) * invDx : Infinity;
+  let tMaxY = stepY !== 0 ? (cellBoundY(iy) - y1) * invDy : Infinity;
+  const tDeltaX = stepX !== 0 ? (cellSize * stepX) * invDx : Infinity;
+  const tDeltaY = stepY !== 0 ? (cellSize * stepY) * invDy : Infinity;
+
+  const seen = new Set();
+  const out = [];
+  const pushCell = (cx, cy) => {
+    const arr = grid.get(`${cx},${cy}`);
+    if (!arr) return;
+    for (const ob of arr) {
+      const id = ob.id != null ? ob.id : ob;
+      if (!seen.has(id)) { seen.add(id); out.push(ob); }
+    }
+  };
+  // 访问起点格
+  pushCell(ix, iy);
+  let guard = 0;
+  const maxSteps = 1 + Math.abs(ix1 - ix0) + Math.abs(iy1 - iy0);
+  while ((ix !== ix1 || iy !== iy1) && guard++ < maxSteps + 4) {
+    if (tMaxX < tMaxY) { ix += stepX; tMaxX += tDeltaX; }
+    else               { iy += stepY; tMaxY += tDeltaY; }
+    pushCell(ix, iy);
+  }
+  return out;
+}
+
+/**
+ * 点查询：返回点所在及邻近格的障碍候选
+ */
+export function getPotentialObstaclesForPoint(index, x, y, radiusCells = 1) {
+  const { cellSize, grid } = index;
+  const cx = Math.floor(x / cellSize);
+  const cy = Math.floor(y / cellSize);
+  const seen = new Set();
+  const out = [];
+  for (let ix = cx - radiusCells; ix <= cx + radiusCells; ix++) {
+    for (let iy = cy - radiusCells; iy <= cy + radiusCells; iy++) {
+      const arr = grid.get(`${ix},${iy}`);
+      if (!arr) continue;
+      for (const ob of arr) {
+        const id = ob.id != null ? ob.id : ob;
+        if (!seen.has(id)) { seen.add(id); out.push(ob); }
+      }
+    }
+  }
+  return out;
 }

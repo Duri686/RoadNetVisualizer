@@ -3,7 +3,7 @@
 import { Delaunay } from 'd3-delaunay';
 import { extractAllObstacleVertices, getBoundaryVertices, lineIntersectsObstacleWithTurf } from '../obstacleGeometry.js';
 import { isPointInObstacles } from '../obstacleGeneration.js';
-import { createSpatialIndex, getPotentialObstacles } from '../spatialIndex.js';
+import { createSpatialIndex, getPotentialObstacles, getObstaclesAlongLineDDA } from '../spatialIndex.js';
 
 export function buildPortalNetwork(width, height, obstacles, options = { useSpatialIndex: true }) {
   // 计时：提取顶点/边界
@@ -108,9 +108,15 @@ export function buildPortalNetwork(width, height, obstacles, options = { useSpat
   const addEdge = (u, v) => {
     if (u === v) return;
     const n1 = nodes[u]; const n2 = nodes[v];
-    // 候选查询
+    // 候选查询（优先 DDA 沿线格子遍历）
     const tPool0 = performance?.now ? performance.now() : Date.now();
-    const pool = useSI ? getPotentialObstacles(sIndex, n1.x, n1.y, n2.x, n2.y) : obstacles;
+    let pool;
+    if (useSI) {
+      pool = getObstaclesAlongLineDDA(sIndex, n1.x, n1.y, n2.x, n2.y);
+      if (!pool || pool.length === 0) pool = getPotentialObstacles(sIndex, n1.x, n1.y, n2.x, n2.y);
+    } else {
+      pool = obstacles;
+    }
     const tPool1 = performance?.now ? performance.now() : Date.now();
     profile.tPoolQueryMs += (tPool1 - tPool0);
     profile.edgesChecked += 1;

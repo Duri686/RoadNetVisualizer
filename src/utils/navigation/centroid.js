@@ -3,7 +3,7 @@
 import { Delaunay } from 'd3-delaunay';
 import { extractAllObstacleVertices, getBoundaryVertices, lineIntersectsObstacleWithTurf } from '../obstacleGeometry.js';
 import { isPointInObstacles } from '../obstacleGeneration.js';
-import { createSpatialIndex, getPotentialObstacles } from '../spatialIndex.js';
+import { createSpatialIndex, getPotentialObstacles, getObstaclesAlongLineDDA, getPotentialObstaclesForPoint } from '../spatialIndex.js';
 
 export function buildCentroidFreeSpaceNetwork(width, height, obstacles, options = { useSpatialIndex: true }) {
   // 计时：提取顶点/边界
@@ -26,6 +26,15 @@ export function buildCentroidFreeSpaceNetwork(width, height, obstacles, options 
   const triangleIndexToNodeIndex = new Map();
   const nodes = [];
   const triangles = [];
+  // 若使用空间索引，提前构建用于节点可行性判定
+  const useSI = options && options.useSpatialIndex !== false;
+  let sIndex = null; let earlyIndexBuildMs = 0;
+  if (useSI) {
+    const t0 = performance?.now ? performance.now() : Date.now();
+    sIndex = createSpatialIndex(width, height, obstacles);
+    const t1 = performance?.now ? performance.now() : Date.now();
+    earlyIndexBuildMs = Math.max(0, Math.round(t1 - t0));
+  }
   // 计时：节点生成与过滤
   const tNode0 = performance?.now ? performance.now() : Date.now();
   for (let t = 0; t < delaunay.triangles.length; t += 3) {
@@ -37,7 +46,18 @@ export function buildCentroidFreeSpaceNetwork(width, height, obstacles, options 
     const pC = allVertices[c];
     const cx = (pA.x + pB.x + pC.x) / 3;
     const cy = (pA.y + pB.y + pC.y) / 3;
-    if (isPointInObstacles(cx, cy, obstacles)) continue;
+    // 使用索引的点内快速判定
+    if (sIndex) {
+      const pool = getPotentialObstaclesForPoint(sIndex, cx, cy, 0);
+      let inside = false;
+      for (let k = 0; k < pool.length; k++) {
+        const ob = pool[k];
+        if (cx >= ob.x && cx <= ob.x + ob.w && cy >= ob.y && cy <= ob.y + ob.h) { inside = true; break; }
+      }
+      if (inside) continue;
+    } else {
+      if (isPointInObstacles(cx, cy, obstacles)) continue;
+    }
     const node = { id: `L0-N${nodes.length}`, x: cx, y: cy, layer: 0, source: 'centroid' };
     const nodeIndex = nodes.push(node) - 1;
     triangleIndexToNodeIndex.set(t / 3, nodeIndex);
@@ -49,8 +69,8 @@ export function buildCentroidFreeSpaceNetwork(width, height, obstacles, options 
   // profiling 与空间索引
   const profile = {
     algorithm: 'centroid',
-    useSpatialIndex: options && options.useSpatialIndex !== false,
-    indexBuildMs: 0,
+    useSpatialIndex: useSI,
+    indexBuildMs: earlyIndexBuildMs,
     edgesChecked: 0,
     candidatesAccum: 0,
     obstaclesTotal: obstacles.length,
@@ -64,13 +84,7 @@ export function buildCentroidFreeSpaceNetwork(width, height, obstacles, options 
     losChecks: 0,
     losFastReject: 0
   };
-  let sIndex = null;
-  if (profile.useSpatialIndex) {
-    const t0 = performance?.now ? performance.now() : Date.now();
-    sIndex = createSpatialIndex(width, height, obstacles);
-    const t1 = performance?.now ? performance.now() : Date.now();
-    profile.indexBuildMs = Math.max(0, Math.round(t1 - t0));
-  }
+  // sIndex 已在节点阶段构建（若启用）
   const seen = new Set();
   const { halfedges } = delaunay;
   // 计时：边遍历（不含候选查询与穿障，将在末尾扣除）
@@ -96,7 +110,13 @@ export function buildCentroidFreeSpaceNetwork(width, height, obstacles, options 
       let intersects = false;
       // 计时：索引候选查询
       const tPool0 = performance?.now ? performance.now() : Date.now();
-      const pool = profile.useSpatialIndex ? getPotentialObstacles(sIndex, p1.x, p1.y, p2.x, p2.y) : obstacles;
+      let pool;
+      if (profile.useSpatialIndex) {
+        pool = getObstaclesAlongLineDDA(sIndex, p1.x, p1.y, p2.x, p2.y);
+        if (!pool || pool.length === 0) pool = getPotentialObstacles(sIndex, p1.x, p1.y, p2.x, p2.y);
+      } else {
+        pool = obstacles;
+      }
       const tPool1 = performance?.now ? performance.now() : Date.now();
       profile.tPoolQueryMs += (tPool1 - tPool0);
       profile.edgesChecked += 1;
@@ -121,6 +141,6 @@ export function buildCentroidFreeSpaceNetwork(width, height, obstacles, options 
   profile.tPoolQueryMs = Math.max(0, Math.round(profile.tPoolQueryMs));
   profile.tLosMs = Math.max(0, Math.round(profile.tLosMs));
 
-  const centroidDelaunay = nodes.length > 0 ? Delaunay.from(nodes.map(n => [n.x, n.y])) : null;
-  return { nodes, edges, triangles, delaunay: centroidDelaunay, profile };
+  // 末尾无需再构建基于节点的 Delaunay（减少额外开销）
+  return { nodes, edges, triangles, delaunay: null, profile };
 }

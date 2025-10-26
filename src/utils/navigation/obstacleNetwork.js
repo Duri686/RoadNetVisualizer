@@ -2,6 +2,7 @@
 // 此修改保持与原逻辑一致，仅做模块化拆分。
 import { Delaunay } from 'd3-delaunay';
 import { euclideanDistance, isPointNearObstacleVertex, extractAllObstacleVertices, getBoundaryVertices, lineIntersectsObstacleWithTurf } from '../obstacleGeometry.js';
+import { createSpatialIndex, getObstaclesAlongLineDDA, getPotentialObstacles } from '../spatialIndex.js';
 
 export function buildObstacleConnectionNetwork(width, height, obstacles) {
   const obstacleVertices = extractAllObstacleVertices(obstacles);
@@ -28,6 +29,8 @@ export function buildObstacleConnectionNetwork(width, height, obstacles) {
   const edgeSet = new Set();
   let totalDelaunayEdges = 0;
   const filterReasons = { sameObstacleSkipped: 0, intersected: 0, accepted: 0 };
+  // 空间索引：用于缩小每条边的候选障碍集合
+  const sIndex = createSpatialIndex(width, height, obstacles);
 
   for (let i = 0; i < delaunay.triangles.length; i += 3) {
     const t0 = delaunay.triangles[i];
@@ -47,7 +50,10 @@ export function buildObstacleConnectionNetwork(width, height, obstacles) {
         const distance = euclideanDistance(n1, n2);
 
         let intersectsObstacle = false;
-        for (const obs of obstacles) {
+        // 使用 DDA 沿线格子遍历 + 回退包围盒查询，显著减少候选
+        let pool = getObstaclesAlongLineDDA(sIndex, n1.x, n1.y, n2.x, n2.y);
+        if (!pool || pool.length === 0) pool = getPotentialObstacles(sIndex, n1.x, n1.y, n2.x, n2.y);
+        for (const obs of pool) {
           const sameObstacle = n1.obstacleId === obs.id && n2.obstacleId === obs.id;
           if (sameObstacle) { filterReasons.sameObstacleSkipped++; continue; }
           const p1IsVertex = isPointNearObstacleVertex(n1.x, n1.y, obs);
