@@ -240,10 +240,21 @@ class Renderer {
       if (this.roadNetData) {
         console.log(`🔄 Resizing canvas to ${width}x${height}, re-rendering...`);
         const currentData = this.roadNetData;
+        // 记录动画状态并立即取消，避免旧 RAF 残留导致位置错乱
+        const wasAnimating = !!(this.interaction && this.interaction.state && this.interaction.state.isAnimating);
+        try {
+          if (this.interaction && wasAnimating) {
+            // 保留快照后再取消
+            this.interaction.state.keepAnimSnapshot = true;
+            this.interaction.cancelAnimationIfAny();
+          }
+        } catch (_) {}
         // 记录现有的交互起点 ID，用于渲染后恢复
         const prevStartId = this.interaction && this.interaction.state.startNode
           ? this.interaction.state.startNode.id
           : null;
+        // 记录是否已有已绘制路径，便于重绘
+        const hadLastPath = !!(this.interaction && this.interaction.state && Array.isArray(this.interaction.state.lastPath) && this.interaction.state.lastPath.length > 0);
         this.renderRoadNet(currentData);
         // 重新设置交互，确保事件监听器在新的视图上生效
         this.setupInteraction();
@@ -266,6 +277,18 @@ class Renderer {
           }
           if (this.interaction.state.startNode) {
             this.interaction.drawInteractionNodes();
+          }
+          // 若之前已有路径，则在尺寸/全屏变化后重绘路径，避免路径被清空
+          if (hadLastPath && typeof this.interaction.redrawLastPath === 'function') {
+            try {
+              // redrawLastPath 内部会再次 cancel，一样需要保留快照
+              if (wasAnimating) this.interaction.state.keepAnimSnapshot = true;
+              this.interaction.redrawLastPath();
+            } catch (e) { console.debug('[Resize] redrawLastPath skipped:', e); }
+          }
+          // 若之前正在播放动画，则在路径重绘后恢复动画
+          if (wasAnimating && this.interaction && this.interaction.state && Array.isArray(this.interaction.state.lastPath) && this.interaction.state.lastPath.length > 1) {
+            try { this.interaction.animatePath(this.interaction.state.lastPath); } catch (_) {}
           }
         }
       }

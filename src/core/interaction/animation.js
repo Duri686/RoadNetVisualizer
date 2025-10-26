@@ -16,9 +16,20 @@ export function animatePath(ctx, path) {
   ctx.animBall = ball;
   ctx.container.addChild(ball);
 
-  let currentIndex = 0;
-  const speed = 0.05; // 动画速度
-  let progress = 0;
+  // 从快照恢复段索引与进度（若存在）
+  const snap = ctx.state && ctx.state.anim ? ctx.state.anim : null;
+  let currentIndex = Math.max(0, Math.min((snap?.index ?? 0), Math.max(0, path.length - 2)));
+  const speed = typeof snap?.speed === 'number' ? snap.speed : 0.05; // 动画速度
+  let progress = Math.max(0, Math.min(1, snap?.progress ?? 0));
+
+  // 立即按当前进度设置一次位置，避免第一帧跳动
+  if (path.length >= 2) {
+    const n1 = path[currentIndex];
+    const n2 = path[currentIndex + 1];
+    const pos0 = ctx.drawing.getAnimationPosition(n1, n2, progress);
+    ball.x = pos0.x;
+    ball.y = pos0.y;
+  }
 
   const animate = () => {
     if (!ctx.state.isAnimating) return; // 已被取消
@@ -28,6 +39,7 @@ export function animatePath(ctx, path) {
       }
       ctx.animBall = null;
       ctx.state.isAnimating = false;
+      ctx.state.anim = null; // 结束时清理快照
       ctx.animRAF = null;
       return;
     }
@@ -45,6 +57,9 @@ export function animatePath(ctx, path) {
       progress = 0;
       currentIndex++;
     }
+
+    // 更新快照：段索引/进度/速度
+    ctx.state.anim = { index: currentIndex, progress, speed };
 
     ctx.animRAF = requestAnimationFrame(animate);
   };
@@ -66,4 +81,10 @@ export function cancelAnimationIfAny(ctx) {
     ctx.animBall = null;
   }
   ctx.state.isAnimating = false;
+  // 若未设置保留标记，则清除快照；否则仅重置标记
+  const keep = !!(ctx.state && ctx.state.keepAnimSnapshot);
+  if (!keep) {
+    ctx.state.anim = null;
+  }
+  if (ctx.state) ctx.state.keepAnimSnapshot = false;
 }

@@ -10,6 +10,24 @@ export function getViewportRectImpl(renderer) {
   return { x, y, width, height, scale };
 }
 
+// 在视图变化后，若存在动画，立即依据快照刷新小球位置，避免一帧偏移
+function updateAnimBallPosition(renderer) {
+  try {
+    const itx = renderer && renderer.interaction;
+    if (!itx || !itx.state || !itx.state.isAnimating || !itx.animBall) return;
+    const lp = itx.state.lastPath;
+    const snap = itx.state.anim || { index: 0, progress: 0 };
+    if (!Array.isArray(lp) || lp.length < 2) return;
+    const idx = Math.max(0, Math.min(snap.index || 0, lp.length - 2));
+    const prog = Math.max(0, Math.min(1, snap.progress || 0));
+    const n1 = lp[idx];
+    const n2 = lp[idx + 1];
+    const pos = renderer.drawing.getAnimationPosition(n1, n2, prog);
+    itx.animBall.x = pos.x;
+    itx.animBall.y = pos.y;
+  } catch (_) {}
+}
+
 export function zoomImpl(renderer, scaleFactor = 1.0) {
   if (!renderer.app || !renderer.mainContainer || !renderer.drawing) return;
   const newScale = renderer.transform.scale * scaleFactor;
@@ -26,6 +44,7 @@ export function zoomImpl(renderer, scaleFactor = 1.0) {
   renderer.mainContainer.y = mouseY - worldPos.y * newScale;
   renderer.drawing.updateTransform(renderer.transform);
   renderer.interaction.updateTransform(renderer.transform);
+  updateAnimBallPosition(renderer);
 }
 
 export function zoomInImpl(renderer) { zoomImpl(renderer, 1.2); }
@@ -41,6 +60,7 @@ export function resetViewImpl(renderer) {
   renderer.drawing.updateTransform(renderer.transform);
   renderer.interaction.updateTransform(renderer.transform);
   renderer.rebuildAllOverlays();
+  updateAnimBallPosition(renderer);
   try { window.dispatchEvent(new CustomEvent('renderer-viewport-changed')); } catch (_) {}
 }
 
@@ -55,6 +75,7 @@ export function centerOnImpl(renderer, worldX, worldY) {
   renderer.transform.panY = -renderer.mainContainer.y / scale;
   renderer.drawing.updateTransform(renderer.transform);
   renderer.interaction.updateTransform(renderer.transform);
+  updateAnimBallPosition(renderer);
   try { window.dispatchEvent(new CustomEvent('renderer-viewport-changed')); } catch (_) {}
 }
 
@@ -79,6 +100,7 @@ export function setupZoomAndPanImpl(renderer) {
       renderer.drawing.updateTransform(renderer.transform);
       renderer.interaction.updateTransform(renderer.transform);
       renderer.rebuildAllOverlays();
+      updateAnimBallPosition(renderer);
     }
   });
   view.addEventListener('mousedown', (e) => {
@@ -166,6 +188,7 @@ export function setupZoomAndPanImpl(renderer) {
           renderer.drawing.updateTransform(renderer.transform);
           renderer.interaction.updateTransform(renderer.transform);
           renderer.rebuildAllOverlays();
+          updateAnimBallPosition(renderer);
           try { window.dispatchEvent(new CustomEvent('renderer-viewport-changed')); } catch (_) {}
         }
       }

@@ -20,6 +20,9 @@ export function setupInteractionImpl(renderer) {
   }
   renderer.interactionContainer.visible = true;
   renderer.interactionContainer.zIndex = 1000;
+  // 重置交互容器的原点与缩放，保证与 mainContainer 保持一致的坐标系
+  renderer.interactionContainer.position.set(0, 0);
+  renderer.interactionContainer.scale.set(1, 1);
 
   if (!renderer.pathContainer) {
     renderer.pathContainer = new PIXI.Container();
@@ -31,6 +34,9 @@ export function setupInteractionImpl(renderer) {
   }
   renderer.pathContainer.visible = true;
   renderer.pathContainer.alpha = 1;
+  // 保持路径容器与交互容器对齐
+  renderer.pathContainer.position.set(0, 0);
+  renderer.pathContainer.scale.set(1, 1);
 
   if (!renderer.crosshairGraphics) {
     renderer.crosshairGraphics = new PIXI.Graphics();

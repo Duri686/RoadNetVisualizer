@@ -94,8 +94,31 @@ export function findAndDrawPath(ctx, startNode, endNode, isPreview = false) {
  */
 export function redrawLastPath(ctx) {
   if (!ctx.state.lastPath || !ctx.pathContainer) return;
+  // 移除可能残留的动画小球，避免位置错乱
+  try { ctx.cancelAnimationIfAny(); } catch (_) {}
   ctx.drawing.drawPath(ctx.pathContainer, ctx.state.lastPath, false);
   updatePathInfo(ctx, ctx.state.lastPath, false);
+
+  // 恢复并绘制起点/终点标记：根据 lastPath 两端节点的 id 重新绑定到当前 layer 节点
+  try {
+    const layer0 = ctx.roadNetData && ctx.roadNetData.layers && ctx.roadNetData.layers[0];
+    const lp = ctx.state.lastPath;
+    if (layer0 && Array.isArray(layer0.nodes) && Array.isArray(lp) && lp.length >= 2) {
+      const sId = lp[0] && lp[0].id;
+      const eId = lp[lp.length - 1] && lp[lp.length - 1].id;
+      let sNode = null; let eNode = null;
+      if (sId != null) sNode = layer0.nodes.find(n => n.id === sId) || null;
+      if (eId != null) eNode = layer0.nodes.find(n => n.id === eId) || null;
+      // 若无法通过 id 匹配，则直接使用路径两端节点（其 x/y 已可用）
+      if (!sNode) sNode = lp[0];
+      if (!eNode) eNode = lp[lp.length - 1];
+      ctx.state.startNode = sNode;
+      ctx.state.endNode = eNode;
+      ctx.drawInteractionNodes();
+    }
+  } catch (e) {
+    // 忽略恢复起终点失败，不影响路径重绘
+  }
 }
 
 /**
