@@ -97,7 +97,7 @@ export function createRendererConfig() {
       // 静态层 RenderTexture 缓存（修复后默认关闭，需人工开启）
       staticLayers: false,
       // 网络层（节点+边）静态缓存，合批后转 RenderTexture（默认关闭）
-      networkLayers: true,
+      networkLayers: false,
       // 视图稳定期（毫秒）后再生成缓存，避免频繁抖动
       networkStableDelayMs: 160,
       // 缩放阈值（相对比例变化），超过则认为失效需要重建
