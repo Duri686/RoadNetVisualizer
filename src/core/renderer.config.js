@@ -1,3 +1,56 @@
+/**
+ * 渲染器配置类型定义
+ *
+ * @typedef {Object} SmoothingConfig
+ * @property {boolean} enabled 是否开启路径平滑
+ * @property {boolean} useInPreview 预览态是否应用平滑（提高观感，可能略耗时）
+ * @property {boolean} useSpatialIndex 是否使用空间索引加速平滑计算
+ * @property {number} maxLookahead 最大前视步数（控制平滑搜索范围）
+ * @property {number} clearance 与障碍物的安全间隙（与坐标单位一致）
+ * @property {number} timeBudgetMs 单帧时间预算（毫秒），限制算法耗时，避免卡顿
+ *
+ * @typedef {Object} OrthogonalConfig
+ * @property {boolean} enabled 是否开启路径正交化
+ * @property {boolean} onlyNearObstacles 仅在靠近障碍物处进行正交化
+ * @property {boolean} useSpatialIndex 是否使用空间索引加速正交化检查
+ * @property {number} timeBudgetMs 单帧时间预算（毫秒）
+ *
+ * @typedef {Object} TrackingConfig
+ * @property {boolean} enabled 是否开启路径跟踪/采样
+ * @property {number} sampleStep 采样步长（像素/单位），步长越小越细腻但更耗时
+ *
+ * @typedef {Object} InteractionConfig
+ * @property {number} startNodeColor 起点节点颜色（十六进制整数，例如 0x00ff00）
+ * @property {number} endNodeColor 终点节点颜色（十六进制整数）
+ * @property {number} hoveredNodeColor 悬浮节点颜色（十六进制整数）
+ * @property {number} pathColor 路径颜色（十六进制整数）
+ * @property {number} pathWidth 路径线宽（像素）
+ * @property {number} nodeHighlightRadius 节点高亮半径（像素）
+ * @property {number} crosshairSize 十字准星尺寸（像素）
+ * @property {number} crosshairColor 十字准星颜色（十六进制整数）
+ * @property {number} crosshairAlpha 十字准星不透明度（0~1）
+ * @property {SmoothingConfig} smoothing 路径平滑配置
+ * @property {OrthogonalConfig} orthogonal 路径正交化配置
+ * @property {TrackingConfig} tracking 路径跟踪/采样配置
+ *
+ * @typedef {Object} RendererConfig
+ * @property {number} nodeRadius 节点半径（像素）
+ * @property {number} nodeColor 节点颜色（十六进制整数）
+ * @property {number} nodeAlpha 节点不透明度（0~1）
+ * @property {number} edgeWidth 边线宽度（像素）
+ * @property {number} edgeColor 边线颜色（十六进制整数）
+ * @property {number} edgeAlpha 边线不透明度（0~1）
+ * @property {number[]} layerColors 图层颜色集合（十六进制整数数组）
+ * @property {InteractionConfig} interaction 交互与可视化高亮信息配置
+ * @property {number} cellSize 空间索引网格大小（像素/单位），值越小碰撞候选越精细
+ * @property {number} padding 画布四周留白（像素）
+ */
+
+/**
+ * 创建渲染器配置。
+ * 保持与原有默认值一致，用于控制节点/边样式、交互高亮、路径平滑/正交化以及空间索引等。
+ * @returns {RendererConfig} 渲染器配置对象
+ */
 // Renderer 配置构造（保持与原逻辑一致）
 export function createRendererConfig() {
   return {

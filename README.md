@@ -1,19 +1,24 @@
 # RoadNet Visualizer
 
-基于 Web 技术（Vite + PixiJS + Web Workers）的多层道路网络生成与可视化工具。
+基于 Vite + PixiJS + Web Workers 的多层道路网络可视化工具，支持路径优化、导航控件、导出分享与主题化。
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Duri686/RoadNetVisualizer)
   
 ## 功能特性
-- 生成多层道路网络：质心网络、Portal 中点、Voronoi 骨架（实验）。
-- 障碍物驱动：可配置尺寸与数量，自动生成并裁剪穿障边。
-- 空间索引优化：支持可调 `cellSize` 的均匀网格索引，显著降低碰撞候选。
-- 交互可视化：缩放、平移、节点选取；A* 寻路（橙色路径）与动态小球动画。
-- 性能信息：索引构建耗时、候选均值/边、渲染初始化/渲染总耗时、数据体积等。
+- 生成多层道路网络：质心网络、Portal 中点、Voronoi 骨架（实验）
+- 路径优化：平滑与正交化，线条更顺更直，提供耗时统计
+- 交互与导航：缩放、平移、节点选取、图层开关与画布导航控件
+- 寻路与动画：A* 路径与动态小球动画
+- 导出与分享：一键导出与分享结果
+- 移动端适配：手机端操作更顺畅
+- 性能与可观测性：索引构建、渲染初始化/总耗时、数据体积等指标
+- 主题与样式：夜间/黑白主题，组件化样式体系
 
 ## 效果预览
 
-![RoadNet Visualizer 效果图](docs/images/overview.png)
+![RoadNet Visualizer 概览效果图](docs/images/overview.png)
+![RoadNet Visualizer 路径实时预览效果图](docs/images/PathPreview.png)
+![RoadNet Visualizer 路径动态规划效果图](docs/images/PathDynamicPlanning.png)
 
 ## 本地开发
 ```bash
@@ -36,11 +41,13 @@ yarn build
 ## 目录结构
 ```
 src/
-├── core/               # 渲染与交互核心（PixiJS）
-├── utils/              # 几何/导航/生成工具模块
-├── components/         # 简单 UI 组件（表单、进度、图层控制）
-├── main.js             # 应用入口
-└── style.css           # 样式
+├── core/                # 渲染核心（渲染/视图/图层/交互/配置 + Workers）
+├── core/interaction/    # 交互拆分模块（事件/管线/动画）
+├── utils/               # 工具库（导航/几何/路径/索引/导出/分享/状态 等）
+│   └── navigation/      # 导航子模块（质心/Portal/Voronoi/分区 等）
+├── components/          # UI 组件（表单、进度、图层控制）
+├── css/                 # 样式与主题（base/reset/tokens/utilities/layout/buttons/forms/...）
+└── main.js              # 应用入口
 ```
 
 ## 许可证（License）

@@ -37,6 +37,20 @@ export function euclideanDistance(p1, p2) {
 }
 
 /**
+ * 计算路径总长度（折线）
+ * @param {{x:number,y:number}[]} path 路径点序列
+ * @returns {number} 总长度
+ */
+export function pathTotalLength(path) {
+  if (!Array.isArray(path) || path.length < 2) return 0;
+  let total = 0;
+  for (let i = 0; i < path.length - 1; i++) {
+    total += euclideanDistance(path[i], path[i + 1]);
+  }
+  return total;
+}
+
+/**
  * 计算矩形中心点
  */
 export function getRectCenter(rect) {
