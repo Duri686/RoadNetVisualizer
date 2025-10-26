@@ -25,8 +25,8 @@ export class RendererDrawing {
   /**
    * 重建基础三角化（虚线）图形
    */
-  rebuildOverlayBase(overlayContainer, edges, offsetX, offsetY, cellSize) {
-    if (!overlayContainer || !Array.isArray(edges)) return;
+  rebuildOverlayBase(overlayContainer, edgesOrPacked, offsetX, offsetY, cellSize) {
+    if (!overlayContainer || !edgesOrPacked) return;
     overlayContainer.removeChildren();
     const g = new PIXI.Graphics();
     g.name = 'overlay-base-lines';
@@ -36,12 +36,23 @@ export class RendererDrawing {
       alpha: 0.35,
     });
     const { dash, gap } = this.computeDashGapByScale(this.transform?.scale || 1);
-    for (const e of edges) {
-      const x1 = offsetX + e.x1 * cellSize;
-      const y1 = offsetY + e.y1 * cellSize;
-      const x2 = offsetX + e.x2 * cellSize;
-      const y2 = offsetY + e.y2 * cellSize;
-      this.drawDashedLine(g, x1, y1, x2, y2, dash, gap);
+    // 支持两种输入：数组[{x1,y1,x2,y2}] 或 Float32Array [x1,y1,x2,y2]*N
+    if (Array.isArray(edgesOrPacked)) {
+      for (const e of edgesOrPacked) {
+        const x1 = offsetX + e.x1 * cellSize;
+        const y1 = offsetY + e.y1 * cellSize;
+        const x2 = offsetX + e.x2 * cellSize;
+        const y2 = offsetY + e.y2 * cellSize;
+        this.drawDashedLine(g, x1, y1, x2, y2, dash, gap);
+      }
+    } else if (edgesOrPacked instanceof Float32Array) {
+      for (let i = 0; i + 3 < edgesOrPacked.length; i += 4) {
+        const x1 = offsetX + edgesOrPacked[i] * cellSize;
+        const y1 = offsetY + edgesOrPacked[i + 1] * cellSize;
+        const x2 = offsetX + edgesOrPacked[i + 2] * cellSize;
+        const y2 = offsetY + edgesOrPacked[i + 3] * cellSize;
+        this.drawDashedLine(g, x1, y1, x2, y2, dash, gap);
+      }
     }
     overlayContainer.addChild(g);
   }
@@ -54,7 +65,7 @@ export class RendererDrawing {
     this.transform = transform;
     // 当缩放发生变化时，可以在这里进行额外处理
   }
-
+  
   /**
    * 绘制虚线段
    * @param {PIXI.Graphics} g - Graphics 对象
@@ -89,7 +100,7 @@ export class RendererDrawing {
       draw = !draw;
     }
   }
-
+  
   /**
    * 渲染障碍物
    * @param {Array} obstacles - 障碍物数组
@@ -102,7 +113,7 @@ export class RendererDrawing {
     const obstacleContainer = new PIXI.Container();
     obstacleContainer.name = 'obstacles';
 
-    obstacles.forEach(obs => {
+    obstacles.forEach((obs, i) => {
       const rect = new PIXI.Graphics();
       rect.beginFill(0xdc2626, 0.5); // 深红填充，半透明
       rect.lineStyle(1, 0xdc2626, 0.85); // 深红描边
@@ -114,11 +125,18 @@ export class RendererDrawing {
       );
       rect.endFill();
       obstacleContainer.addChild(rect);
+      const label = new PIXI.Text(String(i + 1), { fontSize: Math.max(10, Math.floor(cellSize * 0.8)), fill: 0xffffff });
+      label.anchor.set(0.5);
+      label.position.set(
+        offsetX + (obs.x + obs.w / 2) * cellSize,
+        offsetY + (obs.y + obs.h / 2) * cellSize
+      );
+      obstacleContainer.addChild(label);
     });
 
     return obstacleContainer;
   }
-
+  
   /**
    * 创建图层容器
    * @param {Object} layer - 图层数据
@@ -164,54 +182,60 @@ export class RendererDrawing {
     voronoiContainer.name = 'voronoi-skeleton';
 
     // 绘制基础 Delaunay 覆盖层（灰色半透明），帮助理解可行点来源
-    const overlay = layer.metadata && layer.metadata.overlayBase && Array.isArray(layer.metadata.overlayBase.edges)
+    // 同时支持 edges（数组）与 edgesPacked（Float32Array）
+    const overlayEdges = layer.metadata && layer.metadata.overlayBase && Array.isArray(layer.metadata.overlayBase.edges)
       ? layer.metadata.overlayBase.edges
       : null;
-    if (overlay && overlay.length) {
-      this.rebuildOverlayBase(overlayContainer, overlay, offsetX, offsetY, cellSize);
+    const overlayPacked = layer.metadata && layer.metadata.overlayBase && layer.metadata.overlayBase.edgesPacked instanceof Float32Array
+      ? layer.metadata.overlayBase.edgesPacked
+      : null;
+    const overlayAny = overlayPacked && overlayPacked.length ? overlayPacked : overlayEdges;
+    if (overlayAny && (Array.isArray(overlayAny) ? overlayAny.length : overlayAny.length > 0)) {
+      this.rebuildOverlayBase(overlayContainer, overlayAny, offsetX, offsetY, cellSize);
     }
 
-    // 渲染边（先渲染边，这样节点会显示在上层）
-    layer.edges.forEach(edge => {
-      const fromNode = layer.nodes.find(n => n.id === edge.from);
-      const toNode = layer.nodes.find(n => n.id === edge.to);
-
-      if (!fromNode || !toNode) return;
-
-      const line = new PIXI.Graphics();
-      line.lineStyle({
+    // 渲染边（合批到单一 Graphics，减少 draw calls）
+    if (Array.isArray(layer.edges) && layer.edges.length) {
+      const edgeGraphics = new PIXI.Graphics();
+      edgeGraphics.lineStyle({
         width: isVoronoi ? Math.max(1.5, this.config.edgeWidth) : this.config.edgeWidth,
         color: edgeColor,
         alpha: edgeAlpha
       });
-
-      const x1 = offsetX + fromNode.x * cellSize;
-      const y1 = offsetY + fromNode.y * cellSize;
-      const x2 = offsetX + toNode.x * cellSize;
-      const y2 = offsetY + toNode.y * cellSize;
-
-      line.moveTo(x1, y1);
-      line.lineTo(x2, y2);
-
-      if (isVoronoi) {
-        voronoiContainer.addChild(line);
-      } else {
-        networkEdgesContainer.addChild(line);
+      for (let i = 0; i < layer.edges.length; i++) {
+        const edge = layer.edges[i];
+        const fromNode = layer.nodes.find(n => n.id === edge.from);
+        const toNode = layer.nodes.find(n => n.id === edge.to);
+        if (!fromNode || !toNode) continue;
+        const x1 = offsetX + fromNode.x * cellSize;
+        const y1 = offsetY + fromNode.y * cellSize;
+        const x2 = offsetX + toNode.x * cellSize;
+        const y2 = offsetY + toNode.y * cellSize;
+        edgeGraphics.moveTo(x1, y1);
+        edgeGraphics.lineTo(x2, y2);
       }
-    });
+      if (isVoronoi) {
+        voronoiContainer.addChild(edgeGraphics);
+      } else {
+        networkEdgesContainer.addChild(edgeGraphics);
+      }
+    }
 
-    // 渲染节点（所有层统一绘制为蓝色圆点，受“网络节点”开关统一控制）
-    layer.nodes.forEach(node => {
-      const circle = new PIXI.Graphics();
-      circle.beginFill(nodeColor, nodeAlpha);
-      circle.drawCircle(
-        offsetX + node.x * cellSize,
-        offsetY + node.y * cellSize,
-        nodeRadius
-      );
-      circle.endFill();
-      networkNodesContainer.addChild(circle);
-    });
+    // 渲染节点（合批到单一 Graphics）
+    if (Array.isArray(layer.nodes) && layer.nodes.length) {
+      const nodesG = new PIXI.Graphics();
+      nodesG.beginFill(nodeColor, nodeAlpha);
+      for (let i = 0; i < layer.nodes.length; i++) {
+        const node = layer.nodes[i];
+        nodesG.drawCircle(
+          offsetX + node.x * cellSize,
+          offsetY + node.y * cellSize,
+          nodeRadius
+        );
+      }
+      nodesG.endFill();
+      networkNodesContainer.addChild(nodesG);
+    }
 
     // 组装分组容器
     container.addChild(overlayContainer);

@@ -94,6 +94,9 @@ export function getPotentialObstacles(index, x1, y1, x2, y2) {
  */
 export function getObstaclesAlongLineDDA(index, x1, y1, x2, y2) {
   const { cellSize, grid } = index;
+  // 线段包围盒（用于快速排除与线段相距较远的障碍）
+  const segMinX = Math.min(x1, x2), segMaxX = Math.max(x1, x2);
+  const segMinY = Math.min(y1, y2), segMaxY = Math.max(y1, y2);
   const ix0 = Math.floor(x1 / cellSize);
   const iy0 = Math.floor(y1 / cellSize);
   const ix1 = Math.floor(x2 / cellSize);
@@ -117,6 +120,10 @@ export function getObstaclesAlongLineDDA(index, x1, y1, x2, y2) {
     const arr = grid.get(`${cx},${cy}`);
     if (!arr) return;
     for (const ob of arr) {
+      // 快速包围盒排除：若障碍与线段包围盒无交集，跳过
+      const obMinX = ob.x, obMaxX = ob.x + ob.w;
+      const obMinY = ob.y, obMaxY = ob.y + ob.h;
+      if (obMaxX < segMinX || segMaxX < obMinX || obMaxY < segMinY || segMaxY < obMinY) continue;
       const id = ob.id != null ? ob.id : ob;
       if (!seen.has(id)) { seen.add(id); out.push(ob); }
     }

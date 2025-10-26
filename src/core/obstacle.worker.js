@@ -37,8 +37,10 @@ function buildLayer(width, height, obstacles, layerIndex, baseZones, mode = 'cen
     }
     // 生成基础的障碍顶点网络（叠加展示），大规模时按需跳过以提升生成速度
     const overlayMode = options && options.overlayMode ? String(options.overlayMode) : 'auto';
-    const overlaySkip = overlayMode === 'none' || (overlayMode === 'auto' && obstacles.length > 300);
+    // 始终渲染 overlay，除非显式指定 none
+    const overlaySkip = overlayMode === 'none';
     let overlayEdges = [];
+    let overlayPacked = null; // Float32Array 打包后的边
     let overlayBuildMs = 0;
     let overlayActualMode = overlaySkip ? 'skipped' : 'delaunay';
     if (!overlaySkip) {
@@ -50,6 +52,17 @@ function buildLayer(width, height, obstacles, layerIndex, baseZones, mode = 'cen
         const b = idToNode.get(e.to);
         return { x1: a.x, y1: a.y, x2: b.x, y2: b.y };
       });
+      // 打包为 Float32Array，减少结构化克隆成本
+      if (overlayEdges.length) {
+        overlayPacked = new Float32Array(overlayEdges.length * 4);
+        for (let i = 0, k = 0; i < overlayEdges.length; i++) {
+          const e = overlayEdges[i];
+          overlayPacked[k++] = e.x1;
+          overlayPacked[k++] = e.y1;
+          overlayPacked[k++] = e.x2;
+          overlayPacked[k++] = e.y2;
+        }
+      }
       const tOv1 = performance?.now ? performance.now() : Date.now();
       overlayBuildMs = Math.max(0, Math.round(tOv1 - tOv0));
     }
@@ -68,7 +81,9 @@ function buildLayer(width, height, obstacles, layerIndex, baseZones, mode = 'cen
         profile: result.profile || null,
         overlayBase: {
           edgeCount: overlayEdges.length,
-          edges: overlayEdges,
+          // 为空数组以减少体积，使用 edgesPacked 渲染
+          edges: [],
+          edgesPacked: overlayPacked,
           buildMs: overlayBuildMs,
           mode: overlayActualMode
         }
@@ -190,6 +205,21 @@ self.onmessage = function(e) {
 
   try {
     switch (type) {
+    case 'WARMUP': {
+      try {
+        // 轻量预热：小尺寸、少量障碍，触发 d3-delaunay 与主构建路径的 JIT
+        const width = 64, height = 48, layerCount = 1, obstacleCount = 16;
+        const options = { useSpatialIndex: true, overlayMode: 'none' };
+        const obstacles = generateObstacles(width, height, obstacleCount, rng);
+        // 触发一次核心构建
+        buildLayers(width, height, obstacles, layerCount, 'centroid', options);
+      } catch (_) {
+        /* 忽略预热异常 */
+      }
+      // 通知管理器预热完成
+      self.postMessage({ type: 'WARMUP_DONE' });
+      break;
+    }
       case 'GENERATE_NAVGRAPH': {
         const { width, height, layerCount, obstacleCount, seed, mode, options } = payload;
 
@@ -226,7 +256,8 @@ self.onmessage = function(e) {
         const totalNodes = layers.reduce((sum, l) => sum + l.nodes.length, 0);
         const totalEdges = layers.reduce((sum, l) => sum + l.edges.length, 0);
 
-        self.postMessage({
+        // 使用 Transferable 传输 overlayPacked，降低结构化克隆开销
+        const message = {
           type: 'COMPLETE',
           data: {
             layers,
@@ -248,7 +279,17 @@ self.onmessage = function(e) {
               }
             }
           }
-        });
+        };
+        const transferList = [];
+        try {
+          if (Array.isArray(layers)) {
+            for (let i = 0; i < layers.length; i++) {
+              const buf = layers[i]?.metadata?.overlayBase?.edgesPacked?.buffer;
+              if (buf && buf.byteLength) transferList.push(buf);
+            }
+          }
+        } catch (_) { /* 忽略收集失败 */ }
+        self.postMessage(message, transferList);
 
         break;
       }

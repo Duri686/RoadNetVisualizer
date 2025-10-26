@@ -139,16 +139,16 @@ class InputForm {
       errors.push('层数必须在 1-10 之间');
     }
 
-    if (isNaN(values.obstacleCount) || values.obstacleCount < 0 || values.obstacleCount > 800) {
-      errors.push('障碍物数量必须在 0-800 之间');
+    // 障碍物数量：放开上限，但不得为负
+    if (isNaN(values.obstacleCount) || values.obstacleCount < 0) {
+      errors.push('障碍物数量必须为非负整数');
     }
 
-    // 验证障碍物密度：基于合理的密度比例
-    // 每个障碍物平均占用约 10-15% 的小区域，总覆盖率不应超过 50%
-    const totalGridCells = (values.width / 5) * (values.height / 5); // 假设 5×5 网格
-    if (values.obstacleCount > totalGridCells * 0.5) {
-      errors.push(`障碍物过多（建议 ≤ ${Math.floor(totalGridCells * 0.5)}），可能导致无法生成有效导航图`);
-    }
+    // 移除密度硬限制：仅在控制台告警，不阻塞生成
+    // const totalGridCells = (values.width / 5) * (values.height / 5);
+    // if (values.obstacleCount > totalGridCells * 0.5) {
+    //   console.warn(`障碍物较多（建议 ≤ ${Math.floor(totalGridCells * 0.5)}），可能导致端到端耗时上升`);
+    // }
 
     return {
       valid: errors.length === 0,
@@ -186,6 +186,8 @@ class InputForm {
     this.elements.widthInput.disabled = true;
     this.elements.heightInput.disabled = true;
     this.elements.layerInput.disabled = true;
+    // 同步禁用障碍物输入，避免生成期间误操作
+    this.elements.obstacleInput.disabled = true;
     this.elements.generateBtn.disabled = true;
     if (this.elements.modeOptions && this.elements.modeOptions.length) {
       this.elements.modeOptions.forEach(cb => { cb.disabled = true; });
@@ -201,6 +203,8 @@ class InputForm {
     this.elements.widthInput.disabled = false;
     this.elements.heightInput.disabled = false;
     this.elements.layerInput.disabled = false;
+    // 重新启用障碍物输入
+    this.elements.obstacleInput.disabled = false;
     this.elements.generateBtn.disabled = false;
     if (this.elements.modeOptions && this.elements.modeOptions.length) {
       this.elements.modeOptions.forEach(cb => { cb.disabled = false; });

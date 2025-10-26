@@ -255,8 +255,10 @@ class App {
         const genEl0 = document.getElementById('gen-time');
         if (genEl0) genEl0.textContent = '-- ms';
         statusManager.setLoading('Generating road network...');
-        // 仅记录开始时间，不显示 Loading 弹窗
-        this.perf.start = performance.now();
+        // 端到端计时：优先使用主线程发送时刻（clientStart），降低起点偏差
+        this.perf.start = (payload && typeof payload.clientStart === 'number')
+          ? payload.clientStart
+          : (performance.now ? performance.now() : Date.now());
       },
 
       onObstacleReady: (obstacles, count) => {
@@ -350,8 +352,23 @@ class App {
           /* ignore stringify errors */
         }
         const initMs = this.perf.initRenderMs || 0;
+        // 追加 worker 侧拆账（若存在）
+        const wprof = meta && meta.workerProfile;
+        let wprofText = '';
+        let deltaText = '';
+        if (wprof && typeof wprof.obstaclesMs === 'number' && typeof wprof.buildMs === 'number') {
+          const partsW = [];
+          partsW.push(`障碍生成 ${wprof.obstaclesMs} ms`);
+          partsW.push(`构建 ${wprof.buildMs} ms`);
+          if (typeof wprof.overlayMs === 'number') partsW.push(`Overlay ${wprof.overlayMs} ms`);
+          wprofText = ' | ' + partsW.join(' | ');
+          // 计算端到端与生成(Worker)的差值，便于识别主线程/传输/渲染噪声
+          const genMs = (wprof.obstaclesMs || 0) + (wprof.buildMs || 0) + (wprof.overlayMs || 0);
+          const delta = Math.round(cost - genMs);
+          deltaText = ` | 端到端差值 ${delta} ms`;
+        }
         if (perfInfo)
-          perfInfo.textContent = `本次计算：耗时 ${cost} ms | 可行节点 ${nodeCount} 个 | 可行边 ${edgeCount} 条${profText} | 初始化渲染 ${initMs} ms | 数据体积 ${dataKB} | 渲染 ${renderMs} ms`;
+          perfInfo.textContent = `本次计算：耗时 ${cost} ms | 可行节点 ${nodeCount} 个 | 可行边 ${edgeCount} 条${profText}${wprofText}${deltaText} | 初始化渲染 ${initMs} ms | 数据体积 ${dataKB} | 渲染 ${renderMs} ms`;
       },
 
       onError: (error) => {

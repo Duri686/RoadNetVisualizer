@@ -31,6 +31,8 @@ class WorkerManager {
       this.worker = new ObstacleWorker();
       this.setupMessageHandler();
       console.log('✅ Obstacle Worker initialized successfully');
+      // 预热：提升首轮稳定性
+      try { this.worker.postMessage({ type: 'WARMUP' }); } catch (_) {}
     } catch (error) {
       console.error('❌ Failed to initialize worker:', error);
       throw error;
@@ -45,6 +47,9 @@ class WorkerManager {
       const { type, data, progress, error, currentLayer, totalLayers, payload } = e.data;
 
       switch (type) {
+        case 'WARMUP_DONE':
+          console.log('🔥 Worker warmup done');
+          break;
         case 'START':
           this.isProcessing = true;
           console.log('🚀 Worker started processing:', payload);
@@ -147,9 +152,11 @@ class WorkerManager {
     }
 
     try {
+      // 记录主线程发送时间，传递到 Worker 再回传 START，便于端到端计时对齐
+      const clientStart = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
       this.worker.postMessage({
         type: 'GENERATE_NAVGRAPH',
-        payload: { width, height, layerCount, obstacleCount, seed, mode, options }
+        payload: { width, height, layerCount, obstacleCount, seed, mode, options, clientStart }
       });
       return true;
     } catch (error) {
