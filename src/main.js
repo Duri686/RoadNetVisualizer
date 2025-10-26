@@ -132,6 +132,14 @@ class App {
       const tInit1 = performance?.now ? performance.now() : Date.now();
       this.perf.initRenderMs = Math.max(0, Math.round(tInit1 - tInit0));
 
+      // 初始化 FPS 开关状态同步到渲染器
+      try {
+        const fpsChk = document.getElementById('show-fps');
+        if (fpsChk && typeof renderer.setFpsVisible === 'function') {
+          renderer.setFpsVisible(!!fpsChk.checked);
+        }
+      } catch (_) {}
+
       // 全屏切换功能
       const fullscreenBtn = document.getElementById('fullscreen-btn');
       const canvasContainer = document.querySelector('.canvas-container');
@@ -463,6 +471,16 @@ class App {
         }
       }, 250);
     });
+
+    // FPS 显示开关
+    try {
+      const fpsChk = document.getElementById('show-fps');
+      if (fpsChk && typeof renderer.setFpsVisible === 'function') {
+        fpsChk.addEventListener('change', () => {
+          renderer.setFpsVisible(!!fpsChk.checked);
+        });
+      }
+    } catch (_) {}
   }
 
   /**

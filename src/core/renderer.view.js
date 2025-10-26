@@ -72,14 +72,10 @@ export function resetViewImpl(renderer) {
   renderer.mainContainer.position.set(0, 0);
   renderer.drawing.updateTransform(renderer.transform);
   renderer.interaction.updateTransform(renderer.transform);
-  try {
-    const nowScale = renderer.transform?.scale || 1;
-    const prev = renderer._lastOverlayScale ?? 0;
-    renderer._lastOverlayScale = nowScale;
-    if (Math.abs(nowScale - prev) > 0.05) {
-      if (renderer._overlayRebuildTimer) clearTimeout(renderer._overlayRebuildTimer);
-      renderer._overlayRebuildTimer = setTimeout(() => { try { renderer.rebuildAllOverlays(); } catch (_) {} }, 160);
-    }
+  // 优化：使用统一的去抖重建机制
+  try { 
+    renderer.hideOverlaysDuringInteraction(); 
+    renderer.scheduleOverlayRebuild(200);
   } catch (_) {}
   try { if (renderer.config?.culling?.enabled) renderer.refreshObstacleCulling(); } catch (_) {}
   // 重置视图后重建网络层 RT
@@ -112,6 +108,11 @@ export function setupZoomAndPanImpl(renderer) {
   const view = renderer.app.view;
   view.addEventListener('wheel', (e) => {
     e.preventDefault();
+    try {
+      if (typeof renderer.beginFpsPhase === 'function') renderer.beginFpsPhase('zoom');
+      if (renderer._fpsWheelTimer) try { clearTimeout(renderer._fpsWheelTimer); } catch (_) {}
+      renderer._fpsWheelTimer = setTimeout(() => { try { if (typeof renderer.endFpsPhase === 'function') renderer.endFpsPhase('zoom'); } catch (_) {} }, 260);
+    } catch (_) {}
     const scaleFactor = e.deltaY > 0 ? 0.9 : 1.1;
     const newScale = renderer.transform.scale * scaleFactor;
     if (newScale >= renderer.viewState.minScale && newScale <= renderer.viewState.maxScale) {
@@ -129,7 +130,11 @@ export function setupZoomAndPanImpl(renderer) {
       renderer.interaction.updateTransform(renderer.transform);
       // 标记最近交互时间（滚轮缩放）
       try { renderer._lastInteractionAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(); } catch (_) {}
-      renderer.rebuildAllOverlays();
+      // 优化：交互期间隐藏overlay，稳定后再重建（大幅提升性能）
+      try { 
+        renderer.hideOverlaysDuringInteraction(); 
+        renderer.scheduleOverlayRebuild(250);
+      } catch (_) {}
       // 滚轮缩放：延迟转纹理
       try { if (renderer.config?.culling?.enabled) renderer.refreshObstacleCulling(true); } catch (_) {}
       // 缩放时失效网络层 RT，并在稳定后重建
@@ -140,6 +145,7 @@ export function setupZoomAndPanImpl(renderer) {
   view.addEventListener('mousedown', (e) => {
     renderer.viewState.isDragging = true;
     renderer.viewState.lastPosition = { x: e.clientX, y: e.clientY };
+    try { if (typeof renderer.beginFpsPhase === 'function') renderer.beginFpsPhase('pan'); } catch (_) {}
     // 标记最近交互时间（按下）
     try { renderer._lastInteractionAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(); } catch (_) {}
     view.style.cursor = 'grabbing';
@@ -162,6 +168,7 @@ export function setupZoomAndPanImpl(renderer) {
     renderer.viewState.isDragging = false;
     renderer.viewState.lastPosition = null;
     view.style.cursor = 'grab';
+    try { if (typeof renderer.endFpsPhase === 'function') renderer.endFpsPhase('pan'); } catch (_) {}
     // 标记最近交互时间（拖拽结束）
     try { renderer._lastInteractionAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(); } catch (_) {}
     // 在拖拽结束时刷新裁剪：立即重建纹理
@@ -208,6 +215,7 @@ export function setupZoomAndPanImpl(renderer) {
     // 双指捏合缩放
     if (renderer.pointerState.pointers.size >= 2) {
       e.preventDefault();
+      try { if (!renderer._pinchActive && typeof renderer.beginFpsPhase === 'function') { renderer._pinchActive = true; renderer.beginFpsPhase('pinch'); } } catch (_) {}
       const it = renderer.pointerState.pointers.values();
       const p1 = it.next().value; const p2 = it.next().value;
       if (!p1 || !p2) return;
@@ -233,7 +241,11 @@ export function setupZoomAndPanImpl(renderer) {
           renderer.interaction.updateTransform(renderer.transform);
           // 标记最近交互时间（触控捏合）
           try { renderer._lastInteractionAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(); } catch (_) {}
-          renderer.rebuildAllOverlays();
+          // 优化：交互期间隐藏overlay，稳定后再重建
+          try { 
+            renderer.hideOverlaysDuringInteraction(); 
+            renderer.scheduleOverlayRebuild(250);
+          } catch (_) {}
           // 触控捏合：延迟转纹理
           try { if (renderer.config?.culling?.enabled) renderer.refreshObstacleCulling(true); } catch (_) {}
           // 捏合缩放时失效网络层 RT，并在稳定后重建
@@ -258,6 +270,7 @@ export function setupZoomAndPanImpl(renderer) {
         if (Math.abs(dx) + Math.abs(dy) < renderer.pointerState.dragThreshold) return;
         renderer.viewState.isDragging = true;
         view.style.cursor = 'grabbing';
+        try { if (typeof renderer.beginFpsPhase === 'function') renderer.beginFpsPhase('pan'); } catch (_) {}
       }
       e.preventDefault();
       renderer.transform.panX += dx / renderer.transform.scale;
@@ -280,11 +293,13 @@ export function setupZoomAndPanImpl(renderer) {
     if (renderer.pointerState.pointers.size < 2) {
       renderer.pointerState.lastDistance = null;
       renderer.pointerState.lastCenter = null;
+      try { if (renderer._pinchActive && typeof renderer.endFpsPhase === 'function') { renderer._pinchActive = false; renderer.endFpsPhase('pinch'); } } catch (_) {}
     }
     if (renderer.pointerState.pointers.size === 0) {
       renderer.viewState.isDragging = false;
       renderer.viewState.lastPosition = null;
       view.style.cursor = 'grab';
+      try { if (typeof renderer.endFpsPhase === 'function') renderer.endFpsPhase('pan'); } catch (_) {}
       // 标记最近交互时间（触控结束）
       try { renderer._lastInteractionAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(); } catch (_) {}
     }

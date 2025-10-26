@@ -147,6 +147,8 @@ export function renderRoadNetImpl(renderer, navGraphData) {
   renderer.drawing.updateTransform(renderer.transform);
   renderer.interaction.updateTransform(renderer.transform);
   renderer.rebuildAllOverlays();
+  // 记录初始overlay scale，供后续去抖逻辑使用
+  try { renderer._lastOverlayScale = renderer.transform?.scale || 1; } catch (_) {}
   try { window.dispatchEvent(new CustomEvent('renderer-viewport-changed')); } catch (_) {}
   const tSetup1 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
 

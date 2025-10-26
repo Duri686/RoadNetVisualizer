@@ -23,6 +23,9 @@ class NavigatorManager {
       overrideMode: 'auto' // auto | heatmap | detail
     };
     this._dragging = false;
+    // 更新去抖控制（优化拖拽性能）
+    this._updateTimer = null;
+    this._lastUpdateTime = 0;
     this.init();
   }
 
@@ -46,8 +49,8 @@ class NavigatorManager {
 
     // 监听图层显隐变化，自动刷新
     window.addEventListener('layer-visibility-changed', () => this.update());
-    // 监听渲染器视口变化，仅重绘视口框
-    window.addEventListener('renderer-viewport-changed', () => this.update());
+    // 监听渲染器视口变化，使用去抖避免拖拽时卡顿
+    window.addEventListener('renderer-viewport-changed', () => this.scheduleUpdate());
 
     // 绑定模式切换
     const modeSelect = document.getElementById('nav-mode-select');
@@ -447,18 +450,42 @@ class NavigatorManager {
     const vh = viewport.height * this.scale;
     
     this.ctx.strokeRect(vx, vy, vw, vh);
-    
-    this.ctx.setLineDash([]);
     this.ctx.restore();
   }
 
   /**
-   * 更新（重新渲染）
+   * 计划更新（去抖：拖拽时避免每帧重绘）
    */
-  update(data) {
-    if (data) {
-      this.render(data);
-    } else if (this.roadNetData) {
+  scheduleUpdate() {
+    // 严格限流：交互期间最多每200ms更新一次
+    const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    const elapsed = now - (this._lastUpdateTime || 0);
+    
+    // 如果上次更新距今不足150ms，直接忽略（激进限流）
+    if (elapsed < 150) {
+      return;
+    }
+    
+    if (this._updateTimer) {
+      try { clearTimeout(this._updateTimer); } catch (_) {}
+    }
+    
+    // 延迟200ms执行，交互结束后才更新
+    this._updateTimer = setTimeout(() => {
+      try {
+        this.update();
+        this._lastUpdateTime = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      } catch (e) {
+        console.debug('[Navigator] update skipped:', e);
+      }
+    }, 200);
+  }
+
+  /**
+   * 更新缩略图（重新渲染）
+   */
+  update() {
+    if (this.roadNetData) {
       this.render(this.roadNetData);
     }
   }
@@ -467,6 +494,10 @@ class NavigatorManager {
    * 销毁
    */
   destroy() {
+    if (this._updateTimer) {
+      try { clearTimeout(this._updateTimer); } catch (_) {}
+      this._updateTimer = null;
+    }
     this.roadNetData = null;
     this.clear();
   }

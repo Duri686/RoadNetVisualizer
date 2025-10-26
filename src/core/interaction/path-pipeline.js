@@ -18,6 +18,8 @@ export function findAndDrawPath(ctx, startNode, endNode, isPreview = false) {
   const layer = ctx.roadNetData?.layers?.[0];
   if (!layer) return;
   if (!isPreview) ctx.state.smoothMs = 0;
+  let _r = null;
+  try { if (!isPreview && typeof window !== 'undefined') { const app = window.roadNetApp; if (app && app.renderer && typeof app.renderer.beginFpsPhase === 'function') { _r = app.renderer; _r.beginFpsPhase('path'); } } } catch (_) {}
 
   // 使用 A* 算法查找路径
   let path = findPathAStar(layer, startNode, endNode);
@@ -86,6 +88,7 @@ export function findAndDrawPath(ctx, startNode, endNode, isPreview = false) {
       ctx.state.lastPathTotal = total;
     }
   }
+  try { if (!isPreview && _r && typeof _r.endFpsPhase === 'function') { _r.endFpsPhase('path'); } } catch (_) {}
 }
 
 /**
