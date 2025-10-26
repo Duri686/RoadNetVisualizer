@@ -38,6 +38,14 @@ export class SeededRandom {
  */
 export function generateObstacles(width, height, obstacleCount, rng, opts = {}) {
   const obstacles = [];
+  // 指标埋点：接受率/尝试次数/退出原因/占用率估算/耗时
+  const t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+  let attemptsTotal = 0;
+  let accepted = 0;
+  let consecFail = 0;
+  let maxConsecFail = 0;
+  let exitReason = 'completed';
+  let occupiedSum = 0; // 近似占用面积 (w+2p)*(h+2p)
 
   const minWH = Math.max(1, Math.min(width, height));
   const minSizeRatio = typeof opts.minSizeRatio === 'number' ? opts.minSizeRatio : 0.01; // 1%
@@ -83,6 +91,7 @@ export function generateObstacles(width, height, obstacleCount, rng, opts = {}) 
   while (placed < obstacleCount) {
     let ok = false;
     for (let attempt = 0; attempt < perAttempts; attempt++) {
+      attemptsTotal++;
       const w = rng.randomInt(minSize, Math.min(maxSize, width));
       const h = rng.randomInt(minSize, Math.min(maxSize, height));
       const x = rng.randomInt(0, Math.max(0, width - w));
@@ -112,14 +121,35 @@ export function generateObstacles(width, height, obstacleCount, rng, opts = {}) 
       obstacles.push(newObstacle);
       if (avoidOverlap) put(newObstacle.x, newObstacle.y, newObstacle.w, newObstacle.h, newObstacle.id);
       placed++;
+      accepted++;
+      consecFail = 0;
+      occupiedSum += (newObstacle.w + 2 * padding) * (newObstacle.h + 2 * padding);
       ok = true;
       break;
     }
     if (!ok) {
       // 放不下更多障碍，提前结束
+      consecFail++;
+      if (consecFail > maxConsecFail) maxConsecFail = consecFail;
+      exitReason = 'per-obstacle-attempts-exhausted';
       break;
     }
   }
+
+  // 输出统计日志（不改变返回值）
+  try {
+    const t1 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    const used = Math.max(0, Math.round(t1 - t0));
+    const area = Math.max(1, width * height);
+    const avgOccupied = accepted > 0 ? (occupiedSum / accepted) : 0;
+    const capacityEst = avgOccupied > 0 ? Math.floor(area / avgOccupied) : 0;
+    const acceptRate = attemptsTotal > 0 ? (accepted / attemptsTotal) : 0;
+    // 中文日志，便于性能观测
+    console.log(
+      `[Obstacles] 目标 ${obstacleCount} 个 | 已放置 ${placed} 个 | 尝试 ${attemptsTotal} 次 | 接受率 ${(acceptRate * 100).toFixed(1)}% | ` +
+      `最大连续失败 ${maxConsecFail} | 退出原因 ${exitReason} | 近似平均占用 ${avgOccupied.toFixed(1)} px² | 估算容量≈ ${capacityEst} | 生成耗时 ${used} ms`
+    );
+  } catch (_) { /* 忽略日志异常 */ }
 
   return obstacles;
 }

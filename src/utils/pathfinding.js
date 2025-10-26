@@ -44,6 +44,7 @@ export function reconstructPath(cameFrom, current, nodes) {
  * @returns {Array|null} 路径节点数组，如果找不到则返回 null
  */
 export function findPathAStar(layer, startNode, endNode) {
+  const t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
   const nodes = layer.nodes;
   const edges = layer.edges;
 
@@ -64,6 +65,11 @@ export function findPathAStar(layer, startNode, endNode) {
   const gScore = new Map();
   const fScore = new Map();
 
+  // 指标埋点：扩展次数、松弛次数、open 集峰值
+  let expanded = 0;
+  let relaxed = 0;
+  let openPeak = 1;
+
   nodes.forEach(node => {
     gScore.set(node.id, Infinity);
     fScore.set(node.id, Infinity);
@@ -73,6 +79,7 @@ export function findPathAStar(layer, startNode, endNode) {
   fScore.set(startNode.id, heuristic(startNode, endNode));
 
   while (openSet.size > 0) {
+    if (openSet.size > openPeak) openPeak = openSet.size;
     // 找到 fScore 最小的节点
     let current = null;
     let minFScore = Infinity;
@@ -86,10 +93,17 @@ export function findPathAStar(layer, startNode, endNode) {
 
     if (current === endNode.id) {
       // 重建路径
-      return reconstructPath(cameFrom, current, nodes);
+      const path = reconstructPath(cameFrom, current, nodes);
+      try {
+        const t1 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+        const used = Math.max(0, Math.round(t1 - t0));
+        console.log(`[A*] 路径长度 ${path.length} | 扩展 ${expanded} | 松弛 ${relaxed} | open峰值 ${openPeak} | 耗时 ${used} ms`);
+      } catch (_) { /* ignore */ }
+      return path;
     }
 
     openSet.delete(current);
+    expanded++;
 
     const neighbors = graph.get(current) || [];
     for (const neighbor of neighbors) {
@@ -103,9 +117,14 @@ export function findPathAStar(layer, startNode, endNode) {
         fScore.set(neighbor.nodeId, tentativeGScore + heuristic(neighborNode, endNode));
         
         openSet.add(neighbor.nodeId);
+        relaxed++;
       }
     }
   }
-
+  try {
+    const t1 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    const used = Math.max(0, Math.round(t1 - t0));
+    console.log(`[A*] 未找到路径 | 扩展 ${expanded} | 松弛 ${relaxed} | open峰值 ${openPeak} | 耗时 ${used} ms`);
+  } catch (_) { /* ignore */ }
   return null; // 没有找到路径
 }

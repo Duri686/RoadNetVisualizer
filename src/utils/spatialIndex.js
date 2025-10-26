@@ -1,5 +1,9 @@
 // 空间索引（均匀网格）
 // 用于将穿障检测由“遍历所有障碍物”缩减为“仅检测线段附近网格中的障碍物”。
+// 轻量缓存：按 obstacles 数组身份 + (width,height,cellSize) 复用，避免重复构建
+
+// 模块内缓存（不会污染全局作用域）
+const __indexCache = new WeakMap(); // key: obstacles(Array) -> { width, height, cellSize, result }
 
 /**
  * 计算障碍物包围盒
@@ -26,6 +30,18 @@ export function getObstacleBBox(ob) {
  * @param {number} [cellSize] 单元格边长
  */
 export function createSpatialIndex(width, height, obstacles, cellSize) {
+  const t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+  // 命中缓存：相同障碍数组与参数直接复用
+  try {
+    const cached = __indexCache.get(obstacles);
+    if (cached && cached.width === width && cached.height === height && ((cellSize && cached.cellSize === cellSize) || !cellSize)) {
+      const res = cached.result;
+      if (res && res.grid) {
+        console.log(`[SpatialIndex] 复用缓存：cells=${res.grid.size} | cellSize=${res.cellSize}`);
+        return res;
+      }
+    }
+  } catch (_) { /* ignore */ }
   // 估计一个合理 cellSize：综合“障碍平均尺寸”与“密度估计”的较小者
   if (!cellSize) {
     let acc = 0;
@@ -57,6 +73,20 @@ export function createSpatialIndex(width, height, obstacles, cellSize) {
       }
     }
   }
+
+  // 写入缓存
+  try { __indexCache.set(obstacles, { width, height, cellSize, result: { cellSize, grid } }); } catch (_) { /* ignore */ }
+
+  // 统计信息（不改变返回值）
+  try {
+    let refs = 0;
+    for (const arr of grid.values()) refs += arr.length;
+    const cells = grid.size;
+    const avgPerCell = cells > 0 ? (refs / cells) : 0;
+    const t1 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    const used = Math.max(0, Math.round(t1 - t0));
+    console.log(`[SpatialIndex] 构建完成：cells=${cells} | 引用数=${refs} | 平均每格 ${(avgPerCell).toFixed(2)} | cellSize=${cellSize} | 耗时 ${used} ms`);
+  } catch (_) { /* ignore */ }
 
   return { cellSize, grid };
 }

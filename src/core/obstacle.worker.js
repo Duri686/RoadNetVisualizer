@@ -120,6 +120,10 @@ function buildLayer(width, height, obstacles, layerIndex, baseZones, mode = 'cen
 
   // 构建边
   const maxDistance = Math.min(width, height) / (2 - layerIndex * 0.1);
+  // 指标：边对检查次数、穿障检查次数、命中次数
+  let edgePairsConsidered = 0;
+  let obstacleChecks = 0;
+  let intersectHits = 0;
 
   for (let i = 0; i < nodes.length; i++) {
     for (let j = i + 1; j < nodes.length; j++) {
@@ -129,9 +133,13 @@ function buildLayer(width, height, obstacles, layerIndex, baseZones, mode = 'cen
       const distance = euclideanDistance(n1, n2);
       if (distance > maxDistance) continue;
 
-      const intersects = obstacles.some(obs =>
-        lineIntersectsObstacleWithTurf(n1.x, n1.y, n2.x, n2.y, obs)
-      );
+      edgePairsConsidered++;
+      // 手动循环代替 some 以统计检查次数（保持结果一致）
+      let intersects = false;
+      for (let oi = 0; oi < obstacles.length; oi++) {
+        obstacleChecks++;
+        if (lineIntersectsObstacleWithTurf(n1.x, n1.y, n2.x, n2.y, obstacles[oi])) { intersects = true; intersectHits++; break; }
+      }
 
       if (!intersects) {
         edges.push({
@@ -142,6 +150,11 @@ function buildLayer(width, height, obstacles, layerIndex, baseZones, mode = 'cen
       }
     }
   }
+
+  // 输出边构建统计（不改变行为）
+  try {
+    console.log(`[Layer ${layerIndex}] 边检查 ${edgePairsConsidered} | 穿障检查 ${obstacleChecks} | 命中 ${intersectHits}`);
+  } catch (_) { /* ignore */ }
 
   return {
     layerIndex,
@@ -281,14 +294,18 @@ self.onmessage = function(e) {
           }
         };
         const transferList = [];
+        let transferBytes = 0;
         try {
           if (Array.isArray(layers)) {
             for (let i = 0; i < layers.length; i++) {
               const buf = layers[i]?.metadata?.overlayBase?.edgesPacked?.buffer;
-              if (buf && buf.byteLength) transferList.push(buf);
+              if (buf && buf.byteLength) { transferList.push(buf); transferBytes += buf.byteLength; }
             }
           }
         } catch (_) { /* 忽略收集失败 */ }
+        try {
+          console.log(`[Transfer] buffers=${transferList.length} | bytes=${transferBytes}`);
+        } catch (_) { /* ignore */ }
         self.postMessage(message, transferList);
 
         break;

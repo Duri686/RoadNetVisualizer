@@ -109,11 +109,23 @@ export class RendererDrawing {
    * @param {number} cellSize - 单元格大小
    * @returns {PIXI.Container} 障碍物容器
    */
-  renderObstacles(obstacles, offsetX, offsetY, cellSize) {
+  renderObstacles(obstacles, offsetX, offsetY, cellSize, cullRect) {
     const obstacleContainer = new PIXI.Container();
     obstacleContainer.name = 'obstacles';
 
+    const needCull = !!(cullRect && typeof cullRect.x === 'number');
     obstacles.forEach((obs, i) => {
+      // 视窗裁剪（基础版）：像素坐标相交才绘制
+      if (needCull) {
+        const px = offsetX + obs.x * cellSize;
+        const py = offsetY + obs.y * cellSize;
+        const pw = obs.w * cellSize;
+        const ph = obs.h * cellSize;
+        const rx = cullRect.x, ry = cullRect.y, rw = cullRect.w, rh = cullRect.h;
+        if (px + pw < rx || rx + rw < px || py + ph < ry || ry + rh < py) {
+          return; // 不相交则跳过
+        }
+      }
       const rect = new PIXI.Graphics();
       rect.beginFill(0xdc2626, 0.5); // 深红填充，半透明
       rect.lineStyle(1, 0xdc2626, 0.85); // 深红描边
