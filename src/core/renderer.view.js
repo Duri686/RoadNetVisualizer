@@ -51,8 +51,12 @@ export function zoomImpl(renderer, scaleFactor = 1.0) {
   renderer.mainContainer.y = mouseY - worldPos.y * newScale;
   renderer.drawing.updateTransform(renderer.transform);
   renderer.interaction.updateTransform(renderer.transform);
+  // 标记最近交互时间（编程式缩放）
+  try { renderer._lastInteractionAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(); } catch (_) {}
   // 视窗变更后更新障碍物裁剪（交互中：延迟转纹理，降低卡顿）
   try { if (renderer.config?.culling?.enabled) renderer.refreshObstacleCulling(true); } catch (_) {}
+  // 缩放时失效网络层 RT，并在稳定后重建
+  try { if (renderer.invalidateNetworkRT) renderer.invalidateNetworkRT(true); } catch (_) {}
   updateAnimBallPosition(renderer);
 }
 
@@ -70,6 +74,8 @@ export function resetViewImpl(renderer) {
   renderer.interaction.updateTransform(renderer.transform);
   renderer.rebuildAllOverlays();
   try { if (renderer.config?.culling?.enabled) renderer.refreshObstacleCulling(); } catch (_) {}
+  // 重置视图后重建网络层 RT
+  try { renderer.invalidateNetworkRT && renderer.invalidateNetworkRT(true); } catch (_) {}
   updateAnimBallPosition(renderer);
   try { window.dispatchEvent(new CustomEvent('renderer-viewport-changed')); } catch (_) {}
 }
@@ -113,15 +119,21 @@ export function setupZoomAndPanImpl(renderer) {
       renderer.mainContainer.y = mouseY - worldPos.y * newScale;
       renderer.drawing.updateTransform(renderer.transform);
       renderer.interaction.updateTransform(renderer.transform);
+      // 标记最近交互时间（滚轮缩放）
+      try { renderer._lastInteractionAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(); } catch (_) {}
       renderer.rebuildAllOverlays();
       // 滚轮缩放：延迟转纹理
       try { if (renderer.config?.culling?.enabled) renderer.refreshObstacleCulling(true); } catch (_) {}
+      // 缩放时失效网络层 RT，并在稳定后重建
+      try { renderer.invalidateNetworkRT && renderer.invalidateNetworkRT(true); } catch (_) {}
       updateAnimBallPosition(renderer);
     }
   });
   view.addEventListener('mousedown', (e) => {
     renderer.viewState.isDragging = true;
     renderer.viewState.lastPosition = { x: e.clientX, y: e.clientY };
+    // 标记最近交互时间（按下）
+    try { renderer._lastInteractionAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(); } catch (_) {}
     view.style.cursor = 'grabbing';
   });
   view.addEventListener('mousemove', (e) => {
@@ -133,6 +145,8 @@ export function setupZoomAndPanImpl(renderer) {
       renderer.mainContainer.position.x += deltaX;
       renderer.mainContainer.position.y += deltaY;
       renderer.viewState.lastPosition = { x: e.clientX, y: e.clientY };
+      // 标记最近交互时间（拖拽中）
+      try { renderer._lastInteractionAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(); } catch (_) {}
       try { window.dispatchEvent(new CustomEvent('renderer-viewport-changed')); } catch (_) {}
     }
   });
@@ -140,8 +154,12 @@ export function setupZoomAndPanImpl(renderer) {
     renderer.viewState.isDragging = false;
     renderer.viewState.lastPosition = null;
     view.style.cursor = 'grab';
+    // 标记最近交互时间（拖拽结束）
+    try { renderer._lastInteractionAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(); } catch (_) {}
     // 在拖拽结束时刷新裁剪：立即重建纹理
     try { if (renderer.config?.culling?.enabled) renderer.refreshObstacleCulling(false); } catch (_) {}
+    // 拖拽结束后计划重建网络层 RT（延迟）
+    try { renderer.scheduleNetworkRTBuild && renderer.scheduleNetworkRTBuild(); } catch (_) {}
   };
   view.addEventListener('mouseup', endDrag);
   view.addEventListener('mouseleave', endDrag);
@@ -205,9 +223,13 @@ export function setupZoomAndPanImpl(renderer) {
           renderer.mainContainer.y = newY;
           renderer.drawing.updateTransform(renderer.transform);
           renderer.interaction.updateTransform(renderer.transform);
+          // 标记最近交互时间（触控捏合）
+          try { renderer._lastInteractionAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(); } catch (_) {}
           renderer.rebuildAllOverlays();
           // 触控捏合：延迟转纹理
-        try { if (renderer.config?.culling?.enabled) renderer.refreshObstacleCulling(true); } catch (_) {}
+          try { if (renderer.config?.culling?.enabled) renderer.refreshObstacleCulling(true); } catch (_) {}
+          // 捏合缩放时失效网络层 RT，并在稳定后重建
+          try { renderer.invalidateNetworkRT && renderer.invalidateNetworkRT(true); } catch (_) {}
           updateAnimBallPosition(renderer);
           try { window.dispatchEvent(new CustomEvent('renderer-viewport-changed')); } catch (_) {}
         }
@@ -235,6 +257,8 @@ export function setupZoomAndPanImpl(renderer) {
       renderer.mainContainer.position.x += dx;
       renderer.mainContainer.position.y += dy;
       renderer.viewState.lastPosition = { x: p.clientX, y: p.clientY };
+      // 标记最近交互时间（单指拖拽）
+      try { renderer._lastInteractionAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(); } catch (_) {}
       try { window.dispatchEvent(new CustomEvent('renderer-viewport-changed')); } catch (_) {}
     }
   };
@@ -253,6 +277,8 @@ export function setupZoomAndPanImpl(renderer) {
       renderer.viewState.isDragging = false;
       renderer.viewState.lastPosition = null;
       view.style.cursor = 'grab';
+      // 标记最近交互时间（触控结束）
+      try { renderer._lastInteractionAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(); } catch (_) {}
     }
   };
 

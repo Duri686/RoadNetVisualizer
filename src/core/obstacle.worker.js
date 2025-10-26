@@ -5,7 +5,7 @@
 
 import { SeededRandom, generateObstacles, isPointInObstacles } from '../utils/obstacleGeneration.js';
 import { euclideanDistance, lineIntersectsObstacleWithTurf } from '../utils/obstacleGeometry.js';
-import { createSpatialIndex, getObstaclesAlongLineDDA } from '../utils/spatialIndex.js';
+import { createSpatialIndex, getObstaclesAlongLineDDA, computeObstaclesSignature } from '../utils/spatialIndex.js';
 import {
   buildObstacleConnectionNetwork,
   buildDirectionalConnectionNetwork,
@@ -68,10 +68,38 @@ function buildLayer(width, height, obstacles, layerIndex, baseZones, mode = 'cen
       overlayBuildMs = Math.max(0, Math.round(tOv1 - tOv0));
     }
     
+    // 将网络边打包为 Float32Array，便于零拷贝传输与高效渲染
+    const packEdges = (nodes, edges) => {
+      if (!Array.isArray(nodes) || !Array.isArray(edges) || nodes.length === 0 || edges.length === 0) return null;
+      const idToNode = new Map(nodes.map(n => [n.id, n]));
+      const buf = [];
+      for (let i = 0; i < edges.length; i++) {
+        const e = edges[i];
+        const a = idToNode.get(e.from);
+        const b = idToNode.get(e.to);
+        if (!a || !b) continue;
+        buf.push(a.x, a.y, b.x, b.y);
+      }
+      return buf.length ? new Float32Array(buf) : null;
+    };
+
+    const edgesPacked = packEdges(result.nodes, result.edges);
+    // 打包节点为 Float32Array
+    const packNodes = (nodes) => {
+      if (!Array.isArray(nodes) || nodes.length === 0) return null;
+      const buf = new Float32Array(nodes.length * 2);
+      for (let i = 0, k = 0; i < nodes.length; i++) { const n = nodes[i]; buf[k++] = n.x; buf[k++] = n.y; }
+      return buf;
+    };
+    const nodesPacked = packNodes(result.nodes);
+
     return {
       layerIndex: 0,
       nodes: result.nodes,
       edges: result.edges,
+      // 新增：网络边/节点打包（可选）
+      edgesPacked,
+      nodesPacked,
       // 精简：省略大体积的 triangles/delaunay，后续需要可按需开启
       triangles: [],
       delaunay: null,
@@ -173,10 +201,36 @@ function buildLayer(width, height, obstacles, layerIndex, baseZones, mode = 'cen
     console.log(`[Layer ${layerIndex}] 边检查 ${edgePairsConsidered} | 候选均值 ${avgCand.toFixed(2)} | 穿障检查 ${obstacleChecks} | 命中 ${intersectHits}`);
   } catch (_) { /* ignore */ }
 
+  // 将网络边打包为 Float32Array，便于零拷贝传输与高效渲染
+  let edgesPacked = null;
+  let nodesPacked = null;
+  try {
+    if (nodes.length && edges.length) {
+      const idToNode = new Map(nodes.map(n => [n.id, n]));
+      const buf = [];
+      for (let i = 0; i < edges.length; i++) {
+        const e = edges[i];
+        const a = idToNode.get(e.from);
+        const b = idToNode.get(e.to);
+        if (!a || !b) continue;
+        buf.push(a.x, a.y, b.x, b.y);
+      }
+      edgesPacked = buf.length ? new Float32Array(buf) : null;
+    }
+    if (nodes.length) {
+      const np = new Float32Array(nodes.length * 2);
+      for (let i = 0, k = 0; i < nodes.length; i++) { const n = nodes[i]; np[k++] = n.x; np[k++] = n.y; }
+      nodesPacked = np;
+    }
+  } catch (_) { /* ignore */ }
+
   return {
     layerIndex,
     nodes,
     edges,
+    // 新增：网络边/节点打包（可选）
+    edgesPacked,
+    nodesPacked,
     zones,
     metadata: {
       nodeCount: nodes.length,
@@ -268,12 +322,16 @@ self.onmessage = function(e) {
         // 计时：生成障碍物
         const tOb0 = performance?.now ? performance.now() : Date.now();
         const obstacles = generateObstacles(width, height, obstacleCount || 0, rng);
+        // 计算障碍签名用于主线程索引复用
+        let obstaclesSignature = null;
+        try { obstaclesSignature = computeObstaclesSignature(obstacles); } catch (_) {}
         const tOb1 = performance?.now ? performance.now() : Date.now();
         const obstaclesMs = Math.max(0, Math.round(tOb1 - tOb0));
         self.postMessage({
           type: 'OBSTACLE_READY',
           obstacles,
-          count: obstacles.length
+          count: obstacles.length,
+          obstaclesSignature
         });
 
         // 计时：构建导航图
@@ -287,11 +345,26 @@ self.onmessage = function(e) {
         const totalEdges = layers.reduce((sum, l) => sum + l.edges.length, 0);
 
         // 使用 Transferable 传输 overlayPacked，降低结构化克隆开销
+        // 打包障碍为 Float32Array，减少结构化克隆成本
+        let obstaclesPacked = null;
+        try {
+          if (Array.isArray(obstacles) && obstacles.length) {
+            const op = new Float32Array(obstacles.length * 4);
+            for (let i = 0, k = 0; i < obstacles.length; i++) {
+              const o = obstacles[i];
+              op[k++] = o.x; op[k++] = o.y; op[k++] = o.w; op[k++] = o.h;
+            }
+            obstaclesPacked = op;
+          }
+        } catch (_) { /* ignore */ }
+
         const message = {
           type: 'COMPLETE',
           data: {
             layers,
             obstacles,
+            // 新增：障碍打包（可选）
+            obstaclesPacked,
             metadata: {
               width,
               height,
@@ -302,6 +375,8 @@ self.onmessage = function(e) {
               profile: (layers && layers[0] && layers[0].metadata) ? layers[0].metadata.profile : null,
               useSpatialIndex: options && options.useSpatialIndex !== false,
               generatedAt: new Date().toISOString(),
+              // 新增：障碍签名（供主线程 createSpatialIndex 复用缓存）
+              obstaclesSignature,
               workerProfile: {
                 obstaclesMs,
                 buildMs,
@@ -312,16 +387,29 @@ self.onmessage = function(e) {
         };
         const transferList = [];
         let transferBytes = 0;
+        let packedBytes = 0;
+        let nodesBytes = 0;
+        let obsBytes = 0;
         try {
           if (Array.isArray(layers)) {
             for (let i = 0; i < layers.length; i++) {
               const buf = layers[i]?.metadata?.overlayBase?.edgesPacked?.buffer;
               if (buf && buf.byteLength) { transferList.push(buf); transferBytes += buf.byteLength; }
+              const packed = layers[i]?.edgesPacked;
+              if (packed && packed.buffer && packed.byteLength) {
+                transferList.push(packed.buffer);
+                transferBytes += packed.byteLength;
+                packedBytes += packed.byteLength;
+              }
+              const nbuf = layers[i]?.nodesPacked?.buffer;
+              if (nbuf && nbuf.byteLength) { transferList.push(nbuf); transferBytes += nbuf.byteLength; nodesBytes += nbuf.byteLength; }
             }
           }
+          const obuf = obstaclesPacked && obstaclesPacked.buffer;
+          if (obuf && obuf.byteLength) { transferList.push(obuf); transferBytes += obuf.byteLength; obsBytes += obuf.byteLength; }
         } catch (_) { /* 忽略收集失败 */ }
         try {
-          console.log(`[Transfer] buffers=${transferList.length} | bytes=${transferBytes}`);
+          console.log(`[Transfer] buffers=${transferList.length} | bytes=${transferBytes} | edgesPackedBytes=${packedBytes} | nodesPackedBytes=${nodesBytes} | obstaclesPackedBytes=${obsBytes}`);
         } catch (_) { /* ignore */ }
         self.postMessage(message, transferList);
 

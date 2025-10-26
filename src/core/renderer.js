@@ -70,6 +70,16 @@ class Renderer {
     // 初始化子模块
     this.drawing = new RendererDrawing(this.config, this.transform);
     this.interaction = new RendererInteraction(this.config, this.transform, this.drawing);
+
+    // 网络层静态缓存（RenderTexture）
+    this._networkCache = null; // { items: [{layerIndex, edgesSprite, nodesSprite}], scaleAtBuild }
+    this._netTimer = null;
+    this._netScheduleScale = 1;
+    // 调度/去重状态（用于稳定期判定与去抖）
+    this._netSchedulePan = { x: 0, y: 0 }; // 记录调度时的主容器平移
+    this._netLastBuiltAt = 0;              // 上次构建时间戳
+    this._netLastBuiltScale = 1;           // 上次构建时的缩放
+    this._lastInteractionAt = 0;           // 最近一次交互的时间戳（wheel/drag/pinch）
   }
 
   /**
@@ -323,6 +333,8 @@ class Renderer {
    */
   resize(width, height) {
     if (this.app) {
+      // 尺寸变化前先失效网络层缓存，避免旧缓存参与布局造成错位
+      try { this.invalidateNetworkRT(false); } catch (_) {}
       this.app.renderer.resize(width, height);
       
       // 如果有数据，则重新渲染以适应新尺寸并居中
@@ -347,6 +359,9 @@ class Renderer {
         this.setupInteraction();
         // 重新应用可见性
         this.applyVisibilityFlags();
+
+        // 尺寸变化后，计划重建网络层静态缓存
+        try { this.scheduleNetworkRTBuild(); } catch (_) {}
 
         // 恢复交互状态：保留起点，清除终点与动画，确保 hover 预览可用
         if (this.interaction) {
@@ -378,6 +393,125 @@ class Renderer {
         }
       }
     }
+  }
+
+  /**
+   * 计划在视图稳定后构建网络层 RenderTexture 缓存
+   */
+  scheduleNetworkRTBuild() {
+    try { if (!this.config?.caching?.networkLayers) return; } catch (_) { return; }
+    if (!Array.isArray(this.layerContainers) || this.layerContainers.length === 0) return;
+    // 当网络层整体不可见时不调度
+    if ((this.flags?.networkEdgesVisible === false) && (this.flags?.networkNodesVisible === false)) return;
+    const delay = Math.max(0, this.config.caching?.networkStableDelayMs ?? 160);
+    const curScale = this.transform?.scale || 1;
+    const pan = { x: this.mainContainer?.x || 0, y: this.mainContainer?.y || 0 };
+    // 若已有定时器且缩放/平移与已记录值几乎一致，则不重复设置
+    const scaleClose = Math.abs(curScale - (this._netScheduleScale || 1)) <= 1e-3;
+    const panClose = Math.abs(pan.x - (this._netSchedulePan?.x || 0)) < 1 && Math.abs(pan.y - (this._netSchedulePan?.y || 0)) < 1;
+    if (!this._netTimer || !(scaleClose && panClose)) {
+      if (this._netTimer) { try { clearTimeout(this._netTimer); } catch (_) {} this._netTimer = null; }
+      this._netScheduleScale = curScale;
+      this._netSchedulePan = pan;
+      this._netTimer = setTimeout(() => {
+        try { this.buildNetworkRTNow(); } catch (e) { console.debug('[NetworkRT] build skipped:', e); }
+      }, delay);
+    }
+  }
+
+  /**
+   * 立即构建网络层 RenderTexture（若视图稳定，且未拖拽中）
+   */
+  buildNetworkRTNow() {
+    if (!this.config?.caching?.networkLayers) return;
+    if (!this.app || !Array.isArray(this.layerContainers)) return;
+    if (this.viewState?.isDragging) { this.scheduleNetworkRTBuild(); return; }
+    // 更严格的稳定性：缩放阈值收紧、增加平移阈值与去抖
+    const th = Math.max(0.001, Math.min(0.02, this.config.caching?.networkScaleThreshold ?? 0.06));
+    const panTh = Math.max(1, this.config.caching?.networkPanThresholdPx ?? 4);
+    const curScale = this.transform?.scale || 1;
+    const delay = Math.max(0, this.config.caching?.networkStableDelayMs ?? 160);
+    const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    // 保护：距离最近交互不足稳定期则延后
+    if (now - (this._lastInteractionAt || 0) < delay) {
+      return this.scheduleNetworkRTBuild();
+    }
+    if (this._netScheduleScale > 0 && Math.abs(curScale - this._netScheduleScale) / this._netScheduleScale > th) {
+      // 缩放变化过大，延后构建
+      return this.scheduleNetworkRTBuild();
+    }
+    // 平移变化过大，延后构建（按内容像素判断）
+    const pan = { x: this.mainContainer?.x || 0, y: this.mainContainer?.y || 0 };
+    const scale = this.transform?.scale || 1;
+    const dx = Math.abs(pan.x - (this._netSchedulePan?.x || 0)) / Math.max(1, scale);
+    const dy = Math.abs(pan.y - (this._netSchedulePan?.y || 0)) / Math.max(1, scale);
+    if (dx > panTh || dy > panTh) {
+      return this.scheduleNetworkRTBuild();
+    }
+    // 去抖：短时间内重复构建且缩放几乎相同则跳过
+    if ((now - (this._netLastBuiltAt || 0)) < 300 && Math.abs(curScale - (this._netLastBuiltScale || 0)) <= 1e-3) {
+      return; // 跳过重复构建
+    }
+    // 当网络层整体不可见时不构建
+    if ((this.flags?.networkEdgesVisible === false) && (this.flags?.networkNodesVisible === false)) return;
+    // 先清理旧缓存
+    this.invalidateNetworkRT(false);
+    // 使用 Pixi 自带 cacheAsBitmap（避免坐标空间问题）
+    const items = [];
+    for (let i = 0; i < this.layerContainers.length; i++) {
+      const layerC = this.layerContainers[i];
+      if (!layerC) continue;
+      const edgesC = layerC.children?.find(ch => ch.name === 'network-edges');
+      const nodesC = layerC.children?.find(ch => ch.name === 'network-nodes');
+      if (!edgesC && !nodesC) continue;
+      try {
+        if (edgesC) edgesC.cacheAsBitmap = true;
+        if (nodesC) nodesC.cacheAsBitmap = true;
+        items.push({ layerIndex: i, edgesRef: edgesC || null, nodesRef: nodesC || null });
+      } catch (e) {
+        console.debug('[NetworkRT] cacheAsBitmap failed:', e);
+      }
+    }
+    this._networkCache = { items, scaleAtBuild: curScale };
+    this._netLastBuiltAt = now;
+    this._netLastBuiltScale = curScale;
+    try { console.log(`[NetworkRT] cached via cacheAsBitmap: layers=${items.length} @scale=${curScale.toFixed(3)}`); } catch(_){ }
+  }
+
+  /**
+   * 失效并销毁网络层 RenderTexture 缓存
+   * @param {boolean} reschedule 是否重新计划构建
+   */
+  invalidateNetworkRT(reschedule = true) {
+    if (this._netTimer) { try { clearTimeout(this._netTimer); } catch (_) {} this._netTimer = null; }
+    const c = this._networkCache;
+    if (c && Array.isArray(c.items)) {
+      for (const it of c.items) {
+        // 新结构：cacheAsBitmap
+        if (it && (it.edgesRef || it.nodesRef)) {
+          try { if (it.edgesRef) it.edgesRef.cacheAsBitmap = false; } catch (_) {}
+          try { if (it.nodesRef) it.nodesRef.cacheAsBitmap = false; } catch (_) {}
+        }
+        // 旧结构：RT 容器
+        if (it && it.container) {
+          try { this.layerContainers?.[it.layerIndex]?.removeChild(it.container); } catch (_) {}
+          try { it.container.destroy({ children: true }); } catch (_) {}
+        }
+      }
+      // 恢复源容器可见
+      try {
+        for (let i = 0; i < this.layerContainers.length; i++) {
+          const layerC = this.layerContainers[i];
+          if (!layerC) continue;
+          const edgesC = layerC.children?.find(ch => ch.name === 'network-edges');
+          const nodesC = layerC.children?.find(ch => ch.name === 'network-nodes');
+          if (edgesC) edgesC.visible = true;
+          if (nodesC) nodesC.visible = true;
+        }
+      } catch (_) {}
+    }
+    this._networkCache = null;
+    if (reschedule) this.scheduleNetworkRTBuild();
   }
   
   /**

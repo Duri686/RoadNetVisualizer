@@ -75,6 +75,34 @@ class WorkerManager {
 
         case 'COMPLETE':
           this.isProcessing = false;
+          // 主线程统计接收的 edgesPacked（TypedArray）大小与边数
+          try {
+            const layers = data && data.layers ? data.layers : [];
+            let bufCount = 0, byteSum = 0, edgeSum = 0;
+            let nodeBufs = 0, nodeBytes = 0, nodeCount = 0;
+            for (let i = 0; i < layers.length; i++) {
+              const packed = layers[i] && layers[i].edgesPacked;
+              if (packed && packed.buffer && typeof packed.byteLength === 'number') {
+                bufCount++;
+                byteSum += packed.byteLength;
+                edgeSum += Math.floor(packed.length / 4);
+              }
+              const np = layers[i] && layers[i].nodesPacked;
+              if (np && np.buffer && typeof np.byteLength === 'number') {
+                nodeBufs++;
+                nodeBytes += np.byteLength;
+                nodeCount += Math.floor(np.length / 2);
+              }
+            }
+            const kb = byteSum > 0 ? Math.round(byteSum / 1024) : 0;
+            console.log(`[Main] received edgesPacked: layers=${layers.length} | buffers=${bufCount} | edges=${edgeSum} | ${kb} KB`);
+            const nkb = nodeBytes > 0 ? Math.round(nodeBytes / 1024) : 0;
+            console.log(`[Main] received nodesPacked: buffers=${nodeBufs} | nodes=${nodeCount} | ${nkb} KB`);
+            const ob = data && data.obstaclesPacked;
+            const obKb = ob && ob.byteLength ? Math.round(ob.byteLength / 1024) : 0;
+            const obCount = ob && ob.length ? Math.floor(ob.length / 4) : 0;
+            if (ob) console.log(`[Main] received obstaclesPacked: rects=${obCount} | ${obKb} KB`);
+          } catch (_) { /* ignore */ }
           console.log('✅ Worker completed processing:', data.metadata);
           if (this.callbacks.onComplete) {
             this.callbacks.onComplete(data);

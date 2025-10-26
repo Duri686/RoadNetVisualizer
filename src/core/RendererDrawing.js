@@ -15,6 +15,7 @@ export class RendererDrawing {
     this._labelBitmapReady = false;
   }
 
+
   /**
    * 基于当前缩放计算虚线 dash/gap（保持屏幕视觉稳定）
    * 目标：在屏幕上约等于 8px/6px，按 1/scale 线性缩放并限制范围
@@ -244,8 +245,27 @@ export class RendererDrawing {
       this.rebuildOverlayBase(overlayContainer, overlayAny, offsetX, offsetY, cellSize);
     }
 
-    // 渲染边（合批到单一 Graphics，减少 draw calls）
-    if (Array.isArray(layer.edges) && layer.edges.length) {
+    // 渲染边：优先使用 edgesPacked，失败回退到对象数组
+    const preferPacked = !!(this.config && this.config.performance && this.config.performance.usePackedEdges !== false);
+    const hasPacked = layer && layer.edgesPacked instanceof Float32Array && layer.edgesPacked.length > 0;
+    let usedPacked = false;
+    const tE0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    if (preferPacked && hasPacked) {
+      try {
+        const g = this.renderEdgesPacked(layer.edgesPacked, offsetX, offsetY, cellSize, {
+          width: isVoronoi ? Math.max(1.5, this.config.edgeWidth) : this.config.edgeWidth,
+          color: edgeColor,
+          alpha: edgeAlpha,
+        });
+        if (g) {
+          usedPacked = true;
+          if (isVoronoi) { voronoiContainer.addChild(g); } else { networkEdgesContainer.addChild(g); }
+        }
+      } catch (_) {
+        usedPacked = false;
+      }
+    }
+    if (!usedPacked && Array.isArray(layer.edges) && layer.edges.length) {
       const edgeGraphics = new PIXI.Graphics();
       edgeGraphics.lineStyle({
         width: isVoronoi ? Math.max(1.5, this.config.edgeWidth) : this.config.edgeWidth,
@@ -264,15 +284,29 @@ export class RendererDrawing {
         edgeGraphics.moveTo(x1, y1);
         edgeGraphics.lineTo(x2, y2);
       }
-      if (isVoronoi) {
-        voronoiContainer.addChild(edgeGraphics);
-      } else {
-        networkEdgesContainer.addChild(edgeGraphics);
-      }
+      if (isVoronoi) { voronoiContainer.addChild(edgeGraphics); } else { networkEdgesContainer.addChild(edgeGraphics); }
     }
+    const tE1 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    try {
+      const edgeCount = usedPacked ? Math.floor(layer.edgesPacked.length / 4) : (Array.isArray(layer.edges) ? layer.edges.length : 0);
+      const usedMs = Math.max(0, Math.round(tE1 - tE0));
+      console.log(`[Render] edgesPacked used=${usedPacked} | edges=${edgeCount} | drawMs=${usedMs}`);
+    } catch (_) {}
 
-    // 渲染节点（合批到单一 Graphics）
-    if (Array.isArray(layer.nodes) && layer.nodes.length) {
+    // 渲染节点：优先使用 nodesPacked，失败回退到对象数组
+    const preferNodesPacked = !!(this.config && this.config.performance && this.config.performance.usePackedNodes !== false);
+    const hasNodesPacked = layer && layer.nodesPacked instanceof Float32Array && layer.nodesPacked.length > 0;
+    let usedNodesPacked = false;
+    const tN0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    if (preferNodesPacked && hasNodesPacked) {
+      try {
+        const g = this.renderNodesPacked(layer.nodesPacked, offsetX, offsetY, cellSize, {
+          color: nodeColor, alpha: nodeAlpha, radius: nodeRadius,
+        });
+        if (g) { usedNodesPacked = true; networkNodesContainer.addChild(g); }
+      } catch (_) { usedNodesPacked = false; }
+    }
+    if (!usedNodesPacked && Array.isArray(layer.nodes) && layer.nodes.length) {
       const nodesG = new PIXI.Graphics();
       nodesG.beginFill(nodeColor, nodeAlpha);
       for (let i = 0; i < layer.nodes.length; i++) {
@@ -286,6 +320,12 @@ export class RendererDrawing {
       nodesG.endFill();
       networkNodesContainer.addChild(nodesG);
     }
+    const tN1 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    try {
+      const nCount = usedNodesPacked ? Math.floor(layer.nodesPacked.length / 2) : (Array.isArray(layer.nodes) ? layer.nodes.length : 0);
+      const usedMs = Math.max(0, Math.round(tN1 - tN0));
+      console.log(`[Render] nodesPacked used=${usedNodesPacked} | nodes=${nCount} | drawMs=${usedMs}`);
+    } catch (_) {}
 
     // 组装分组容器
     container.addChild(overlayContainer);
@@ -452,3 +492,65 @@ export class RendererDrawing {
     };
   }
 }
+
+// 优化：使用 Float32Array 的打包边进行合批绘制
+RendererDrawing.prototype.renderEdgesPacked = function(edgesPacked, offsetX, offsetY, cellSize, style) {
+  if (!(edgesPacked instanceof Float32Array) || edgesPacked.length < 4) return null;
+  const g = new PIXI.Graphics();
+  const width = style && typeof style.width === 'number' ? style.width : this.config.edgeWidth;
+  const color = style && typeof style.color === 'number' ? style.color : (this.config.edgeColor || 0xffffff);
+  const alpha = style && typeof style.alpha === 'number' ? style.alpha : (this.config.edgeAlpha || 1);
+  g.lineStyle({ width, color, alpha });
+  for (let i = 0; i + 3 < edgesPacked.length; i += 4) {
+    const x1 = offsetX + edgesPacked[i] * cellSize;
+    const y1 = offsetY + edgesPacked[i + 1] * cellSize;
+    const x2 = offsetX + edgesPacked[i + 2] * cellSize;
+    const y2 = offsetY + edgesPacked[i + 3] * cellSize;
+    g.moveTo(x1, y1);
+    g.lineTo(x2, y2);
+  }
+  return g;
+};
+
+// 使用 Float32Array 的打包节点进行合批绘制
+RendererDrawing.prototype.renderNodesPacked = function(nodesPacked, offsetX, offsetY, cellSize, style) {
+  if (!(nodesPacked instanceof Float32Array) || nodesPacked.length < 2) return null;
+  const color = style && typeof style.color === 'number' ? style.color : (this.config.nodeColor || 0xffffff);
+  const alpha = style && typeof style.alpha === 'number' ? style.alpha : (this.config.nodeAlpha || 1);
+  const radius = style && typeof style.radius === 'number' ? style.radius : (this.config.nodeRadius || 2);
+  const g = new PIXI.Graphics();
+  g.beginFill(color, alpha);
+  for (let i = 0; i + 1 < nodesPacked.length; i += 2) {
+    const x = offsetX + nodesPacked[i] * cellSize;
+    const y = offsetY + nodesPacked[i + 1] * cellSize;
+    g.drawCircle(x, y, radius);
+  }
+  g.endFill();
+  return g;
+};
+
+// 使用 Float32Array 的打包障碍合批绘制（供渲染主流程调用）
+RendererDrawing.prototype.renderObstaclesPacked = function(obstaclesPacked, offsetX, offsetY, cellSize, cullRect) {
+  if (!(obstaclesPacked instanceof Float32Array) || obstaclesPacked.length < 4) return null;
+  const g = new PIXI.Graphics();
+  g.beginFill(0xdc2626, 0.5);
+  g.lineStyle(1, 0xdc2626, 0.85);
+  const needCull = !!(cullRect && typeof cullRect.x === 'number');
+  for (let i = 0; i + 3 < obstaclesPacked.length; i += 4) {
+    const ox = obstaclesPacked[i];
+    const oy = obstaclesPacked[i + 1];
+    const ow = obstaclesPacked[i + 2];
+    const oh = obstaclesPacked[i + 3];
+    const px = offsetX + ox * cellSize;
+    const py = offsetY + oy * cellSize;
+    const pw = ow * cellSize;
+    const ph = oh * cellSize;
+    if (needCull) {
+      const rx = cullRect.x, ry = cullRect.y, rw = cullRect.w, rh = cullRect.h;
+      if (px + pw < rx || rx + rw < px || py + ph < ry || ry + rh < py) continue;
+    }
+    g.drawRect(px, py, pw, ph);
+  }
+  g.endFill();
+  return g;
+};

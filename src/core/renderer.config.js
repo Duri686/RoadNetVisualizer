@@ -96,6 +96,12 @@ export function createRendererConfig() {
     caching: {
       // 静态层 RenderTexture 缓存（修复后默认关闭，需人工开启）
       staticLayers: false,
+      // 网络层（节点+边）静态缓存，合批后转 RenderTexture（默认关闭）
+      networkLayers: true,
+      // 视图稳定期（毫秒）后再生成缓存，避免频繁抖动
+      networkStableDelayMs: 160,
+      // 缩放阈值（相对比例变化），超过则认为失效需要重建
+      networkScaleThreshold: 0.06,
     },
     culling: {
       // 视窗裁剪（仅绘制可见区域附近图元）
@@ -110,6 +116,15 @@ export function createRendererConfig() {
       useBitmapText: true,
       // 小于该像素尺寸（cellSize*scale）时不绘制编号
       minPixelForLabel: 0,
+    },
+    // 性能兼容开关
+    performance: {
+      // 打包边渲染（'auto' 表示若存在 edgesPacked 则优先使用；true 强制；false 关闭）
+      usePackedEdges: 'auto',
+      // 打包节点渲染（'auto' 表示若存在 nodesPacked 则优先使用；true 强制；false 关闭）
+      usePackedNodes: 'auto',
+      // 打包障碍物渲染（'auto' 表示若存在 obstaclesPacked 则优先使用；true 强制；false 关闭）
+      usePackedObstacles: 'auto',
     },
   };
 }

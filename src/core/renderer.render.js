@@ -34,7 +34,9 @@ export function renderRoadNetImpl(renderer, navGraphData) {
   try {
     const tIdx0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
     if (Array.isArray(obstacles) && obstacles.length > 0) {
-      navGraphData.spatialIndex = createSpatialIndex(width, height, obstacles);
+      const sig = metadata && metadata.obstaclesSignature ? metadata.obstaclesSignature : undefined;
+      if (sig) { try { console.log(`[SpatialIndex] using signature=${sig}`); } catch (_) {} }
+      navGraphData.spatialIndex = createSpatialIndex(width, height, obstacles, undefined, sig);
     } else {
       navGraphData.spatialIndex = null;
     }
@@ -68,12 +70,21 @@ export function renderRoadNetImpl(renderer, navGraphData) {
     const cullRect = cullingEnabled ? { x: -margin, y: -margin, w: renderer.app.screen.width + margin * 2, h: renderer.app.screen.height + margin * 2 } : null;
     const cacheKey = `${obstacles?.length || 0}|${offsetX}|${offsetY}|${cellSize}`;
     const canCache = !!(cfg.caching && cfg.caching.staticLayers === true); // 默认关闭，开关控制
+    // 优先使用 obstaclesPacked（如存在且未被禁用）
+    const preferPackedObs = !!(cfg.performance && cfg.performance.usePackedObstacles !== false);
+    const obstaclesPacked = (preferPackedObs && navGraphData && navGraphData.obstaclesPacked instanceof Float32Array)
+      ? navGraphData.obstaclesPacked : null;
     if (canCache && renderer._obstacleCache && renderer._obstacleCache.key === cacheKey && renderer._obstacleCache.obsRef === obstacles && renderer._obstacleCache.sprite) {
       renderer.obstacleLayer = renderer._obstacleCache.sprite;
       renderer.mainContainer.addChild(renderer.obstacleLayer);
       try { console.log('[Cache] 复用障碍物静态纹理'); } catch (_) {}
     } else if (canCache) {
-      const obstacleContainer = renderer.drawing.renderObstacles(obstacles, offsetX, offsetY, cellSize, cullRect);
+      const g = obstaclesPacked
+        ? renderer.drawing.renderObstaclesPacked(obstaclesPacked, offsetX, offsetY, cellSize, cullRect)
+        : renderer.drawing.renderObstacles(obstacles, offsetX, offsetY, cellSize, cullRect);
+      // 统一封装为容器，便于生成纹理
+      const obstacleContainer = new PIXI.Container();
+      if (g) obstacleContainer.addChild(g);
       let usedSprite = false;
       try {
         const worldBounds = obstacleContainer.getBounds?.() || { x: 0, y: 0, width: 1, height: 1 };
@@ -95,9 +106,13 @@ export function renderRoadNetImpl(renderer, navGraphData) {
         try { obstacleContainer.destroy({ children: true }); } catch (_) {}
       }
     } else {
-      const obstacleContainer = renderer.drawing.renderObstacles(obstacles, offsetX, offsetY, cellSize, cullRect);
-      renderer.obstacleLayer = obstacleContainer;
-      renderer.mainContainer.addChild(obstacleContainer);
+      const g = obstaclesPacked
+        ? renderer.drawing.renderObstaclesPacked(obstaclesPacked, offsetX, offsetY, cellSize, cullRect)
+        : renderer.drawing.renderObstacles(obstacles, offsetX, offsetY, cellSize, cullRect);
+      const container = new PIXI.Container();
+      if (g) container.addChild(g);
+      renderer.obstacleLayer = container;
+      renderer.mainContainer.addChild(container);
     }
   }
   const tOb1 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
@@ -134,6 +149,9 @@ export function renderRoadNetImpl(renderer, navGraphData) {
   renderer.rebuildAllOverlays();
   try { window.dispatchEvent(new CustomEvent('renderer-viewport-changed')); } catch (_) {}
   const tSetup1 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+
+  // 若开启网络层静态缓存，则在视图稳定后计划构建
+  try { renderer.scheduleNetworkRTBuild && renderer.scheduleNetworkRTBuild(); } catch (_) {}
 
   // 设置导航图数据并启用交互
   const tInter0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();

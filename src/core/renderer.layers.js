@@ -10,14 +10,17 @@ export function applyVisibilityFlagsImpl(renderer) {
       const overlay = layerC.children?.find(ch => ch.name === 'overlay-base');
       const nEdges = layerC.children?.find(ch => ch.name === 'network-edges');
       const nNodes = layerC.children?.find(ch => ch.name === 'network-nodes');
+      const nRT = layerC.children?.find(ch => ch.name === 'network-rt');
       const voronoi = layerC.children?.find(ch => ch.name === 'voronoi-skeleton');
 
       if (overlay) overlay.visible = layerVisible && (renderer.flags.baseOverlayVisible !== false);
       if (nEdges) nEdges.visible = layerVisible && (renderer.flags.networkEdgesVisible !== false);
       if (nNodes) nNodes.visible = layerVisible && (renderer.flags.networkNodesVisible !== false);
+      // RT 容器在可见性上等价于（边 或 节点）可见
+      if (nRT) nRT.visible = layerVisible && ((renderer.flags.networkEdgesVisible !== false) || (renderer.flags.networkNodesVisible !== false));
       if (voronoi) voronoi.visible = layerVisible && (renderer.flags.voronoiVisible !== false);
 
-      layerC.visible = !!(overlay?.visible || nEdges?.visible || nNodes?.visible || voronoi?.visible);
+      layerC.visible = !!(overlay?.visible || nEdges?.visible || nNodes?.visible || nRT?.visible || voronoi?.visible);
     });
   }
 }
@@ -81,6 +84,8 @@ export function clearCanvasImpl(renderer) {
     renderer.mainContainer.removeChildren();
     renderer.layerContainers = [];
   }
+  // 释放网络层静态缓存（如存在）
+  try { if (renderer.invalidateNetworkRT) renderer.invalidateNetworkRT(false); } catch (_) {}
   // 释放障碍物静态缓存纹理与引用，避免内存泄漏
   try {
     if (renderer._obstacleCache) {
@@ -90,6 +95,9 @@ export function clearCanvasImpl(renderer) {
       renderer._obstacleCache = null;
     }
   } catch (_) { /* ignore */ }
+  // 释放已持有的数据引用（含 TypedArray），便于 GC
+  // 注意：不要在此处修改 renderer.roadNetData（尤其是 TypedArray），
+  // 否则在 resize 过程中重用数据会丢失 packed 内容与 overlay。
   renderer.currentLayer = null;
   renderer.showAllLayers = false;
   renderer.roadNetData = null;
@@ -101,9 +109,14 @@ export function rebuildAllOverlaysImpl(renderer) {
   renderer.layerContainers.forEach((layerC, idx) => {
     const overlay = layerC.children?.find(ch => ch.name === 'overlay-base');
     if (!overlay) return;
-    const edges = renderer.roadNetData.layers?.[idx]?.metadata?.overlayBase?.edges || [];
-    if (edges && edges.length && renderer.drawing && typeof renderer.drawing.rebuildOverlayBase === 'function') {
-      renderer.drawing.rebuildOverlayBase(overlay, edges, offsetX, offsetY, cellSize);
+    const base = renderer.roadNetData.layers?.[idx]?.metadata?.overlayBase;
+    const edges = base && Array.isArray(base.edges) ? base.edges : null;
+    const packed = base && base.edgesPacked instanceof Float32Array ? base.edgesPacked : null;
+    const any = (packed && packed.length) ? packed : edges;
+    if (any && ((Array.isArray(any) && any.length) || (any instanceof Float32Array && any.length))) {
+      if (renderer.drawing && typeof renderer.drawing.rebuildOverlayBase === 'function') {
+        renderer.drawing.rebuildOverlayBase(overlay, any, offsetX, offsetY, cellSize);
+      }
     }
   });
 }
