@@ -318,7 +318,20 @@ class App {
               ? (prof.candidatesAccum / prof.edgesChecked).toFixed(1)
               : '-';
           const onOff = meta.useSpatialIndex ? '启用' : '关闭';
-          profText = ` | 索引:${onOff} | 索引构建 ${prof.indexBuildMs} ms | 候选均值 ${avgCandidates}/边`;
+          // 细分计时（若存在）
+          const parts = [`索引:${onOff}`, `索引构建 ${prof.indexBuildMs} ms`, `候选均值 ${avgCandidates}/边`];
+          const addIfNum = (label, v) => {
+            if (typeof v === 'number' && isFinite(v) && v >= 0) parts.push(`${label} ${Math.round(v)} ms`);
+          };
+          addIfNum('提取', prof.tExtractMs);
+          addIfNum('Delaunay', prof.tDelaunayMs);
+          addIfNum('节点', prof.tNodeBuildMs);
+          addIfNum('边遍历', prof.tEdgeIterMs);
+          addIfNum('候选查询', prof.tPoolQueryMs);
+          addIfNum('穿障', prof.tLosMs);
+          if (typeof prof.edgesChecked === 'number') parts.push(`边检查 ${prof.edgesChecked}`);
+          if (typeof prof.losChecks === 'number') parts.push(`穿障检查 ${prof.losChecks}`);
+          profText = ' | ' + parts.join(' | ');
         }
         // 单次渲染测时（避免上方重复渲染）
         const tRender0 = performance?.now ? performance.now() : Date.now();

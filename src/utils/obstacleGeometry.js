@@ -5,6 +5,33 @@
 
 import * as turf from '@turf/turf';
 
+// —— 快速直线-矩形相交（Liang–Barsky 裁剪）——
+// 仅适用于轴对齐矩形（AABB），满足当前障碍物模型。
+function lineIntersectsAARect(ax, ay, bx, by, rect) {
+  // 快速包含：两端均在内部，视为相交/包含
+  const L = rect.x, R = rect.x + rect.w;
+  const T = rect.y, B = rect.y + rect.h;
+  const inside = (x, y) => x >= L && x <= R && y >= T && y <= B;
+  if (inside(ax, ay) && inside(bx, by)) return true;
+
+  let t0 = 0; let t1 = 1;
+  const dx = bx - ax; const dy = by - ay;
+  const clip = (p, q) => {
+    if (p === 0) return q < 0 ? false : true; // 平行：若在外侧则不相交
+    const r = q / p;
+    if (p < 0) { if (r > t1) return false; if (r > t0) t0 = r; }
+    else { if (r < t0) return false; if (r < t1) t1 = r; }
+    return true;
+  };
+  // 左、右、上、下 边界
+  if (!clip(-dx, ax - L)) return false;
+  if (!clip( dx, R - ax)) return false;
+  if (!clip(-dy, ay - T)) return false;
+  if (!clip( dy, B - ay)) return false;
+  // 有重叠区间则相交（含端点/内部）
+  return t0 <= t1 && (t0 >= 0 || t1 >= 0) && (t0 <= 1 || t1 <= 1);
+}
+
 /**
  * 欧几里得距离
  * @param {Object} p1 - 点1 {x, y}
@@ -28,33 +55,8 @@ export function euclideanDistance(p1, p2) {
  * @returns {boolean} 是否相交
  */
 export function lineIntersectsObstacleWithTurf(x1, y1, x2, y2, obstacle) {
-  try {
-    // 创建线段（LineString）
-    const line = turf.lineString([[x1, y1], [x2, y2]]);
-    
-    // 创建障碍物矩形（Polygon）
-    // 注意：turf 多边形需要闭合，第一个点和最后一个点相同
-    const obstaclePolygon = turf.polygon([[
-      [obstacle.x, obstacle.y],                      // 左上
-      [obstacle.x + obstacle.w, obstacle.y],         // 右上
-      [obstacle.x + obstacle.w, obstacle.y + obstacle.h], // 右下
-      [obstacle.x, obstacle.y + obstacle.h],         // 左下
-      [obstacle.x, obstacle.y]                       // 闭合到左上
-    ]]);
-    
-    // 检测线段是否与多边形相交
-    const intersects = turf.booleanIntersects(line, obstaclePolygon);
-    
-    // 检测线段是否被多边形包含
-    const contained = turf.booleanContains(obstaclePolygon, line);
-    
-    // 如果相交或被包含，返回 true
-    return intersects || contained;
-  } catch (error) {
-    // 如果 turf 计算出错，使用保守策略：认为不相交
-    console.warn('Turf intersection check failed:', error);
-    return false;
-  }
+  // 当前障碍为轴对齐矩形，直接采用快速算法（性能最佳）
+  return lineIntersectsAARect(x1, y1, x2, y2, obstacle);
 }
 
 /**

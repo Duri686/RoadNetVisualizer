@@ -6,19 +6,27 @@ import { isPointInObstacles } from '../obstacleGeneration.js';
 import { createSpatialIndex, getPotentialObstacles } from '../spatialIndex.js';
 
 export function buildVoronoiSkeleton(width, height, obstacles, options = { useSpatialIndex: true }) {
+  // 计时：提取顶点/边界
+  const tExtract0 = performance?.now ? performance.now() : Date.now();
   const obstacleVertices = extractAllObstacleVertices(obstacles);
   const boundaryVertices = getBoundaryVertices(width, height);
   const allVertices = [...obstacleVertices, ...boundaryVertices];
+  const tExtract1 = performance?.now ? performance.now() : Date.now();
   if (allVertices.length < 3) {
     return { nodes: [], edges: [], triangles: [], delaunay: null };
   }
 
   const pts = allVertices.map(v => [v.x, v.y]);
+  // 计时：Delaunay 构建
+  const tDel0 = performance?.now ? performance.now() : Date.now();
   const delaunay = Delaunay.from(pts);
+  const tDel1 = performance?.now ? performance.now() : Date.now();
 
   // 标记自由三角形 & 计算外接圆心
   const triFree = [];
   const centers = [];
+  // 计时：标记自由三角形并计算圆心
+  const tNode0 = performance?.now ? performance.now() : Date.now();
   for (let t = 0; t < delaunay.triangles.length; t += 3) {
     const a = delaunay.triangles[t];
     const b = delaunay.triangles[t + 1];
@@ -31,6 +39,7 @@ export function buildVoronoiSkeleton(width, height, obstacles, options = { useSp
     triFree.push(!isPointInObstacles(cx, cy, obstacles));
     centers.push(computeCircumcenter(A.x, A.y, B.x, B.y, C.x, C.y));
   }
+  const tNode1 = performance?.now ? performance.now() : Date.now();
 
   const edges = [];
   const usedNodes = new Map();
@@ -47,7 +56,23 @@ export function buildVoronoiSkeleton(width, height, obstacles, options = { useSp
   const { halfedges } = delaunay;
   // 空间索引：减少穿障检测次数（功能等价，性能优化）
   const useSI = options && options.useSpatialIndex !== false;
-  const profile = { algorithm: 'voronoi', useSpatialIndex: useSI, indexBuildMs: 0, edgesChecked: 0, candidatesAccum: 0, obstaclesTotal: obstacles.length };
+  const profile = {
+    algorithm: 'voronoi',
+    useSpatialIndex: useSI,
+    indexBuildMs: 0,
+    edgesChecked: 0,
+    candidatesAccum: 0,
+    obstaclesTotal: obstacles.length,
+    // 新增细分计时
+    tExtractMs: Math.max(0, Math.round(tExtract1 - tExtract0)),
+    tDelaunayMs: Math.max(0, Math.round(tDel1 - tDel0)),
+    tNodeBuildMs: Math.max(0, Math.round(tNode1 - tNode0)),
+    tEdgeIterMs: 0,
+    tPoolQueryMs: 0,
+    tLosMs: 0,
+    losChecks: 0,
+    losFastReject: 0
+  };
   let sIndex = null;
   if (useSI) {
     const t0 = performance?.now ? performance.now() : Date.now();
@@ -55,6 +80,8 @@ export function buildVoronoiSkeleton(width, height, obstacles, options = { useSp
     const t1 = performance?.now ? performance.now() : Date.now();
     profile.indexBuildMs = Math.max(0, Math.round(t1 - t0));
   }
+  // 计时：边遍历（不含候选查询与穿障，将在末尾扣除）
+  const tIter0 = performance?.now ? performance.now() : Date.now();
   for (let e = 0; e < halfedges.length; e++) {
     const opp = halfedges[e];
     if (opp < 0 || e >= opp) continue;
@@ -71,12 +98,21 @@ export function buildVoronoiSkeleton(width, height, obstacles, options = { useSp
     const [S, T] = clipped;
 
     let blocked = false;
+    // 候选查询
+    const tPool0 = performance?.now ? performance.now() : Date.now();
     const pool = useSI ? getPotentialObstacles(sIndex, S.x, S.y, T.x, T.y) : obstacles;
+    const tPool1 = performance?.now ? performance.now() : Date.now();
+    profile.tPoolQueryMs += (tPool1 - tPool0);
     profile.edgesChecked += 1;
     profile.candidatesAccum += pool.length;
+    // 穿障检测
+    const tLos0 = performance?.now ? performance.now() : Date.now();
     for (const obs of pool) {
+      profile.losChecks += 1;
       if (lineIntersectsObstacleWithTurf(S.x, S.y, T.x, T.y, obs)) { blocked = true; break; }
     }
+    const tLos1 = performance?.now ? performance.now() : Date.now();
+    profile.tLosMs += (tLos1 - tLos0);
     if (blocked) continue;
 
     const u = addNode(S);
@@ -84,6 +120,12 @@ export function buildVoronoiSkeleton(width, height, obstacles, options = { useSp
     const cost = Math.hypot(S.x - T.x, S.y - T.y);
     edges.push({ from: nodes[u].id, to: nodes[v].id, cost });
   }
+
+  const tIter1 = performance?.now ? performance.now() : Date.now();
+  // 边遍历净耗时（不含候选查询与穿障）
+  profile.tEdgeIterMs = Math.max(0, Math.round((tIter1 - tIter0) - profile.tPoolQueryMs - profile.tLosMs));
+  profile.tPoolQueryMs = Math.max(0, Math.round(profile.tPoolQueryMs));
+  profile.tLosMs = Math.max(0, Math.round(profile.tLosMs));
 
   const nodeDelaunay = nodes.length > 0 ? Delaunay.from(nodes.map(n => [n.x, n.y])) : null;
   return { nodes, edges, triangles: [], delaunay: nodeDelaunay, profile };
