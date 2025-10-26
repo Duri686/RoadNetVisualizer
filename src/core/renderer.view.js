@@ -51,6 +51,8 @@ export function zoomImpl(renderer, scaleFactor = 1.0) {
   renderer.mainContainer.y = mouseY - worldPos.y * newScale;
   renderer.drawing.updateTransform(renderer.transform);
   renderer.interaction.updateTransform(renderer.transform);
+  // 视窗变更后更新障碍物裁剪（交互中：延迟转纹理，降低卡顿）
+  try { if (renderer.config?.culling?.enabled) renderer.refreshObstacleCulling(true); } catch (_) {}
   updateAnimBallPosition(renderer);
 }
 
@@ -67,6 +69,7 @@ export function resetViewImpl(renderer) {
   renderer.drawing.updateTransform(renderer.transform);
   renderer.interaction.updateTransform(renderer.transform);
   renderer.rebuildAllOverlays();
+  try { if (renderer.config?.culling?.enabled) renderer.refreshObstacleCulling(); } catch (_) {}
   updateAnimBallPosition(renderer);
   try { window.dispatchEvent(new CustomEvent('renderer-viewport-changed')); } catch (_) {}
 }
@@ -86,6 +89,7 @@ export function centerOnImpl(renderer, worldX, worldY) {
   renderer.transform.panY = -renderer.mainContainer.y / scale;
   renderer.drawing.updateTransform(renderer.transform);
   renderer.interaction.updateTransform(renderer.transform);
+  try { if (renderer.config?.culling?.enabled) renderer.refreshObstacleCulling(); } catch (_) {}
   try { window.dispatchEvent(new CustomEvent('renderer-viewport-changed')); } catch (_) {}
 }
 
@@ -110,6 +114,8 @@ export function setupZoomAndPanImpl(renderer) {
       renderer.drawing.updateTransform(renderer.transform);
       renderer.interaction.updateTransform(renderer.transform);
       renderer.rebuildAllOverlays();
+      // 滚轮缩放：延迟转纹理
+      try { if (renderer.config?.culling?.enabled) renderer.refreshObstacleCulling(true); } catch (_) {}
       updateAnimBallPosition(renderer);
     }
   });
@@ -134,6 +140,8 @@ export function setupZoomAndPanImpl(renderer) {
     renderer.viewState.isDragging = false;
     renderer.viewState.lastPosition = null;
     view.style.cursor = 'grab';
+    // 在拖拽结束时刷新裁剪：立即重建纹理
+    try { if (renderer.config?.culling?.enabled) renderer.refreshObstacleCulling(false); } catch (_) {}
   };
   view.addEventListener('mouseup', endDrag);
   view.addEventListener('mouseleave', endDrag);
@@ -198,6 +206,8 @@ export function setupZoomAndPanImpl(renderer) {
           renderer.drawing.updateTransform(renderer.transform);
           renderer.interaction.updateTransform(renderer.transform);
           renderer.rebuildAllOverlays();
+          // 触控捏合：延迟转纹理
+        try { if (renderer.config?.culling?.enabled) renderer.refreshObstacleCulling(true); } catch (_) {}
           updateAnimBallPosition(renderer);
           try { window.dispatchEvent(new CustomEvent('renderer-viewport-changed')); } catch (_) {}
         }

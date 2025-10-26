@@ -117,6 +117,24 @@ class InputForm {
         if (!el) return undefined;
         const v = parseInt(el.value, 10);
         return isNaN(v) ? undefined : Math.max(4, v);
+      })(),
+      // 障碍编号显示相关开关
+      showLabels: !!document.getElementById('show-labels')?.checked,
+      useBitmapText: !!document.getElementById('use-bitmaptext')?.checked,
+      labelMinPx: (() => {
+        const el = document.getElementById('label-minpx-input');
+        if (!el) return undefined;
+        const v = parseInt(el.value, 10);
+        return isNaN(v) ? undefined : Math.max(0, v);
+      })(),
+      // 静态缓存与裁剪
+      staticCache: !!document.getElementById('static-cache')?.checked,
+      cullingEnabled: !!document.getElementById('culling-enabled')?.checked,
+      cullingMargin: (() => {
+        const el = document.getElementById('culling-margin-input');
+        if (!el) return undefined;
+        const v = parseInt(el.value, 10);
+        return isNaN(v) ? undefined : Math.max(0, v);
       })()
     };
   }

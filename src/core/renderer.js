@@ -71,6 +71,77 @@ class Renderer {
     this.drawing = new RendererDrawing(this.config, this.transform);
     this.interaction = new RendererInteraction(this.config, this.transform, this.drawing);
   }
+
+  /**
+   * 基于当前视窗参数刷新障碍物层（用于缩放/平移后重新裁剪）
+   */
+  refreshObstacleCulling(deferTexture = false) {
+    try {
+      if (!this.app || !this.mainContainer || !this.roadNetData || !Array.isArray(this.roadNetData.obstacles)) return;
+      const obstacles = this.roadNetData.obstacles;
+      const { offsetX = 0, offsetY = 0, cellSize = 1 } = this.transform || {};
+      // 清理旧障碍层与缓存纹理
+      if (this.obstacleLayer) {
+        try { this.mainContainer.removeChild(this.obstacleLayer); } catch (_) {}
+        try { this.obstacleLayer.destroy && this.obstacleLayer.destroy({ children: true, texture: false, baseTexture: false }); } catch (_) {}
+        this.obstacleLayer = null;
+      }
+      if (this._obstacleCache && this._obstacleCache.texture) {
+        try { this._obstacleCache.texture.destroy(true); } catch (_) {}
+        this._obstacleCache = null;
+      }
+      if (this._obTexTimer) { try { clearTimeout(this._obTexTimer); } catch (_) {} this._obTexTimer = null; }
+      const cfg = this.config || {};
+      const doCull = !!(cfg.culling && cfg.culling.enabled);
+      const margin = (cfg.culling && typeof cfg.culling.margin === 'number') ? cfg.culling.margin : 128;
+      // 将视口转换为“内容像素”坐标（未乘缩放），使之与绘制坐标系一致
+      const scale = this.transform?.scale || 1;
+      const leftContentPx = -this.mainContainer.x / scale;
+      const topContentPx = -this.mainContainer.y / scale;
+      const viewWidthContentPx = this.app.screen.width / scale;
+      const viewHeightContentPx = this.app.screen.height / scale;
+      const cullRect = doCull
+        ? {
+            x: leftContentPx - margin,
+            y: topContentPx - margin,
+            w: viewWidthContentPx + margin * 2,
+            h: viewHeightContentPx + margin * 2,
+          }
+        : null;
+      const canCache = !!(cfg.caching && cfg.caching.staticLayers === true);
+      // 重新绘制（与初始渲染一致，但不使用跨视口缓存）
+      const container = this.drawing.renderObstacles(obstacles, offsetX, offsetY, cellSize, cullRect);
+      if (canCache && !deferTexture) {
+        try {
+          const worldBounds = container.getBounds?.() || { x: 0, y: 0, width: 1, height: 1 };
+          const region = new PIXI.Rectangle(worldBounds.x, worldBounds.y, worldBounds.width, worldBounds.height);
+          const tex = this.app.renderer.generateTexture(container, { region });
+          const spr = new PIXI.Sprite(tex);
+          spr.name = 'obstacles';
+          spr.position.set(worldBounds.x, worldBounds.y);
+          this._obstacleCache = { key: 'viewport-refresh', obsRef: obstacles, texture: tex, sprite: spr };
+          this.obstacleLayer = spr;
+          this.mainContainer.addChild(spr);
+          try { container.destroy({ children: true }); } catch (_) {}
+          return;
+        } catch (_) {
+          /* 回退到容器 */
+        }
+      }
+      // 直接使用容器绘制，并在空闲时（若允许缓存）延迟转纹理
+      this.obstacleLayer = container;
+      this.mainContainer.addChild(container);
+      if (canCache && deferTexture) {
+        try {
+          this._obTexTimer = setTimeout(() => {
+            try { this.refreshObstacleCulling(false); } catch (_) {}
+          }, 160);
+        } catch (_) {}
+      }
+    } catch (e) {
+      console.debug('[Renderer] refreshObstacleCulling skipped:', e);
+    }
+  }
  
   /**
    * 在执行 fn 期间临时开启动画快照保留，结束后恢复原状态

@@ -36,6 +36,28 @@
               />
             </div>
             <div class="input-group">
+              <label class="input-group-label">
+                <input type="checkbox" id="static-cache" />
+                启用静态层缓存（障碍层 RenderTexture）
+              </label>
+            </div>
+            <div class="input-group">
+              <label class="input-group-label">
+                <input type="checkbox" id="culling-enabled" checked />
+                启用视窗裁剪
+              </label>
+            </div>
+            <div class="input-group" title="裁剪边距（像素），避免临界闪烁。范围建议 64-256">
+              <label for="culling-margin-input">裁剪边距（像素）</label>
+              <input
+                autocomplete="off"
+                type="text"
+                id="culling-margin-input"
+                value="128"
+                placeholder="例如 128"
+              />
+            </div>
+            <div class="input-group">
               <label for="height-input">地图高度 (Height)</label>
               <input
                 autocomplete="off"
@@ -133,6 +155,28 @@
                 type="text"
                 id="cell-size-input"
                 placeholder="auto"
+              />
+            </div>
+            <div class="input-group">
+              <label class="input-group-label">
+                <input type="checkbox" id="show-labels" checked />
+                显示障碍编号（Labels）
+              </label>
+            </div>
+            <div class="input-group">
+              <label class="input-group-label">
+                <input type="checkbox" id="use-bitmaptext" checked />
+                使用 BitmapText（更高效）
+              </label>
+            </div>
+            <div class="input-group" title="当单元像素尺寸低于阈值时隐藏编号，0 表示始终显示">
+              <label for="label-minpx-input">编号显示阈值（像素）</label>
+              <input
+                autocomplete="off"
+                type="text"
+                id="label-minpx-input"
+                value="0"
+                placeholder="0=始终显示"
               />
             </div>
           </details>

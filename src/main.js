@@ -477,6 +477,14 @@ class App {
       mode,
       useSpatialIndex,
       cellSize,
+      // 新增：渲染标签相关配置
+      showLabels,
+      useBitmapText,
+      labelMinPx,
+      // 新增：静态缓存与裁剪
+      staticCache,
+      cullingEnabled,
+      cullingMargin,
     } = values;
 
     console.log(
@@ -499,6 +507,24 @@ class App {
     this.roadNetData = null;
     this.layerControl.reset();
     renderer.clearCanvas();
+
+    // 在生成前应用渲染配置（最小改动：仅更新相关字段）
+    try {
+      const cfg = this.renderer && this.renderer.config ? this.renderer.config : null;
+      if (cfg) {
+        cfg.labels = cfg.labels || {};
+        if (typeof showLabels === 'boolean') cfg.labels.enabled = showLabels;
+        if (typeof useBitmapText === 'boolean') cfg.labels.useBitmapText = useBitmapText;
+        if (typeof labelMinPx === 'number' && isFinite(labelMinPx)) cfg.labels.minPixelForLabel = Math.max(0, labelMinPx);
+
+        cfg.caching = cfg.caching || {};
+        if (typeof staticCache === 'boolean') cfg.caching.staticLayers = staticCache;
+
+        cfg.culling = cfg.culling || {};
+        if (typeof cullingEnabled === 'boolean') cfg.culling.enabled = cullingEnabled;
+        if (typeof cullingMargin === 'number' && isFinite(cullingMargin)) cfg.culling.margin = Math.max(0, cullingMargin);
+      }
+    } catch (e) { console.debug('[Config] apply label config skipped:', e); }
 
     // 开始生成
     const success = workerManager.generateNavGraph(
@@ -547,11 +573,23 @@ class App {
       const l = document.getElementById('layer-input');
       const o = document.getElementById('obstacle-input');
       const si = document.getElementById('use-spatial-index');
+      const lbl = document.getElementById('show-labels');
+      const bmt = document.getElementById('use-bitmaptext');
+      const lpx = document.getElementById('label-minpx-input');
+      const sc = document.getElementById('static-cache');
+      const ce = document.getElementById('culling-enabled');
+      const cm = document.getElementById('culling-margin-input');
       if (w) w.value = '500';
       if (h) h.value = '300';
       if (l) l.value = '1';
       if (o) o.value = '200';
       if (si) si.checked = true;
+      if (lbl) lbl.checked = true;
+      if (bmt) bmt.checked = true;
+      if (lpx) lpx.value = '0';
+      if (sc) sc.checked = false;
+      if (ce) ce.checked = true;
+      if (cm) cm.value = '128';
       const values = this.inputForm.getValues();
       this.handleGenerate(values);
     } catch (e) {

@@ -103,5 +103,13 @@ export function createRendererConfig() {
       // 预留边距（像素），避免临界闪烁
       margin: 128,
     },
+    labels: {
+      // 是否显示障碍索引编号
+      enabled: true,
+      // 使用 BitmapText 绘制编号（更高效），可按需关闭回退到 Text
+      useBitmapText: true,
+      // 小于该像素尺寸（cellSize*scale）时不绘制编号
+      minPixelForLabel: 0,
+    },
   };
 }

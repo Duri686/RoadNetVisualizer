@@ -24,15 +24,15 @@ export function heuristic(nodeA, nodeB) {
  */
 export function reconstructPath(cameFrom, current, nodes) {
   const path = [];
-  const nodeMap = new Map(nodes.map(n => [n.id, n]));
-  
+  const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+
   path.push(nodeMap.get(current));
-  
+
   while (cameFrom.has(current)) {
     current = cameFrom.get(current);
     path.unshift(nodeMap.get(current));
   }
-  
+
   return path;
 }
 
@@ -41,29 +41,48 @@ export function reconstructPath(cameFrom, current, nodes) {
  * 简化实现：允许重复入堆，出堆时以 fScore 校验是否为最新
  */
 class MinHeap {
-  constructor() { this.arr = []; }
-  size() { return this.arr.length; }
-  push(item) { this.arr.push(item); this.bubbleUp(this.arr.length - 1); }
+  constructor() {
+    this.arr = [];
+  }
+  size() {
+    return this.arr.length;
+  }
+  push(item) {
+    this.arr.push(item);
+    this.bubbleUp(this.arr.length - 1);
+  }
   pop() {
     if (this.arr.length === 0) return null;
     const top = this.arr[0];
     const last = this.arr.pop();
-    if (this.arr.length) { this.arr[0] = last; this.bubbleDown(0); }
+    if (this.arr.length) {
+      this.arr[0] = last;
+      this.bubbleDown(0);
+    }
     return top;
   }
   bubbleUp(i) {
     while (i > 0) {
-      const p = ((i - 1) >> 1);
+      const p = (i - 1) >> 1;
       if (this.arr[p].key <= this.arr[i].key) break;
-      const t = this.arr[p]; this.arr[p] = this.arr[i]; this.arr[i] = t; i = p;
+      const t = this.arr[p];
+      this.arr[p] = this.arr[i];
+      this.arr[i] = t;
+      i = p;
     }
   }
   bubbleDown(i) {
     for (;;) {
-      const l = i * 2 + 1, r = l + 1; let m = i;
+      const l = i * 2 + 1,
+        r = l + 1;
+      let m = i;
       if (l < this.arr.length && this.arr[l].key < this.arr[m].key) m = l;
       if (r < this.arr.length && this.arr[r].key < this.arr[m].key) m = r;
-      if (m === i) break; const t = this.arr[m]; this.arr[m] = this.arr[i]; this.arr[i] = t; i = m;
+      if (m === i) break;
+      const t = this.arr[m];
+      this.arr[m] = this.arr[i];
+      this.arr[i] = t;
+      i = m;
     }
   }
 }
@@ -76,15 +95,18 @@ class MinHeap {
  * @returns {Array|null} 路径节点数组，如果找不到则返回 null
  */
 export function findPathAStar(layer, startNode, endNode) {
-  const t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+  const t0 =
+    typeof performance !== 'undefined' && performance.now
+      ? performance.now()
+      : Date.now();
   const nodes = layer.nodes;
   const edges = layer.edges;
 
   // 构建邻接表
   const graph = new Map();
-  nodes.forEach(node => graph.set(node.id, []));
-  
-  edges.forEach(edge => {
+  nodes.forEach((node) => graph.set(node.id, []));
+
+  edges.forEach((edge) => {
     const from = edge.from;
     const to = edge.to;
     graph.get(from).push({ nodeId: to, cost: edge.cost });
@@ -92,7 +114,7 @@ export function findPathAStar(layer, startNode, endNode) {
   });
 
   // id->node 映射（加速邻接取坐标）
-  const idToNode = new Map(nodes.map(n => [n.id, n]));
+  const idToNode = new Map(nodes.map((n) => [n.id, n]));
 
   // A* 算法（最小堆）
   const openHeap = new MinHeap();
@@ -106,7 +128,7 @@ export function findPathAStar(layer, startNode, endNode) {
   let relaxed = 0;
   let openPeak = 1;
 
-  nodes.forEach(node => {
+  nodes.forEach((node) => {
     gScore.set(node.id, Infinity);
     fScore.set(node.id, Infinity);
   });
@@ -120,9 +142,15 @@ export function findPathAStar(layer, startNode, endNode) {
     let current = null;
     for (;;) {
       const top = openHeap.pop();
-      if (!top) { current = null; break; }
+      if (!top) {
+        current = null;
+        break;
+      }
       const expected = fScore.get(top.id);
-      if (expected === top.key) { current = top.id; break; }
+      if (expected === top.key) {
+        current = top.id;
+        break;
+      }
       // 过期项，跳过
     }
     if (current == null) break;
@@ -130,11 +158,11 @@ export function findPathAStar(layer, startNode, endNode) {
     if (current === endNode.id) {
       // 重建路径
       const path = reconstructPath(cameFrom, current, nodes);
-      try {
-        const t1 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-        const used = Math.max(0, Math.round(t1 - t0));
-        console.log(`[A*] 路径长度 ${path.length} | 扩展 ${expanded} | 松弛 ${relaxed} | open峰值 ${openPeak} | 耗时 ${used} ms`);
-      } catch (_) { /* ignore */ }
+      // try {
+      //   const t1 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      //   const used = Math.max(0, Math.round(t1 - t0));
+      //   console.log(`[A*] 路径长度 ${path.length} | 扩展 ${expanded} | 松弛 ${relaxed} | open峰值 ${openPeak} | 耗时 ${used} ms`);
+      // } catch (_) { /* ignore */ }
       return path;
     }
 
@@ -143,24 +171,31 @@ export function findPathAStar(layer, startNode, endNode) {
     const neighbors = graph.get(current) || [];
     for (const neighbor of neighbors) {
       const tentativeGScore = gScore.get(current) + neighbor.cost;
-      
+
       if (tentativeGScore < gScore.get(neighbor.nodeId)) {
         cameFrom.set(neighbor.nodeId, current);
         gScore.set(neighbor.nodeId, tentativeGScore);
-        
+
         const neighborNode = idToNode.get(neighbor.nodeId);
         const f = tentativeGScore + heuristic(neighborNode, endNode);
         fScore.set(neighbor.nodeId, f);
-        
+
         openHeap.push({ id: neighbor.nodeId, key: f });
         relaxed++;
       }
     }
   }
   try {
-    const t1 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    const t1 =
+      typeof performance !== 'undefined' && performance.now
+        ? performance.now()
+        : Date.now();
     const used = Math.max(0, Math.round(t1 - t0));
-    console.log(`[A*] 未找到路径 | 扩展 ${expanded} | 松弛 ${relaxed} | open峰值 ${openPeak} | 耗时 ${used} ms`);
-  } catch (_) { /* ignore */ }
+    console.log(
+      `[A*] 未找到路径 | 扩展 ${expanded} | 松弛 ${relaxed} | open峰值 ${openPeak} | 耗时 ${used} ms`,
+    );
+  } catch (_) {
+    /* ignore */
+  }
   return null; // 没有找到路径
 }

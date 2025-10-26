@@ -9,6 +9,10 @@ export class RendererDrawing {
   constructor(config, transform) {
     this.config = config;
     this.transform = transform;
+    // 共享位图字体（仅创建一次）
+    this._labelBitmapFontName = 'ObstacleLabel-Bitmap';
+    this._labelBitmapBaseSize = 16; // 基础字号，实际通过 scale 调整
+    this._labelBitmapReady = false;
   }
 
   /**
@@ -114,14 +118,31 @@ export class RendererDrawing {
     obstacleContainer.name = 'obstacles';
 
     const needCull = !!(cullRect && typeof cullRect.x === 'number');
-    // 标签 LOD：缩放*cellSize 太小时不绘制标签，减少 draw calls
+    // 标签 LOD：缩放*cellSize 小于阈值不绘制标签，减少 draw calls
     const scale = this.transform?.scale || 1;
-    const showLabel = (cellSize * scale) >= 8;
+    const labelCfg = (this.config && this.config.labels) || {};
+    const labelsEnabled = labelCfg.enabled !== false;
+    const minPx = typeof labelCfg.minPixelForLabel === 'number' ? labelCfg.minPixelForLabel : 8;
+    const showLabel = labelsEnabled && (cellSize * scale) >= minPx;
+    const wantBitmap = !!(labelCfg.useBitmapText && PIXI.BitmapText && PIXI.BitmapFont);
+    if (showLabel && wantBitmap && !this._labelBitmapReady) {
+      try {
+        // 动态生成位图字体（一次），减少文本渲染成本
+        PIXI.BitmapFont.from(this._labelBitmapFontName, {
+          fontFamily: 'Arial',
+          fontSize: this._labelBitmapBaseSize,
+          fill: 0xffffff,
+        });
+        this._labelBitmapReady = true;
+      } catch (_) { /* ignore */ }
+    }
 
     // 合批矩形至单一 Graphics
     const g = new PIXI.Graphics();
     g.beginFill(0xdc2626, 0.5);
     g.lineStyle(1, 0xdc2626, 0.85);
+    // 先把底层矩形 Graphics 放入容器，确保后续标签在其之上
+    obstacleContainer.addChild(g);
 
     obstacles.forEach((obs, i) => {
       // 视窗裁剪（基础版）：像素坐标相交才绘制
@@ -142,17 +163,26 @@ export class RendererDrawing {
         obs.h * cellSize
       );
       if (showLabel) {
-        const label = new PIXI.Text(String(i + 1), { fontSize: Math.max(10, Math.floor(cellSize * 0.8)), fill: 0xffffff });
-        label.anchor.set(0.5);
-        label.position.set(
-          offsetX + (obs.x + obs.w / 2) * cellSize,
-          offsetY + (obs.y + obs.h / 2) * cellSize
-        );
-        obstacleContainer.addChild(label);
+        const cx = offsetX + (obs.x + obs.w / 2) * cellSize;
+        const cy = offsetY + (obs.y + obs.h / 2) * cellSize;
+        const desiredPx = Math.max(10, Math.floor(cellSize * 0.8));
+        if (wantBitmap && this._labelBitmapReady) {
+          const bt = new PIXI.BitmapText(String(i + 1), { fontName: this._labelBitmapFontName, tint: 0xffffff });
+          const k = desiredPx / this._labelBitmapBaseSize;
+          bt.scale.set(k);
+          // 居中（BitmapText 无 anchor，用边界×scale 居中）
+          const b = bt.getLocalBounds();
+          bt.position.set(cx - (b.width * k) / 2, cy - (b.height * k) / 2);
+          obstacleContainer.addChild(bt);
+        } else {
+          const label = new PIXI.Text(String(i + 1), { fontSize: desiredPx, fill: 0xffffff });
+          label.anchor.set(0.5);
+          label.position.set(cx, cy);
+          obstacleContainer.addChild(label);
+        }
       }
     });
     g.endFill();
-    obstacleContainer.addChild(g);
 
     return obstacleContainer;
   }

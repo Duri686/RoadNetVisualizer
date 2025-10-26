@@ -4,6 +4,7 @@
 
 // 模块内缓存（不会污染全局作用域）
 const __indexCache = new WeakMap(); // key: obstacles(Array) -> { width, height, cellSize, result }
+const __sigCache = new Map(); // key: `${sig}|${width}|${height}|${cellSize||'auto'}` -> result
 
 /**
  * 计算障碍物包围盒
@@ -29,7 +30,27 @@ export function getObstacleBBox(ob) {
  * @param {Array} obstacles 障碍数组
  * @param {number} [cellSize] 单元格边长
  */
-export function createSpatialIndex(width, height, obstacles, cellSize) {
+/**
+ * 计算障碍数组签名（用于跨引用缓存）
+ * - 简单 FNV-1a 32 位哈希 + 长度
+ */
+export function computeObstaclesSignature(obstacles) {
+  let hash = 2166136261 >>> 0;
+  for (let i = 0; i < obstacles.length; i++) {
+    const o = obstacles[i];
+    // 仅取常用标量字段
+    const vals = [o.x|0, o.y|0, o.w|0, o.h|0];
+    for (let k = 0; k < vals.length; k++) {
+      hash ^= (vals[k] & 0xff) >>> 0; hash = Math.imul(hash, 16777619) >>> 0;
+      hash ^= ((vals[k]>>>8) & 0xff) >>> 0; hash = Math.imul(hash, 16777619) >>> 0;
+      hash ^= ((vals[k]>>>16) & 0xff) >>> 0; hash = Math.imul(hash, 16777619) >>> 0;
+      hash ^= ((vals[k]>>>24) & 0xff) >>> 0; hash = Math.imul(hash, 16777619) >>> 0;
+    }
+  }
+  return `${obstacles.length}-${hash >>> 0}`;
+}
+
+export function createSpatialIndex(width, height, obstacles, cellSize, signature) {
   const t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
   // 命中缓存：相同障碍数组与参数直接复用
   try {
@@ -40,6 +61,16 @@ export function createSpatialIndex(width, height, obstacles, cellSize) {
         console.log(`[SpatialIndex] 复用缓存：cells=${res.grid.size} | cellSize=${res.cellSize}`);
         return res;
       }
+    }
+  } catch (_) { /* ignore */ }
+  // 尝试签名缓存（用于跨引用复用）
+  try {
+    const sig = signature || computeObstaclesSignature(obstacles);
+    const key = `${sig}|${width}|${height}|${cellSize || 'auto'}`;
+    const sigHit = __sigCache.get(key);
+    if (sigHit && sigHit.grid) {
+      console.log(`[SpatialIndex] 复用缓存(签名)：cells=${sigHit.grid.size} | cellSize=${sigHit.cellSize}`);
+      return sigHit;
     }
   } catch (_) { /* ignore */ }
   // 估计一个合理 cellSize：综合“障碍平均尺寸”与“密度估计”的较小者
@@ -75,7 +106,13 @@ export function createSpatialIndex(width, height, obstacles, cellSize) {
   }
 
   // 写入缓存
-  try { __indexCache.set(obstacles, { width, height, cellSize, result: { cellSize, grid } }); } catch (_) { /* ignore */ }
+  try {
+    const res = { cellSize, grid };
+    __indexCache.set(obstacles, { width, height, cellSize, result: res });
+    const sig = signature || computeObstaclesSignature(obstacles);
+    const key = `${sig}|${width}|${height}|${cellSize || 'auto'}`;
+    __sigCache.set(key, res);
+  } catch (_) { /* ignore */ }
 
   // 统计信息（不改变返回值）
   try {
