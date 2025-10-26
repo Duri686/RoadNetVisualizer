@@ -32,7 +32,10 @@ export class RendererDrawing {
    */
   rebuildOverlayBase(overlayContainer, edgesOrPacked, offsetX, offsetY, cellSize) {
     if (!overlayContainer || !edgesOrPacked) return;
-    overlayContainer.removeChildren();
+    const removedOverlay = overlayContainer.removeChildren();
+    if (Array.isArray(removedOverlay)) {
+      removedOverlay.forEach((ch) => { try { ch.destroy && ch.destroy({ children: true }); } catch (_) {} });
+    }
     const g = new PIXI.Graphics();
     g.name = 'overlay-base-lines';
     g.lineStyle({
@@ -90,6 +93,8 @@ export class RendererDrawing {
     const uy = dy / len;
     let dist = 0;
     let draw = true;
+    let segCount = 0;
+    const MAX_SEGMENTS = 200;
     while (dist < len) {
       const seg = draw ? dashLen : gapLen;
       const nx1 = x1 + ux * dist;
@@ -103,6 +108,14 @@ export class RendererDrawing {
       }
       dist = ndist;
       draw = !draw;
+      segCount += 1;
+      if (segCount > MAX_SEGMENTS) {
+        if (draw) {
+          g.moveTo(nx2, ny2);
+          g.lineTo(x2, y2);
+        }
+        break;
+      }
     }
   }
   
@@ -379,7 +392,10 @@ export class RendererDrawing {
     }
     
     // 其他情况（含最终路径或有效预览）才更新绘制
-    pathContainer.removeChildren();
+    const removed = pathContainer.removeChildren();
+    if (Array.isArray(removed)) {
+      removed.forEach((ch) => { try { ch.destroy && ch.destroy({ children: true }); } catch (_) {} });
+    }
 
     const { pathColor, pathWidth } = this.config.interaction;
     const alpha = isPreview ? 0.3 : 0.8;
@@ -419,9 +435,9 @@ export class RendererDrawing {
   drawInteractionNodes(container, startNode, endNode) {
     
     // 清除旧的节点标记
-    container.children
-      .filter(child => child.name && child.name.startsWith('node-marker'))
-      .forEach(child => container.removeChild(child));
+    const toRemove = container.children
+      .filter(child => child.name && child.name.startsWith('node-marker'));
+    toRemove.forEach(child => { try { container.removeChild(child); child.destroy && child.destroy({ children: true }); } catch (_) {} });
 
     const { startNodeColor, endNodeColor, nodeHighlightRadius } = this.config.interaction;
     

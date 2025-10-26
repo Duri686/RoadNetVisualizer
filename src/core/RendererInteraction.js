@@ -214,12 +214,15 @@ export class RendererInteraction {
    */
   clearInteractionGraphics() {
     if (this.pathContainer) {
-      this.pathContainer.removeChildren();
+      const removed = this.pathContainer.removeChildren();
+      if (Array.isArray(removed)) {
+        removed.forEach((ch) => { try { ch.destroy && ch.destroy({ children: true }); } catch (_) {} });
+      }
     }
     if (this.container) {
-      this.container.children
-        .filter((child) => child.name && child.name.startsWith('node-marker'))
-        .forEach((child) => this.container.removeChild(child));
+      const markers = this.container.children
+        .filter((child) => child.name && child.name.startsWith('node-marker'));
+      markers.forEach((child) => { try { this.container.removeChild(child); child.destroy && child.destroy({ children: true }); } catch (_) {} });
     }
     if (this.crosshairGraphics) {
       this.crosshairGraphics.clear();

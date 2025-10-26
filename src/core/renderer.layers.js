@@ -81,7 +81,19 @@ export function showLayerImpl(renderer, layerIndex) {
 
 export function clearCanvasImpl(renderer) {
   if (renderer.mainContainer) {
-    renderer.mainContainer.removeChildren();
+    try {
+      const removed = renderer.mainContainer.removeChildren();
+      if (Array.isArray(removed)) {
+        removed.forEach((ch) => {
+          try {
+            if (renderer.interactionContainer && ch === renderer.interactionContainer) {
+              return; // keep persistent interaction container; will be re-attached later
+            }
+            ch.destroy && ch.destroy({ children: true });
+          } catch (_) { }
+        });
+      }
+    } catch (_) { try { renderer.mainContainer.removeChildren(); } catch (_) {} }
     renderer.layerContainers = [];
   }
   // 释放网络层静态缓存（如存在）

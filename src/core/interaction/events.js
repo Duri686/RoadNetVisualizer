@@ -57,7 +57,8 @@ export function handlePointerMove(ctx, event, currentLayer) {
   if (!ctx.state.enabled || currentLayer !== 0) return;
 
   // 容器尚未就绪（例如全屏切换触发的重绘过程中）
-  if (!ctx.container || !ctx.container.parent) return;
+  if (!ctx.container || !ctx.container.parent || !ctx.container.worldTransform) return;
+  if (!event || !event.data || typeof event.data.getLocalPosition !== 'function') return;
 
   const layer = ctx.roadNetData.layers[0];
   if (!layer || !layer.delaunay) {
@@ -73,7 +74,12 @@ export function handlePointerMove(ctx, event, currentLayer) {
   const allowCrosshair = pointerType === 'mouse' && !isMobileView;
 
   // 获取鼠标相对于交互容器的坐标（已考虑缩放和平移）
-  const localPos = event.data.getLocalPosition(ctx.container);
+  let localPos;
+  try {
+    localPos = event.data.getLocalPosition(ctx.container);
+  } catch (_) {
+    return; // 渲染树尚未稳定，跳过本次
+  }
 
   // 计算网格坐标（用于 Delaunay 查找）
   const gridX = (localPos.x - ctx.transform.offsetX) / ctx.transform.cellSize;
@@ -132,7 +138,14 @@ export function handlePointerDown(ctx, event) {
     const layer = ctx.roadNetData.layers[0];
     if (layer && layer.delaunay) {
       // 获取鼠标相对于交互容器的坐标
-      const localPos = event.data.getLocalPosition(ctx.container);
+      if (!ctx.container || !ctx.container.parent || !ctx.container.worldTransform) return false;
+      if (!event || !event.data || typeof event.data.getLocalPosition !== 'function') return false;
+      let localPos;
+      try {
+        localPos = event.data.getLocalPosition(ctx.container);
+      } catch (_) {
+        return false;
+      }
 
       // 计算网格坐标
       const gridX = (localPos.x - ctx.transform.offsetX) / ctx.transform.cellSize;
@@ -163,7 +176,12 @@ export function handlePointerDown(ctx, event) {
     ctx.state.startNode = clickedNode;
     ctx.state.endNode = null;
     ctx.state.path = null;
-    if (ctx.pathContainer) ctx.pathContainer.removeChildren();
+    if (ctx.pathContainer) {
+      const removed = ctx.pathContainer.removeChildren();
+      if (Array.isArray(removed)) {
+        removed.forEach((ch) => { try { ch.destroy && ch.destroy({ children: true }); } catch (_) {} });
+      }
+    }
     ctx.drawInteractionNodes();
     return true;
   }

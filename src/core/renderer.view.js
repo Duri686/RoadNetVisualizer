@@ -56,7 +56,7 @@ export function zoomImpl(renderer, scaleFactor = 1.0) {
   // 视窗变更后更新障碍物裁剪（交互中：延迟转纹理，降低卡顿）
   try { if (renderer.config?.culling?.enabled) renderer.refreshObstacleCulling(true); } catch (_) {}
   // 缩放时失效网络层 RT，并在稳定后重建
-  try { if (renderer.invalidateNetworkRT) renderer.invalidateNetworkRT(true); } catch (_) {}
+  try { if (renderer.config?.caching?.networkLayers && renderer.invalidateNetworkRT) renderer.invalidateNetworkRT(true); } catch (_) {}
   updateAnimBallPosition(renderer);
 }
 
@@ -72,10 +72,18 @@ export function resetViewImpl(renderer) {
   renderer.mainContainer.position.set(0, 0);
   renderer.drawing.updateTransform(renderer.transform);
   renderer.interaction.updateTransform(renderer.transform);
-  renderer.rebuildAllOverlays();
+  try {
+    const nowScale = renderer.transform?.scale || 1;
+    const prev = renderer._lastOverlayScale ?? 0;
+    renderer._lastOverlayScale = nowScale;
+    if (Math.abs(nowScale - prev) > 0.05) {
+      if (renderer._overlayRebuildTimer) clearTimeout(renderer._overlayRebuildTimer);
+      renderer._overlayRebuildTimer = setTimeout(() => { try { renderer.rebuildAllOverlays(); } catch (_) {} }, 160);
+    }
+  } catch (_) {}
   try { if (renderer.config?.culling?.enabled) renderer.refreshObstacleCulling(); } catch (_) {}
   // 重置视图后重建网络层 RT
-  try { renderer.invalidateNetworkRT && renderer.invalidateNetworkRT(true); } catch (_) {}
+  try { if (renderer.config?.caching?.networkLayers && renderer.invalidateNetworkRT) renderer.invalidateNetworkRT(true); } catch (_) {}
   updateAnimBallPosition(renderer);
   try { window.dispatchEvent(new CustomEvent('renderer-viewport-changed')); } catch (_) {}
 }
@@ -125,7 +133,7 @@ export function setupZoomAndPanImpl(renderer) {
       // 滚轮缩放：延迟转纹理
       try { if (renderer.config?.culling?.enabled) renderer.refreshObstacleCulling(true); } catch (_) {}
       // 缩放时失效网络层 RT，并在稳定后重建
-      try { renderer.invalidateNetworkRT && renderer.invalidateNetworkRT(true); } catch (_) {}
+      try { if (renderer.config?.caching?.networkLayers && renderer.invalidateNetworkRT) renderer.invalidateNetworkRT(true); } catch (_) {}
       updateAnimBallPosition(renderer);
     }
   });
@@ -159,7 +167,7 @@ export function setupZoomAndPanImpl(renderer) {
     // 在拖拽结束时刷新裁剪：立即重建纹理
     try { if (renderer.config?.culling?.enabled) renderer.refreshObstacleCulling(false); } catch (_) {}
     // 拖拽结束后计划重建网络层 RT（延迟）
-    try { renderer.scheduleNetworkRTBuild && renderer.scheduleNetworkRTBuild(); } catch (_) {}
+    try { if (renderer.config?.caching?.networkLayers && renderer.scheduleNetworkRTBuild) renderer.scheduleNetworkRTBuild(); } catch (_) {}
   };
   view.addEventListener('mouseup', endDrag);
   view.addEventListener('mouseleave', endDrag);
@@ -229,7 +237,7 @@ export function setupZoomAndPanImpl(renderer) {
           // 触控捏合：延迟转纹理
           try { if (renderer.config?.culling?.enabled) renderer.refreshObstacleCulling(true); } catch (_) {}
           // 捏合缩放时失效网络层 RT，并在稳定后重建
-          try { renderer.invalidateNetworkRT && renderer.invalidateNetworkRT(true); } catch (_) {}
+          try { if (renderer.config?.caching?.networkLayers && renderer.invalidateNetworkRT) renderer.invalidateNetworkRT(true); } catch (_) {}
           updateAnimBallPosition(renderer);
           try { window.dispatchEvent(new CustomEvent('renderer-viewport-changed')); } catch (_) {}
         }

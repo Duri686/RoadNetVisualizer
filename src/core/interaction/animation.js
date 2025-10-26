@@ -35,7 +35,8 @@ export function animatePath(ctx, path) {
     if (!ctx.state.isAnimating) return; // 已被取消
     if (currentIndex >= path.length - 1) {
       if (ctx.animBall && ctx.container) {
-        ctx.container.removeChild(ctx.animBall);
+        try { ctx.container.removeChild(ctx.animBall); } catch (_) {}
+        try { ctx.animBall.destroy && ctx.animBall.destroy({ children: true }); } catch (_) {}
       }
       ctx.animBall = null;
       ctx.state.isAnimating = false;
@@ -77,7 +78,8 @@ export function cancelAnimationIfAny(ctx) {
     ctx.animRAF = null;
   }
   if (ctx.animBall && ctx.container) {
-    ctx.container.removeChild(ctx.animBall);
+    try { ctx.container.removeChild(ctx.animBall); } catch (_) {}
+    try { ctx.animBall.destroy && ctx.animBall.destroy({ children: true }); } catch (_) {}
     ctx.animBall = null;
   }
   ctx.state.isAnimating = false;

@@ -375,7 +375,10 @@ class Renderer {
             }
           }
           if (this.interaction.pathContainer) {
-            this.interaction.pathContainer.removeChildren();
+            const removed = this.interaction.pathContainer.removeChildren();
+            if (Array.isArray(removed)) {
+              removed.forEach((ch) => { try { ch.destroy && ch.destroy({ children: true }); } catch (_) {} });
+            }
           }
           if (this.interaction.state.startNode) {
             this.interaction.drawInteractionNodes();
