@@ -92,5 +92,16 @@ export function createRendererConfig() {
     },
     cellSize: 10,
     padding: 40,
+    // 性能相关开关（基础版）
+    caching: {
+      // 静态层 RenderTexture 缓存（修复后默认关闭，需人工开启）
+      staticLayers: false,
+    },
+    culling: {
+      // 视窗裁剪（仅绘制可见区域附近图元）
+      enabled: true,
+      // 预留边距（像素），避免临界闪烁
+      margin: 128,
+    },
   };
 }

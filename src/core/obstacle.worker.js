@@ -5,6 +5,7 @@
 
 import { SeededRandom, generateObstacles, isPointInObstacles } from '../utils/obstacleGeneration.js';
 import { euclideanDistance, lineIntersectsObstacleWithTurf } from '../utils/obstacleGeometry.js';
+import { createSpatialIndex, getObstaclesAlongLineDDA } from '../utils/spatialIndex.js';
 import {
   buildObstacleConnectionNetwork,
   buildDirectionalConnectionNetwork,
@@ -124,6 +125,11 @@ function buildLayer(width, height, obstacles, layerIndex, baseZones, mode = 'cen
   let edgePairsConsidered = 0;
   let obstacleChecks = 0;
   let intersectHits = 0;
+  let candidateSum = 0;
+
+  // 可选：空间索引（用于收敛候选）
+  const useSI = !(options && options.useSpatialIndex === false);
+  const si = useSI ? createSpatialIndex(width, height, obstacles) : null;
 
   for (let i = 0; i < nodes.length; i++) {
     for (let j = i + 1; j < nodes.length; j++) {
@@ -134,11 +140,21 @@ function buildLayer(width, height, obstacles, layerIndex, baseZones, mode = 'cen
       if (distance > maxDistance) continue;
 
       edgePairsConsidered++;
-      // 手动循环代替 some 以统计检查次数（保持结果一致）
       let intersects = false;
-      for (let oi = 0; oi < obstacles.length; oi++) {
-        obstacleChecks++;
-        if (lineIntersectsObstacleWithTurf(n1.x, n1.y, n2.x, n2.y, obstacles[oi])) { intersects = true; intersectHits++; break; }
+      if (si) {
+        // 使用 DDA 沿线逐格收集候选，显著减少穿障检查数
+        const cand = getObstaclesAlongLineDDA(si, n1.x, n1.y, n2.x, n2.y);
+        candidateSum += cand.length;
+        for (let oi = 0; oi < cand.length; oi++) {
+          obstacleChecks++;
+          if (lineIntersectsObstacleWithTurf(n1.x, n1.y, n2.x, n2.y, cand[oi])) { intersects = true; intersectHits++; break; }
+        }
+      } else {
+        // 保留旧逻辑
+        for (let oi = 0; oi < obstacles.length; oi++) {
+          obstacleChecks++;
+          if (lineIntersectsObstacleWithTurf(n1.x, n1.y, n2.x, n2.y, obstacles[oi])) { intersects = true; intersectHits++; break; }
+        }
       }
 
       if (!intersects) {
@@ -153,7 +169,8 @@ function buildLayer(width, height, obstacles, layerIndex, baseZones, mode = 'cen
 
   // 输出边构建统计（不改变行为）
   try {
-    console.log(`[Layer ${layerIndex}] 边检查 ${edgePairsConsidered} | 穿障检查 ${obstacleChecks} | 命中 ${intersectHits}`);
+    const avgCand = edgePairsConsidered > 0 ? (candidateSum / edgePairsConsidered) : 0;
+    console.log(`[Layer ${layerIndex}] 边检查 ${edgePairsConsidered} | 候选均值 ${avgCand.toFixed(2)} | 穿障检查 ${obstacleChecks} | 命中 ${intersectHits}`);
   } catch (_) { /* ignore */ }
 
   return {

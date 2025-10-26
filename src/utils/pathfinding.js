@@ -37,6 +37,38 @@ export function reconstructPath(cameFrom, current, nodes) {
 }
 
 /**
+ * 最小堆（用于 open 集）
+ * 简化实现：允许重复入堆，出堆时以 fScore 校验是否为最新
+ */
+class MinHeap {
+  constructor() { this.arr = []; }
+  size() { return this.arr.length; }
+  push(item) { this.arr.push(item); this.bubbleUp(this.arr.length - 1); }
+  pop() {
+    if (this.arr.length === 0) return null;
+    const top = this.arr[0];
+    const last = this.arr.pop();
+    if (this.arr.length) { this.arr[0] = last; this.bubbleDown(0); }
+    return top;
+  }
+  bubbleUp(i) {
+    while (i > 0) {
+      const p = ((i - 1) >> 1);
+      if (this.arr[p].key <= this.arr[i].key) break;
+      const t = this.arr[p]; this.arr[p] = this.arr[i]; this.arr[i] = t; i = p;
+    }
+  }
+  bubbleDown(i) {
+    for (;;) {
+      const l = i * 2 + 1, r = l + 1; let m = i;
+      if (l < this.arr.length && this.arr[l].key < this.arr[m].key) m = l;
+      if (r < this.arr.length && this.arr[r].key < this.arr[m].key) m = r;
+      if (m === i) break; const t = this.arr[m]; this.arr[m] = this.arr[i]; this.arr[i] = t; i = m;
+    }
+  }
+}
+
+/**
  * A* 路径查找算法
  * @param {Object} layer - 导航图层数据
  * @param {Object} startNode - 起点节点
@@ -59,8 +91,12 @@ export function findPathAStar(layer, startNode, endNode) {
     graph.get(to).push({ nodeId: from, cost: edge.cost });
   });
 
-  // A* 算法
-  const openSet = new Set([startNode.id]);
+  // id->node 映射（加速邻接取坐标）
+  const idToNode = new Map(nodes.map(n => [n.id, n]));
+
+  // A* 算法（最小堆）
+  const openHeap = new MinHeap();
+  openHeap.push({ id: startNode.id, key: heuristic(startNode, endNode) });
   const cameFrom = new Map();
   const gScore = new Map();
   const fScore = new Map();
@@ -78,18 +114,18 @@ export function findPathAStar(layer, startNode, endNode) {
   gScore.set(startNode.id, 0);
   fScore.set(startNode.id, heuristic(startNode, endNode));
 
-  while (openSet.size > 0) {
-    if (openSet.size > openPeak) openPeak = openSet.size;
-    // 找到 fScore 最小的节点
+  while (openHeap.size() > 0) {
+    if (openHeap.size() > openPeak) openPeak = openHeap.size();
+    // 取 fScore 最小的节点（跳过过期项）
     let current = null;
-    let minFScore = Infinity;
-    for (const nodeId of openSet) {
-      const score = fScore.get(nodeId);
-      if (score < minFScore) {
-        minFScore = score;
-        current = nodeId;
-      }
+    for (;;) {
+      const top = openHeap.pop();
+      if (!top) { current = null; break; }
+      const expected = fScore.get(top.id);
+      if (expected === top.key) { current = top.id; break; }
+      // 过期项，跳过
     }
+    if (current == null) break;
 
     if (current === endNode.id) {
       // 重建路径
@@ -102,7 +138,6 @@ export function findPathAStar(layer, startNode, endNode) {
       return path;
     }
 
-    openSet.delete(current);
     expanded++;
 
     const neighbors = graph.get(current) || [];
@@ -113,10 +148,11 @@ export function findPathAStar(layer, startNode, endNode) {
         cameFrom.set(neighbor.nodeId, current);
         gScore.set(neighbor.nodeId, tentativeGScore);
         
-        const neighborNode = nodes.find(n => n.id === neighbor.nodeId);
-        fScore.set(neighbor.nodeId, tentativeGScore + heuristic(neighborNode, endNode));
+        const neighborNode = idToNode.get(neighbor.nodeId);
+        const f = tentativeGScore + heuristic(neighborNode, endNode);
+        fScore.set(neighbor.nodeId, f);
         
-        openSet.add(neighbor.nodeId);
+        openHeap.push({ id: neighbor.nodeId, key: f });
         relaxed++;
       }
     }

@@ -81,6 +81,15 @@ export function clearCanvasImpl(renderer) {
     renderer.mainContainer.removeChildren();
     renderer.layerContainers = [];
   }
+  // 释放障碍物静态缓存纹理与引用，避免内存泄漏
+  try {
+    if (renderer._obstacleCache) {
+      if (renderer._obstacleCache.texture && typeof renderer._obstacleCache.texture.destroy === 'function') {
+        renderer._obstacleCache.texture.destroy(true);
+      }
+      renderer._obstacleCache = null;
+    }
+  } catch (_) { /* ignore */ }
   renderer.currentLayer = null;
   renderer.showAllLayers = false;
   renderer.roadNetData = null;

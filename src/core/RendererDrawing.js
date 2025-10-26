@@ -114,6 +114,15 @@ export class RendererDrawing {
     obstacleContainer.name = 'obstacles';
 
     const needCull = !!(cullRect && typeof cullRect.x === 'number');
+    // 标签 LOD：缩放*cellSize 太小时不绘制标签，减少 draw calls
+    const scale = this.transform?.scale || 1;
+    const showLabel = (cellSize * scale) >= 8;
+
+    // 合批矩形至单一 Graphics
+    const g = new PIXI.Graphics();
+    g.beginFill(0xdc2626, 0.5);
+    g.lineStyle(1, 0xdc2626, 0.85);
+
     obstacles.forEach((obs, i) => {
       // 视窗裁剪（基础版）：像素坐标相交才绘制
       if (needCull) {
@@ -126,25 +135,24 @@ export class RendererDrawing {
           return; // 不相交则跳过
         }
       }
-      const rect = new PIXI.Graphics();
-      rect.beginFill(0xdc2626, 0.5); // 深红填充，半透明
-      rect.lineStyle(1, 0xdc2626, 0.85); // 深红描边
-      rect.drawRect(
+      g.drawRect(
         offsetX + obs.x * cellSize,
         offsetY + obs.y * cellSize,
         obs.w * cellSize,
         obs.h * cellSize
       );
-      rect.endFill();
-      obstacleContainer.addChild(rect);
-      const label = new PIXI.Text(String(i + 1), { fontSize: Math.max(10, Math.floor(cellSize * 0.8)), fill: 0xffffff });
-      label.anchor.set(0.5);
-      label.position.set(
-        offsetX + (obs.x + obs.w / 2) * cellSize,
-        offsetY + (obs.y + obs.h / 2) * cellSize
-      );
-      obstacleContainer.addChild(label);
+      if (showLabel) {
+        const label = new PIXI.Text(String(i + 1), { fontSize: Math.max(10, Math.floor(cellSize * 0.8)), fill: 0xffffff });
+        label.anchor.set(0.5);
+        label.position.set(
+          offsetX + (obs.x + obs.w / 2) * cellSize,
+          offsetY + (obs.y + obs.h / 2) * cellSize
+        );
+        obstacleContainer.addChild(label);
+      }
     });
+    g.endFill();
+    obstacleContainer.addChild(g);
 
     return obstacleContainer;
   }

@@ -62,14 +62,38 @@ export function renderRoadNetImpl(renderer, navGraphData) {
   // 先渲染障碍物层（底层）
   const tOb0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
   if (obstacles && obstacles.length > 0) {
-    const margin = 128; // 基础裁剪边距
-    const cullRect = { x: -margin, y: -margin, w: renderer.app.screen.width + margin * 2, h: renderer.app.screen.height + margin * 2 };
+    const cfg = renderer.config || {};
+    const cullingEnabled = !!(cfg.culling && cfg.culling.enabled);
+    const margin = (cfg.culling && typeof cfg.culling.margin === 'number') ? cfg.culling.margin : 128;
+    const cullRect = cullingEnabled ? { x: -margin, y: -margin, w: renderer.app.screen.width + margin * 2, h: renderer.app.screen.height + margin * 2 } : null;
     const cacheKey = `${obstacles?.length || 0}|${offsetX}|${offsetY}|${cellSize}`;
-    const canCache = false; // 暂停缓存以修复偏移问题，后续再启用
+    const canCache = !!(cfg.caching && cfg.caching.staticLayers === true); // 默认关闭，开关控制
     if (canCache && renderer._obstacleCache && renderer._obstacleCache.key === cacheKey && renderer._obstacleCache.obsRef === obstacles && renderer._obstacleCache.sprite) {
       renderer.obstacleLayer = renderer._obstacleCache.sprite;
       renderer.mainContainer.addChild(renderer.obstacleLayer);
       try { console.log('[Cache] 复用障碍物静态纹理'); } catch (_) {}
+    } else if (canCache) {
+      const obstacleContainer = renderer.drawing.renderObstacles(obstacles, offsetX, offsetY, cellSize, cullRect);
+      let usedSprite = false;
+      try {
+        const worldBounds = obstacleContainer.getBounds?.() || { x: 0, y: 0, width: 1, height: 1 };
+        const region = new PIXI.Rectangle(worldBounds.x, worldBounds.y, worldBounds.width, worldBounds.height);
+        const tex = renderer.app.renderer.generateTexture(obstacleContainer, { region });
+        const spr = new PIXI.Sprite(tex);
+        spr.name = 'obstacles';
+        spr.position.set(worldBounds.x, worldBounds.y);
+        renderer._obstacleCache = { key: cacheKey, obsRef: obstacles, texture: tex, sprite: spr };
+        renderer.obstacleLayer = spr;
+        renderer.mainContainer.addChild(spr);
+        usedSprite = true;
+        try { console.log('[Cache] 生成障碍物静态纹理'); } catch (_) {}
+      } catch (_) {
+        renderer.obstacleLayer = obstacleContainer;
+        renderer.mainContainer.addChild(obstacleContainer);
+      }
+      if (usedSprite) {
+        try { obstacleContainer.destroy({ children: true }); } catch (_) {}
+      }
     } else {
       const obstacleContainer = renderer.drawing.renderObstacles(obstacles, offsetX, offsetY, cellSize, cullRect);
       renderer.obstacleLayer = obstacleContainer;
