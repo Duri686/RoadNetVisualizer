@@ -39,19 +39,34 @@ class App {
     const card = document.getElementById('legend-card');
     if (!card) return;
 
+    // 更新 UI 状态的辅助函数
+    const updateUI = (key, visible) => {
+      const item = card.querySelector(`.legend-item-new[data-layer="${key}"]`);
+      if (item) {
+        const btn = item.querySelector('.legend-eye');
+        const isOn = visible !== false;
+        item.classList.toggle('off', !isOn);
+        if (btn) btn.setAttribute('aria-pressed', isOn ? 'true' : 'false');
+      }
+    };
+
     // 初始化：根据管理器状态同步“眼睛”按钮
     try {
       const states = layerToggleManager.getLayerStates();
-      card.querySelectorAll('.legend-item-new[data-layer]').forEach((item) => {
-        const key = item.getAttribute('data-layer');
-        const btn = item.querySelector('.legend-eye');
-        const on = states[key] !== false;
-        item.classList.toggle('off', !on);
-        if (btn) btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      Object.keys(states).forEach(key => {
+        updateUI(key, states[key]);
       });
     } catch (e) {
       console.debug('[Legend] init sync skipped:', e);
     }
+
+    // 监听全局图层变化事件（实现双向同步）
+    window.addEventListener('layer-visibility-changed', (e) => {
+      if (e.detail) {
+        const { layerName, isVisible } = e.detail;
+        updateUI(layerName, isVisible);
+      }
+    });
 
     // 事件委托：点击眼睛切换图层
     card.addEventListener('click', (ev) => {
@@ -60,11 +75,12 @@ class App {
       const item = btn.closest('.legend-item-new');
       const key = item && item.getAttribute('data-layer');
       if (!key) return;
-      const current = btn.getAttribute('aria-pressed') === 'true';
-      const next = !current;
-      btn.setAttribute('aria-pressed', next ? 'true' : 'false');
-      item.classList.toggle('off', !next);
-      // 联动渲染器
+      
+      // 获取当前按钮状态并取反
+      const currentPressed = btn.getAttribute('aria-pressed') === 'true';
+      const next = !currentPressed;
+      
+      // 仅调用管理器，UI 更新交由事件监听处理
       layerToggleManager.toggleLayer(key, next);
     });
   }
@@ -192,7 +208,6 @@ class App {
       this.setupZoomControls();
 
       // 绑定侧栏交互
-      this.setupLegendControls();
       this.setupLegendControls();
       this.setupPathPanelControls();
       

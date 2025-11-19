@@ -184,6 +184,7 @@ export class RoadNetRenderer {
     const lines = new THREE.LineSegments(geometry, material);
     lines.computeLineDistances(); // 计算虚线距离
     lines.name = 'baseTriangulation';
+    lines.visible = false; // 默认不显示
     layerGroup.add(lines);
   }
 
