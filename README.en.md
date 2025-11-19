@@ -1,6 +1,6 @@
 # RoadNet Visualizer
 
-Multi-layer road network generator and visualizer built with Vite, PixiJS, and Web Workers. It supports path optimization (smoothing/orthogonalization), multi-layer navigation, interactive controls, export/share, and theming.
+Multi-layer road network generator and visualizer built with Vite, Three.js, and Web Workers. It supports path optimization (smoothing/orthogonalization), multi-layer navigation, interactive controls, export/share, and theming.
 
 [中文文档 | Chinese README](./README.zh-CN.md)
 
@@ -8,7 +8,7 @@ Multi-layer road network generator and visualizer built with Vite, PixiJS, and W
 ![Deploy](https://github.com/Duri686/RoadNetVisualizer/actions/workflows/deploy.yml/badge.svg?branch=main)
 ![Node](https://img.shields.io/badge/node-%3E=20-339933?logo=node.js&logoColor=white)
 ![Vite](https://img.shields.io/badge/vite-5-646CFF?logo=vite&logoColor=white)
-![PixiJS](https://img.shields.io/badge/PixiJS-7-blueviolet)
+![Three.js](https://img.shields.io/badge/Three.js-black?logo=three.js&logoColor=white)
 ![License](https://img.shields.io/badge/license-NonCommercial-orange)
 ![Stars](https://img.shields.io/github/stars/Duri686/RoadNetVisualizer?style=social)
 
@@ -40,7 +40,7 @@ Multi-layer road network generator and visualizer built with Vite, PixiJS, and W
 - Path planning and optimization  
   A* pathfinding; smoothing and orthogonalization; timing metrics
 - Interaction and navigation  
-  Zoom, pan, node picking, layer toggles, canvas navigation controls
+  3D Camera controls (Orbit), node picking, layer toggles, canvas navigation controls
 - Export and sharing  
   One-click export and share
 - Mobile friendly  
@@ -100,8 +100,8 @@ yarn preview
   - Optimization: smoothing, orthogonalization for straighter, smoother lines  
   - Metrics: timing breakdown for pathfinding and optimization
 - Rendering & interaction  
-  - Rendering: PixiJS (WebGL)  
-  - Interaction: zoom/pan, node picking, layer toggles, canvas navigation controls  
+  - Rendering: Three.js (WebGL)  
+  - Interaction: 3D Orbit controls, node picking, layer toggles  
   - Animation: moving ball along path
 - Concurrency & performance  
   - Web Workers: index/compute off main thread  
@@ -170,7 +170,7 @@ Licensed under the PolyForm Noncommercial License 1.0.0. See [LICENSE](./LICENSE
 
 ## Acknowledgments
 
-- [PixiJS](https://pixijs.com/)
+- [Three.js](https://threejs.org/)
 - [d3-delaunay](https://github.com/d3/d3-delaunay)
 - [Turf.js](https://turfjs.org/)
 - Vite & GitHub Actions

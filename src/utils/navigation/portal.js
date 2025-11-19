@@ -77,6 +77,7 @@ export function buildPortalNetwork(width, height, obstacles, options = { useSpat
     }
   }
 
+  const tNode1 = performance?.now ? performance.now() : Date.now();
   const edges = [];
   const useSI = options && options.useSpatialIndex !== false;
   const profile = {

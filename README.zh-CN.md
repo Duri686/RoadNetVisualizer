@@ -1,6 +1,6 @@
 # RoadNet Visualizer
 
-基于 Web 技术（Vite + PixiJS + Web Workers）的多层道路网络生成与可视化工具。支持路径优化（平滑/正交化）、多层导航、交互控制、导出分享与主题化。
+基于 Web 技术（Vite + Three.js + Web Workers）的多层道路网络生成与可视化工具。支持路径优化（平滑/正交化）、多层导航、交互控制、导出分享与主题化。
 
 [English README](./README.en.md)
 
@@ -8,7 +8,7 @@
 ![Deploy](https://github.com/Duri686/RoadNetVisualizer/actions/workflows/deploy.yml/badge.svg?branch=main)
 ![Node](https://img.shields.io/badge/node-%3E=20-339933?logo=node.js&logoColor=white)
 ![Vite](https://img.shields.io/badge/vite-5-646CFF?logo=vite&logoColor=white)
-![PixiJS](https://img.shields.io/badge/PixiJS-7-blueviolet)
+![Three.js](https://img.shields.io/badge/Three.js-black?logo=three.js&logoColor=white)
 ![License](https://img.shields.io/badge/license-NonCommercial-orange)
 ![Stars](https://img.shields.io/github/stars/Duri686/RoadNetVisualizer?style=social)
 
@@ -40,7 +40,7 @@
 - 路径规划与优化  
   A* 寻路；路径平滑与正交化；提供耗时统计
 - 交互与导航  
-  缩放、平移、节点选取、图层开关、画布导航控件
+  3D 视角控制（旋转/缩放/平移）、节点选取、图层开关
 - 导出与分享  
   一键导出与分享结果
 - 移动端适配  
@@ -100,8 +100,8 @@ yarn preview
   - 优化：平滑、正交化，使线条更“顺”和“直”  
   - 指标：寻路与优化阶段的耗时统计
 - 渲染与交互  
-  - 渲染：PixiJS（WebGL）  
-  - 交互：缩放/平移、节点选取、图层开关、画布导航控件  
+  - 渲染：Three.js (WebGL)  
+  - 交互：3D 视角控制、节点选取、图层开关  
   - 动画：小球沿路径动态播放
 - 并行与性能  
   - Web Workers：索引/计算在 Worker 中执行，降低主线程阻塞  
@@ -176,7 +176,7 @@ src/
 
 ## 致谢
 
-- [PixiJS](https://pixijs.com/)
+- [Three.js](https://threejs.org/)
 - [d3-delaunay](https://github.com/d3/d3-delaunay)
 - [Turf.js](https://turfjs.org/)
 - Vite & GitHub Actions

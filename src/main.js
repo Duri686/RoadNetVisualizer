@@ -4,7 +4,7 @@
  */
 
 import workerManager from './core/workerManager.js';
-import renderer from './core/renderer.js';
+import renderer from './core/renderer3d.js';
 import InputForm from './components/InputForm.js';
 import ProgressBar from './components/ProgressBar.js';
 import LayerControl from './components/LayerControl.js';
@@ -12,7 +12,9 @@ import statusManager from './utils/statusManager.js';
 import exportManager from './utils/exportManager.js';
 import shareManager from './utils/shareManager.js';
 import layerToggleManager from './utils/layerToggleManager.js';
-import navigatorManager from './utils/navigatorManager.js';
+// import navigatorManager from './utils/navigatorManager.js'; // 已禁用以优化性能
+import { findPathAStar } from './utils/pathfinding.js';
+import { smoothPathVisibility } from './utils/pathSmoothing.js';
 
 // #TODO: 添加错误边界处理
 // #TODO: 添加性能监控
@@ -191,7 +193,96 @@ class App {
 
       // 绑定侧栏交互
       this.setupLegendControls();
+      this.setupLegendControls();
       this.setupPathPanelControls();
+      
+      // 监听 3D 渲染器的寻路请求
+      window.addEventListener('renderer-path-request', (e) => {
+          const { start, end } = e.detail;
+          if (start && end && renderer.roadNetData) {
+              console.log('Path request received:', start, end);
+              const layerIndex = start.layer || 0;
+              const layer = renderer.roadNetData.layers[layerIndex];
+              
+              if (layer) {
+                  setTimeout(() => {
+                      const smoothStartTime = performance.now();
+                      
+                      // 1. 使用A*算法查找原始路径
+                      let path = findPathAStar(layer, start, end);
+                      console.log('Raw path found:', path?.length, 'nodes');
+                      
+                      if (path && path.length > 1) {
+                          // 2. 应用可见性平滑（与2D版本相同）
+                          const obstacles = renderer.roadNetData.obstacles || [];
+                          const metadata = renderer.roadNetData.metadata || {};
+                          
+                          try {
+                              const smoothedPath = smoothPathVisibility(path, obstacles, {
+                                  width: metadata.width || 0,
+                                  height: metadata.height || 0,
+                                  useSpatialIndex: true,
+                                  maxLookahead: 100, // 增加前瞻距离，优先选择直线路径
+                                  clearance: 2.0 // 保持2.0单位安全距离
+                              });
+                              
+                              const smoothTime = performance.now() - smoothStartTime;
+                              console.log('Smoothed path:', smoothedPath.length, 'nodes (reduced from', path.length, ')');
+                              path = smoothedPath;
+                              
+                              // 3. 计算路径统计
+                              let totalLength = 0;
+                              let turns = 0;
+                              for (let i = 0; i < path.length - 1; i++) {
+                                  const dx = path[i + 1].x - path[i].x;
+                                  const dy = path[i + 1].y - path[i].y;
+                                  totalLength += Math.sqrt(dx * dx + dy * dy);
+                                  
+                                  // 计算转折（方向变化）
+                                  if (i > 0) {
+                                      const dx1 = path[i].x - path[i - 1].x;
+                                      const dy1 = path[i].y - path[i - 1].y;
+                                      const dx2 = path[i + 1].x - path[i].x;
+                                      const dy2 = path[i + 1].y - path[i].y;
+                                      
+                                      const angle1 = Math.atan2(dy1, dx1);
+                                      const angle2 = Math.atan2(dy2, dx2);
+                                      const angleDiff = Math.abs(angle2 - angle1);
+                                      
+                                      if (angleDiff > 0.1) turns++;
+                                  }
+                              }
+                              
+                              // 4. 更新UI统计
+                              const pathStatus = document.getElementById('path-status');
+                              const pathLength = document.getElementById('path-length');
+                              const pathNodes = document.getElementById('path-nodes');
+                              const pathTurns = document.getElementById('path-turns');
+                              const pathSmoothMs = document.getElementById('path-smooth-ms');
+                              
+                              if (pathStatus) pathStatus.textContent = '已找到';
+                              if (pathLength) pathLength.textContent = `${totalLength.toFixed(2)} m`;
+                              if (pathNodes) pathNodes.textContent = path.length;
+                              if (pathTurns) pathTurns.textContent = turns;
+                              if (pathSmoothMs) pathSmoothMs.textContent = `${smoothTime.toFixed(1)} ms`;
+                              
+                          } catch (e) {
+                              console.warn('Path smoothing failed, using raw path:', e);
+                          }
+                          
+                          // 5. 绘制平滑后的路径
+                          renderer.drawPath(path);
+                      } else {
+                          console.warn('No path found');
+                          
+                          // 更新UI为未找到
+                          const pathStatus = document.getElementById('path-status');
+                          if (pathStatus) pathStatus.textContent = '未找到';
+                      }
+                  }, 0);
+              }
+          }
+      });
 
       // 使用 ResizeObserver 监听 #pixi-canvas 实际尺寸变化，避免初次布局与自适应引发抖动
       try {
@@ -350,15 +441,24 @@ class App {
         const renderMs = Math.max(0, Math.round(tRender1 - tRender0));
         
         // 更新缩略图导航
-        navigatorManager.render(data);
+        // navigatorManager.render(data); // 已禁用以优化性能
+        
+        // 计算数据体积
         let dataKB = '-';
         try {
           const payload = { layers: data.layers, obstacles: data.obstacles };
           const len = JSON.stringify(payload).length;
-          dataKB = Math.round(len / 1024) + 'KB';
+          dataKB = Math.round(len / 1024);
         } catch (e) {
           /* ignore stringify errors */
         }
+        
+        // 更新3D渲染和数据体积UI
+        const renderTimeEl = document.getElementById('render-time');
+        const dataSizeEl = document.getElementById('data-size');
+        if (renderTimeEl) renderTimeEl.textContent = `${renderMs} ms`;
+        if (dataSizeEl) dataSizeEl.textContent = `${dataKB} KB`;
+        
         const initMs = this.perf.initRenderMs || 0;
         // 追加 worker 侧拆账（若存在）
         const wprof = meta && meta.workerProfile;
@@ -373,10 +473,10 @@ class App {
           // 计算端到端与生成(Worker)的差值，便于识别主线程/传输/渲染噪声
           const genMs = (wprof.obstaclesMs || 0) + (wprof.buildMs || 0) + (wprof.overlayMs || 0);
           const delta = Math.round(cost - genMs);
-          deltaText = ` | 端到端差值 ${delta} ms`;
+          deltaText = ` | 主线程开销 ${delta} ms`;
         }
         if (perfInfo)
-          perfInfo.textContent = `本次计算：耗时 ${cost} ms | 可行节点 ${nodeCount} 个 | 可行边 ${edgeCount} 条${profText}${wprofText}${deltaText} | 初始化渲染 ${initMs} ms | 数据体积 ${dataKB} | 渲染 ${renderMs} ms`;
+          perfInfo.textContent = `详细分析：可行节点 ${nodeCount} | 可行边 ${edgeCount}${profText}${wprofText}${deltaText}`;
       },
 
       onError: (error) => {

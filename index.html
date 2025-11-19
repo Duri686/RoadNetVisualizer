@@ -309,22 +309,7 @@
           <!-- 画布区域 -->
           <div id="pixi-canvas"></div>
 
-          <!-- 缩略图导航 -->
-          <div class="canvas-navigator">
-            <div class="navigator-controls">
-              <label for="nav-mode-select" class="sr-only"
-                >Navigator Mode</label
-              >
-              <select id="nav-mode-select" title="缩略图模式">
-                <option value="auto" selected>自动</option>
-                <option value="heatmap">热力</option>
-                <option value="detail">细节</option>
-              </select>
-            </div>
-            <div class="navigator-viewport">
-              <canvas id="navigator-canvas"></canvas>
-            </div>
-          </div>
+          <!-- 缩略图导航已移除以优化性能 -->
 
           <!-- 画布提示信息（简化版） -->
           <div class="canvas-hint">
@@ -496,6 +481,14 @@
               <div class="stat-item">
                 <span class="stat-label">生成耗时</span>
                 <span class="stat-value" id="gen-time">-- ms</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">3D渲染</span>
+                <span class="stat-value" id="render-time">-- ms</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">数据体积</span>
+                <span class="stat-value" id="data-size">-- KB</span>
               </div>
             </div>
             <div id="perf-info" class="perf-detail">
