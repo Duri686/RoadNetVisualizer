@@ -58,54 +58,15 @@
   cursor: pointer;
   accent-color: var(--primary-color);
 }
-
-/* 层控与选择器 */
-.layer-controls {
-  display: flex;
-  gap: var(--space-md);
-  align-items: center;
-  flex-wrap: wrap;
-  margin-bottom: var(--space-lg);
-}
-
-.layer-controls label {
-  color: var(--text-secondary);
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.layer-controls select {
-  flex: 1;
-  min-width: 150px;
-  padding: var(--space-md) var(--space-lg);
-  background: var(--bg-input);
-  border: 1px solid var(--border-input);
-  border-radius: var(--radius-lg);
-  color: var(--text-primary);
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.layer-controls select:hover {
-  background: var(--bg-input-hover);
-  border-color: var(--text-muted);
-}
-
-.layer-controls select:focus {
-  outline: none;
-  border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px rgba(91, 95, 239, 0.1);
-}
-
 /* 模式选择组 */
 .mode-group {
   display: flex;
-  gap: var(--space-md);
   flex-wrap: wrap;
-  margin: var(--space-md) 0;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
 }
 
+/* 模式选择项 */
 .mode-item {
   display: inline-flex;
   align-items: center;
@@ -113,17 +74,30 @@
   background: var(--bg-input);
   border: 1px solid var(--border-input);
   border-radius: var(--radius-md);
-  padding: var(--space-sm) var(--space-md);
+  padding: 8px 12px;
   color: var(--text-primary);
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 500;
   user-select: none;
   cursor: pointer;
   transition: all 0.2s ease;
+  flex: 1;
+  min-width: 100px;
+  justify-content: center;
 }
 
 .mode-item:hover {
   background: var(--bg-input-hover);
   border-color: var(--text-muted);
+  transform: translateY(-1px);
+}
+
+/* 选中状态 (使用 :has 选择器) */
+.mode-item:has(input:checked) {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: var(--primary-color);
+  color: #fff;
+  box-shadow: 0 0 0 1px var(--primary-color);
 }
 
 .mode-item input[type='checkbox'] {
@@ -131,6 +105,27 @@
   height: 16px;
   cursor: pointer;
   accent-color: var(--primary-color);
+}
+
+/* 模式说明文本 */
+.mode-help {
+  margin-top: var(--space-md);
+  padding: var(--space-md);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.mode-help div {
+  margin-bottom: 4px;
+}
+
+.mode-help strong {
+  color: var(--accent-color);
+  font-weight: 600;
 }
 
 /* 状态提示增强样式 */

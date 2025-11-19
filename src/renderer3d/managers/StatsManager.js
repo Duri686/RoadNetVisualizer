@@ -18,7 +18,8 @@ export class StatsManager {
     this.stats = new Stats();
     this.stats.showPanel(0); // 0: FPS, 1: MS, 2: MB
     this.stats.dom.style.position = 'absolute';
-    this.stats.dom.style.top = '8px';
+    this.stats.dom.style.top = 'auto';
+    this.stats.dom.style.bottom = '8px';
     this.stats.dom.style.left = '8px';
     this.stats.dom.style.zIndex = '100';
     this.container.appendChild(this.stats.dom);

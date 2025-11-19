@@ -1,51 +1,58 @@
-/* 设计令牌（变量）- 亮色主题 */
+/* 设计令牌（变量）- 深色赛博风格 */
 :root {
-  /* 主色系 - 科技蓝 */
-  --primary-color: #0066FF;
-  --primary-hover: #0052CC;
-  --primary-active: #0047B3;
+  /* 主色系 - 电蓝 */
+  --primary-color: #3B82F6;
+  --primary-hover: #2563EB;
+  --primary-active: #1D4ED8;
   
-  /* 背景色 */
-  --bg-page: #F9FAFB;
-  --bg-card: #FFFFFF;
-  --bg-input: #F3F4F6;
-  --bg-input-hover: #E5E7EB;
+  /* 强调色 - 霓虹青 */
+  --accent-color: #22D3EE;
+  --accent-hover: #06B6D4;
+  
+  /* 背景色 - 深空蓝灰 */
+  --bg-page: #0F172A;
+  --bg-card: rgba(15, 23, 42, 0.6); /* 半透明深色 */
+  --bg-input: rgba(255, 255, 255, 0.05);
+  --bg-input-hover: rgba(255, 255, 255, 0.08);
+  --bg-glass: rgba(255, 255, 255, 0.04);
   
   /* 文字色 */
-  --text-primary: #1F2937;
-  --text-secondary: #6B7280;
-  --text-muted: #9CA3AF;
+  --text-primary: #E2E8F0;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
   --text-white: #FFFFFF;
   
   /* 边框色 */
-  --border-light: #E5E7EB;
-  --border-input: #D1D5DB;
-  --border-focus: #5B5FEF;
+  --border-light: rgba(255, 255, 255, 0.06);
+  --border-input: rgba(255, 255, 255, 0.1);
+  --border-focus: #3B82F6;
+  --border-glass: rgba(255, 255, 255, 0.08);
   
   /* 状态色 */
-  --success-color: #10B981;
+  --success-color: #22C55E;
   --error-color: #EF4444;
   --warning-color: #F59E0B;
   --info-color: #3B82F6;
   
   /* 统计图标色 */
-  --stat-node-color: #EF4444;
+  --stat-node-color: #22D3EE;
   --stat-edge-color: #3B82F6;
-  --stat-layer-color: #10B981;
+  --stat-layer-color: #F472B6;
   
   /* 可视化元素色（对应设计稿图例） */
   --viz-start-point: #10B981;  /* 绿色 - 起点 */
   --viz-end-point: #EF4444;    /* 红色 - 终点 */
   --viz-path: #F59E0B;         /* 黄色 - 路径 */
-  --viz-network-edge: #3B82F6; /* 蓝色 - 网络边 */
-  --viz-obstacle: #DC2626;     /* 深红 - 障碍物 */
-  --viz-voronoi: #06B6D4;      /* 青色 - Voronoi */
-  --viz-canvas-bg: #0F172A;    /* 深蓝黑 - 画布背景 */
+  --viz-network-edge: #38BDF8; /* 电蓝 - 网络边 */
+  --viz-obstacle: #EF4444;     /* 亮红 - 障碍物 */
+  --viz-voronoi: #22D3EE;      /* 青色 - Voronoi */
+  --viz-canvas-bg: #020617;    /* 深空黑 - 画布背景 */
   
   /* 阴影 */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+  --shadow-glass: 0 4px 30px rgba(0, 0, 0, 0.3);
   
   /* 圆角 */
   --radius-sm: 6px;
@@ -61,4 +68,7 @@
   --space-lg: 16px;
   --space-xl: 20px;
   --space-2xl: 24px;
+  
+  /* 模糊 */
+  --backdrop-blur: blur(12px);
 }

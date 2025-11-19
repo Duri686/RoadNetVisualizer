@@ -23,21 +23,21 @@ export const Renderer3DConfig = {
   
   // 颜色配置
   colors: {
-    background: 0x0a0e27,
-    node: 0x3b82f6,           // 蓝色节点
+    background: 0x020617,      // 深空黑
+    node: 0x3b82f6,            // 电蓝节点
     nodeEmissive: 0x2563eb,    // 深蓝发光
-    edge: 0x3b82f6,
-    obstacle: 0xef4444,
-    obstacleEmissive: 0x991b1b,
-    pathActive: 0xffa500,      // 橙色路径
-    pathBurned: 0x555577,
-    startNode: 0x00ff88,       // 绿色起点
-    startNodeEmissive: 0x00cc66,
-    endNode: 0xff3333,         // 红色终点
-    endNodeEmissive: 0xcc0000,
+    edge: 0x38bdf8,            // 亮青色边
+    obstacle: 0xef4444,        // 亮红障碍物
+    obstacleEmissive: 0xdc2626, // 红色发光
+    pathActive: 0xf59e0b,      // 琥珀色路径
+    pathBurned: 0x475569,      // 烧过的路径变灰
+    startNode: 0x10b981,       // 绿色起点
+    startNodeEmissive: 0x059669,
+    endNode: 0xef4444,         // 红色终点
+    endNodeEmissive: 0xb91c1c,
     grid: {
-      primary: 0x4444ff,
-      secondary: 0x222244
+      primary: 0x1e293b,       // 深蓝灰网格
+      secondary: 0x0f172a      // 更深背景网格
     }
   },
   

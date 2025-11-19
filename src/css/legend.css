@@ -163,14 +163,74 @@
   margin: 4px 0;
 }
 
+/* 图例样式 */
+.legend-panel {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: auto;
+  min-width: 160px;
+  z-index: 100;
+  background: var(--bg-glass);
+  backdrop-filter: var(--backdrop-blur);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-glass);
+  padding: 16px;
+}
+
+.legend-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: 8px;
+}
+
+.legend-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* The original .legend-item rule is replaced by the new one below */
 /* 图例项 */
-.legend-item {
+/* .legend-item {
   display: inline-flex;
   align-items: center;
   gap: var(--space-sm);
   font-size: 13px;
   color: var(--text-secondary);
+} */
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  color: var(--text-primary);
 }
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 10px;
+  box-shadow: 0 0 8px currentColor;
+}
+
+/* 颜色定义 */
+.dot-start { color: var(--viz-start-point); background: currentColor; }
+.dot-end { color: var(--viz-end-point); background: currentColor; }
+.dot-path { color: var(--viz-path); background: currentColor; }
+.dot-edge { color: var(--viz-network-edge); background: currentColor; }
+.dot-obstacle { color: var(--viz-obstacle); background: currentColor; }
+.dot-voronoi { color: var(--viz-voronoi); background: currentColor; }
 
 /* 图例图标 */
 .icon.obstacle {
@@ -269,14 +329,38 @@
   }
 }
 .btn-compact {
-  padding: 4px 8px;
+  padding: 6px 12px;
   font-size: 12px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
 }
+
+.btn-compact:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
+
 .btn-icon {
   width: 28px;
   height: 28px;
   padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+}
+
+.btn-icon:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
 }
 
 /* 折叠状态 */
