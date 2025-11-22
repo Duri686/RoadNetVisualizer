@@ -1,447 +1,69 @@
 /**
- * Obstacle-Driven Navigation Graph Worker
- * 障碍物驱动的导航图生成器
+ * Obstacle-Driven Navigation Graph Worker - 调试版
+ * 添加详细日志以排查模块加载问题
  */
 
-import { SeededRandom, generateObstacles, isPointInObstacles } from '../utils/obstacleGeneration.js';
-import { euclideanDistance, lineIntersectsObstacleWithTurf } from '../utils/obstacleGeometry.js';
-import { createSpatialIndex, getObstaclesAlongLineDDA, computeObstaclesSignature } from '../utils/spatialIndex.js';
-import {
-  buildObstacleConnectionNetwork,
-  buildDirectionalConnectionNetwork,
-  segmentFreeSpaceDetailed,
-  aggregateZones,
-  buildCentroidFreeSpaceNetwork,
-  buildPortalNetwork,
-  buildVoronoiSkeleton
-} from '../utils/navigation/index.js';
+console.log('[Worker] 开始加载 worker 文件...');
 
-const rng = new SeededRandom();
-
-/**
- * 构建单层导航图（支持层次抽象）
- */
-function buildLayer(width, height, obstacles, layerIndex, baseZones, mode = 'centroid', options = {}) {
-  // Layer 0: 根据模式选择可行网络/骨架构建
-  if (layerIndex === 0) {
-    let result;
-    let abstractionType = 'centroid-free';
-    if (mode === 'portal') {
-      result = buildPortalNetwork(width, height, obstacles, { useSpatialIndex: options.useSpatialIndex !== false });
-      abstractionType = 'portal';
-    } else if (mode === 'voronoi') {
-      result = buildVoronoiSkeleton(width, height, obstacles, { useSpatialIndex: options.useSpatialIndex !== false });
-      abstractionType = 'voronoi-skeleton';
-    } else {
-      result = buildCentroidFreeSpaceNetwork(width, height, obstacles, { useSpatialIndex: options.useSpatialIndex !== false });
-      abstractionType = 'centroid-free';
-    }
-    // 生成基础的障碍顶点网络（叠加展示），大规模时按需跳过以提升生成速度
-    const overlayMode = options && options.overlayMode ? String(options.overlayMode) : 'auto';
-    // 始终渲染 overlay，除非显式指定 none
-    const overlaySkip = overlayMode === 'none';
-    let overlayEdges = [];
-    let overlayPacked = null; // Float32Array 打包后的边
-    let overlayBuildMs = 0;
-    let overlayActualMode = overlaySkip ? 'skipped' : 'delaunay';
-    if (!overlaySkip) {
-      const tOv0 = performance?.now ? performance.now() : Date.now();
-      const baseForOverlay = buildObstacleConnectionNetwork(width, height, obstacles);
-      const idToNode = new Map(baseForOverlay.nodes.map(n => [n.id, n]));
-      overlayEdges = baseForOverlay.edges.map(e => {
-        const a = idToNode.get(e.from);
-        const b = idToNode.get(e.to);
-        return { x1: a.x, y1: a.y, x2: b.x, y2: b.y };
-      });
-      // 打包为 Float32Array，减少结构化克隆成本
-      if (overlayEdges.length) {
-        overlayPacked = new Float32Array(overlayEdges.length * 4);
-        for (let i = 0, k = 0; i < overlayEdges.length; i++) {
-          const e = overlayEdges[i];
-          overlayPacked[k++] = e.x1;
-          overlayPacked[k++] = e.y1;
-          overlayPacked[k++] = e.x2;
-          overlayPacked[k++] = e.y2;
-        }
-      }
-      const tOv1 = performance?.now ? performance.now() : Date.now();
-      overlayBuildMs = Math.max(0, Math.round(tOv1 - tOv0));
-    }
-    
-    // 将网络边打包为 Float32Array，便于零拷贝传输与高效渲染
-    const packEdges = (nodes, edges) => {
-      if (!Array.isArray(nodes) || !Array.isArray(edges) || nodes.length === 0 || edges.length === 0) return null;
-      const idToNode = new Map(nodes.map(n => [n.id, n]));
-      const buf = [];
-      for (let i = 0; i < edges.length; i++) {
-        const e = edges[i];
-        const a = idToNode.get(e.from);
-        const b = idToNode.get(e.to);
-        if (!a || !b) continue;
-        buf.push(a.x, a.y, b.x, b.y);
-      }
-      return buf.length ? new Float32Array(buf) : null;
-    };
-
-    const edgesPacked = packEdges(result.nodes, result.edges);
-    // 打包节点为 Float32Array
-    const packNodes = (nodes) => {
-      if (!Array.isArray(nodes) || nodes.length === 0) return null;
-      const buf = new Float32Array(nodes.length * 2);
-      for (let i = 0, k = 0; i < nodes.length; i++) { const n = nodes[i]; buf[k++] = n.x; buf[k++] = n.y; }
-      return buf;
-    };
-    const nodesPacked = packNodes(result.nodes);
-
-    return {
-      layerIndex: 0,
-      nodes: result.nodes,
-      edges: result.edges,
-      // 新增：网络边/节点打包（可选）
-      edgesPacked,
-      nodesPacked,
-      // 精简：省略大体积的 triangles/delaunay，后续需要可按需开启
-      triangles: [],
-      delaunay: null,
-      metadata: {
-        nodeCount: result.nodes.length,
-        edgeCount: result.edges.length,
-        abstraction: abstractionType,
-        profile: result.profile || null,
-        overlayBase: {
-          edgeCount: overlayEdges.length,
-          // 为空数组以减少体积，使用 edgesPacked 渲染
-          edges: [],
-          edgesPacked: overlayPacked,
-          buildMs: overlayBuildMs,
-          mode: overlayActualMode
-        }
-      }
-    };
-  }
-
-  // Layer 1+: 基于 Layer 0 进行抽稀聚合
-  let zones;
-  
-  if (!baseZones || baseZones.length === 0) {
-    // 如果没有基础zones，使用旧的网格方法作为后备
-    zones = segmentFreeSpaceDetailed(width, height, obstacles);
-  } else {
-    // 使用聚合方法
-    const aggregationFactor = 2 * (layerIndex + 1);
-    zones = aggregateZones(baseZones, aggregationFactor);
-  }
-
-  const nodes = [];
-  const edges = [];
-
-  // 创建节点
-  zones.forEach((zone, i) => {
-    nodes.push({
-      id: `L${layerIndex}-N${i}`,
-      x: zone.centerX,
-      y: zone.centerY,
-      layer: layerIndex,
-      zoneId: zone.id,
-      clusterSize: zone.clusterSize || 1
-    });
-  });
-
-  // 构建边
-  const maxDistance = Math.min(width, height) / (2 - layerIndex * 0.1);
-  // 指标：边对检查次数、穿障检查次数、命中次数
-  let edgePairsConsidered = 0;
-  let obstacleChecks = 0;
-  let intersectHits = 0;
-  let candidateSum = 0;
-
-  // 可选：空间索引（用于收敛候选）
-  const useSI = !(options && options.useSpatialIndex === false);
-  const si = useSI ? createSpatialIndex(width, height, obstacles) : null;
-
-  for (let i = 0; i < nodes.length; i++) {
-    for (let j = i + 1; j < nodes.length; j++) {
-      const n1 = nodes[i];
-      const n2 = nodes[j];
-
-      const distance = euclideanDistance(n1, n2);
-      if (distance > maxDistance) continue;
-
-      edgePairsConsidered++;
-      let intersects = false;
-      if (si) {
-        // 使用 DDA 沿线逐格收集候选，显著减少穿障检查数
-        const cand = getObstaclesAlongLineDDA(si, n1.x, n1.y, n2.x, n2.y);
-        candidateSum += cand.length;
-        for (let oi = 0; oi < cand.length; oi++) {
-          obstacleChecks++;
-          if (lineIntersectsObstacleWithTurf(n1.x, n1.y, n2.x, n2.y, cand[oi])) { intersects = true; intersectHits++; break; }
-        }
-      } else {
-        // 保留旧逻辑
-        for (let oi = 0; oi < obstacles.length; oi++) {
-          obstacleChecks++;
-          if (lineIntersectsObstacleWithTurf(n1.x, n1.y, n2.x, n2.y, obstacles[oi])) { intersects = true; intersectHits++; break; }
-        }
-      }
-
-      if (!intersects) {
-        edges.push({
-          from: n1.id,
-          to: n2.id,
-          cost: distance
-        });
-      }
-    }
-  }
-
-  // 输出边构建统计（不改变行为）
+// 尝试动态导入以捕获错误
+(async () => {
   try {
-    const avgCand = edgePairsConsidered > 0 ? (candidateSum / edgePairsConsidered) : 0;
-    console.log(`[Layer ${layerIndex}] 边检查 ${edgePairsConsidered} | 候选均值 ${avgCand.toFixed(2)} | 穿障检查 ${obstacleChecks} | 命中 ${intersectHits}`);
-  } catch (_) { /* ignore */ }
+    console.log('[Worker] 尝试导入 messageHandler...');
+    const messageHandlerModule = await import(
+      './workers/messaging/messageHandler.js'
+    );
+    console.log('[Worker] ✅ messageHandler 导入成功', messageHandlerModule);
 
-  // 将网络边打包为 Float32Array，便于零拷贝传输与高效渲染
-  let edgesPacked = null;
-  let nodesPacked = null;
-  try {
-    if (nodes.length && edges.length) {
-      const idToNode = new Map(nodes.map(n => [n.id, n]));
-      const buf = [];
-      for (let i = 0; i < edges.length; i++) {
-        const e = edges[i];
-        const a = idToNode.get(e.from);
-        const b = idToNode.get(e.to);
-        if (!a || !b) continue;
-        buf.push(a.x, a.y, b.x, b.y);
-      }
-      edgesPacked = buf.length ? new Float32Array(buf) : null;
-    }
-    if (nodes.length) {
-      const np = new Float32Array(nodes.length * 2);
-      for (let i = 0, k = 0; i < nodes.length; i++) { const n = nodes[i]; np[k++] = n.x; np[k++] = n.y; }
-      nodesPacked = np;
-    }
-  } catch (_) { /* ignore */ }
+    const { handleMessage, handleError } = messageHandlerModule;
 
-  return {
-    layerIndex,
-    nodes,
-    edges,
-    // 新增：网络边/节点打包（可选）
-    edgesPacked,
-    nodesPacked,
-    zones,
-    metadata: {
-      nodeCount: nodes.length,
-      edgeCount: edges.length,
-      zoneCount: zones.length,
-      abstraction: layerIndex === 0 ? 'detailed' : `aggregated-${layerIndex}`
-    }
-  };
-}
-
-/**
- * 构建多层导航图（真正的层次抽象）
- */
-function buildLayers(width, height, obstacles, layerCount, mode = 'centroid', options = {}) {
-  const layers = [];
-  let baseZones = null;
-
-  for (let i = 0; i < layerCount; i++) {
-    const layer = buildLayer(width, height, obstacles, i, baseZones, mode, options);
-    layers.push(layer);
-
-    // Layer 0 是障碍物顶点网络，将其节点转换为 zones 供后续层使用
-    if (i === 0) {
-      // 将 Layer 0 的节点转换为类似 zone 的数据结构
-      baseZones = layer.nodes.map(node => ({
-        id: node.id,
-        centerX: node.x,
-        centerY: node.y,
-        size: 1,  // 顶点的虚拟尺寸
-        nodeId: node.id
-      }));
-    } else if (layer.zones) {
-      // Layer 1+ 使用 zones
-      baseZones = layer.zones;
+    if (typeof handleMessage !== 'function') {
+      throw new Error('handleMessage 不是函数');
     }
 
-    // 报告进度
-    const progress = (i + 1) / layerCount;
+    if (typeof handleError !== 'function') {
+      throw new Error('handleError 不是函数');
+    }
+
+    console.log('[Worker] ✅ 函数验证通过');
+
+    self.onmessage = handleMessage;
+    self.onerror = handleError;
+
+    console.log('[Worker] ✅ 完全模块化 Worker 初始化成功');
+
+    // 发送初始化成功消息
     self.postMessage({
-      type: 'PROGRESS',
-      progress,
-      currentLayer: i,
-      totalLayers: layerCount,
-      layerNodeCount: layer.nodes.length
+      type: 'WORKER_READY',
+      message: '完全模块化版本加载成功',
     });
-  }
-
-  return layers;
-}
-
-/**
- * Worker 消息处理
- */
-self.onmessage = function(e) {
-  const { type, payload } = e.data;
-
-  try {
-    switch (type) {
-    case 'WARMUP': {
-      try {
-        // 轻量预热：小尺寸、少量障碍，触发 d3-delaunay 与主构建路径的 JIT
-        const width = 64, height = 48, layerCount = 1, obstacleCount = 16;
-        const options = { useSpatialIndex: true, overlayMode: 'none' };
-        const obstacles = generateObstacles(width, height, obstacleCount, rng);
-        // 触发一次核心构建
-        buildLayers(width, height, obstacles, layerCount, 'centroid', options);
-      } catch (_) {
-        /* 忽略预热异常 */
-      }
-      // 通知管理器预热完成
-      self.postMessage({ type: 'WARMUP_DONE' });
-      break;
-    }
-      case 'GENERATE_NAVGRAPH': {
-        const { width, height, layerCount, obstacleCount, seed, mode, options } = payload;
-
-        // 设置随机种子
-        if (seed !== undefined) {
-          rng.seed = seed;
-        }
-
-        // 参数验证
-        if (!width || !height || !layerCount) {
-          throw new Error('Invalid parameters');
-        }
-
-        self.postMessage({ type: 'START', payload });
-
-        // 计时：生成障碍物
-        const tOb0 = performance?.now ? performance.now() : Date.now();
-        const obstacles = generateObstacles(width, height, obstacleCount || 0, rng);
-        // 计算障碍签名用于主线程索引复用
-        let obstaclesSignature = null;
-        try { obstaclesSignature = computeObstaclesSignature(obstacles); } catch (_) {}
-        const tOb1 = performance?.now ? performance.now() : Date.now();
-        const obstaclesMs = Math.max(0, Math.round(tOb1 - tOb0));
-        self.postMessage({
-          type: 'OBSTACLE_READY',
-          obstacles,
-          count: obstacles.length,
-          obstaclesSignature
-        });
-
-        // 计时：构建导航图
-        const tBuild0 = performance?.now ? performance.now() : Date.now();
-        const layers = buildLayers(width, height, obstacles, layerCount, mode || 'centroid', options || {});
-        const tBuild1 = performance?.now ? performance.now() : Date.now();
-        const buildMs = Math.max(0, Math.round(tBuild1 - tBuild0));
-
-        // 计算总统计
-        const totalNodes = layers.reduce((sum, l) => sum + l.nodes.length, 0);
-        const totalEdges = layers.reduce((sum, l) => sum + l.edges.length, 0);
-
-        // 使用 Transferable 传输 overlayPacked，降低结构化克隆开销
-        // 打包障碍为 Float32Array，减少结构化克隆成本
-        let obstaclesPacked = null;
-        try {
-          if (Array.isArray(obstacles) && obstacles.length) {
-            const op = new Float32Array(obstacles.length * 4);
-            for (let i = 0, k = 0; i < obstacles.length; i++) {
-              const o = obstacles[i];
-              op[k++] = o.x; op[k++] = o.y; op[k++] = o.w; op[k++] = o.h;
-            }
-            obstaclesPacked = op;
-          }
-        } catch (_) { /* ignore */ }
-
-        const message = {
-          type: 'COMPLETE',
-          data: {
-            layers,
-            obstacles,
-            // 新增：障碍打包（可选）
-            obstaclesPacked,
-            metadata: {
-              width,
-              height,
-              layerCount,
-              obstacleCount: obstacles.length,
-              totalNodes,
-              totalEdges,
-              profile: (layers && layers[0] && layers[0].metadata) ? layers[0].metadata.profile : null,
-              useSpatialIndex: options && options.useSpatialIndex !== false,
-              generatedAt: new Date().toISOString(),
-              // 新增：障碍签名（供主线程 createSpatialIndex 复用缓存）
-              obstaclesSignature,
-              workerProfile: {
-                obstaclesMs,
-                buildMs,
-                overlayMs: (layers && layers[0] && layers[0].metadata && layers[0].metadata.overlayBase && typeof layers[0].metadata.overlayBase.buildMs === 'number') ? layers[0].metadata.overlayBase.buildMs : 0
-              }
-            }
-          }
-        };
-        const transferList = [];
-        let transferBytes = 0;
-        let packedBytes = 0;
-        let nodesBytes = 0;
-        let obsBytes = 0;
-        try {
-          if (Array.isArray(layers)) {
-            for (let i = 0; i < layers.length; i++) {
-              const buf = layers[i]?.metadata?.overlayBase?.edgesPacked?.buffer;
-              if (buf && buf.byteLength) { transferList.push(buf); transferBytes += buf.byteLength; }
-              const packed = layers[i]?.edgesPacked;
-              if (packed && packed.buffer && packed.byteLength) {
-                transferList.push(packed.buffer);
-                transferBytes += packed.byteLength;
-                packedBytes += packed.byteLength;
-              }
-              const nbuf = layers[i]?.nodesPacked?.buffer;
-              if (nbuf && nbuf.byteLength) { transferList.push(nbuf); transferBytes += nbuf.byteLength; nodesBytes += nbuf.byteLength; }
-            }
-          }
-          const obuf = obstaclesPacked && obstaclesPacked.buffer;
-          if (obuf && obuf.byteLength) { transferList.push(obuf); transferBytes += obuf.byteLength; obsBytes += obuf.byteLength; }
-        } catch (_) { /* 忽略收集失败 */ }
-        try {
-          console.log(`[Transfer] buffers=${transferList.length} | bytes=${transferBytes} | edgesPackedBytes=${packedBytes} | nodesPackedBytes=${nodesBytes} | obstaclesPackedBytes=${obsBytes}`);
-        } catch (_) { /* ignore */ }
-        self.postMessage(message, transferList);
-
-        break;
-      }
-
-      case 'CANCEL': {
-        self.postMessage({ type: 'CANCELLED' });
-        break;
-      }
-
-      default:
-        console.warn(`Unknown worker message type: ${type}`);
-    }
   } catch (error) {
+    console.error('[Worker] ❌ 模块加载失败:', error);
+    console.error('[Worker] 错误详情:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+    });
+
+    // 发送错误到主线程
     self.postMessage({
       type: 'ERROR',
       error: {
-        message: error.message,
-        stack: error.stack
-      }
+        message: '模块加载失败: ' + error.message,
+        stack: error.stack,
+        phase: 'initialization',
+      },
     });
-  }
-};
 
-self.onerror = function(error) {
-  self.postMessage({
-    type: 'ERROR',
-    error: {
-      message: error.message,
-      filename: error.filename,
-      lineno: error.lineno
-    }
-  });
-};
+    // 降级到基础错误处理
+    self.onerror = function (e) {
+      console.error('[Worker] Global error:', e);
+      self.postMessage({
+        type: 'ERROR',
+        error: {
+          message: e.message || String(e),
+          phase: 'runtime',
+        },
+      });
+    };
+  }
+})();

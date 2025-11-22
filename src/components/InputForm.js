@@ -9,6 +9,8 @@ class InputForm {
       widthInput: document.getElementById('width-input'),
       heightInput: document.getElementById('height-input'),
       layerInput: document.getElementById('layer-input'),
+      floorEntranceInput: document.getElementById('floor-entrance-input'),
+      floorEntranceGroup: document.getElementById('floor-entrance-group'),
       obstacleInput: document.getElementById('obstacle-input'),
       generateBtn: document.getElementById('generate-btn'),
       modeOptions: document.querySelectorAll('.mode-option')
@@ -64,6 +66,23 @@ class InputForm {
     inputs.forEach(input => {
       input.addEventListener('input', () => this.validateInputs());
     });
+    
+    // 监听楼层数变化,动态显示/隐藏楼层出入口输入框
+    if (this.elements.layerInput && this.elements.floorEntranceGroup) {
+      this.elements.layerInput.addEventListener('input', () => {
+        const floors = parseInt(this.elements.layerInput.value, 10);
+        if (floors > 1 && !isNaN(floors)) {
+          this.elements.floorEntranceGroup.style.display = 'block';
+        } else {
+          this.elements.floorEntranceGroup.style.display = 'none';
+        }
+      });
+      // 初始检查
+      const initialFloors = parseInt(this.elements.layerInput.value, 10);
+      if (initialFloors > 1) {
+        this.elements.floorEntranceGroup.style.display = 'block';
+      }
+    }
 
     console.log('✅ Input form initialized');
   }
@@ -110,6 +129,11 @@ class InputForm {
       height: parseInt(this.elements.heightInput.value, 10),
       layerCount: parseInt(this.elements.layerInput.value, 10),
       obstacleCount: parseInt(this.elements.obstacleInput.value, 10),
+      floorEntranceCount: (() => {
+        if (!this.elements.floorEntranceInput) return 4;
+        const v = parseInt(this.elements.floorEntranceInput.value, 10);
+        return isNaN(v) ? 4 : Math.max(2, Math.min(10, v)); // Clamp 2-10
+      })(),
       mode,
       useSpatialIndex: !!document.getElementById('use-spatial-index')?.checked,
       cellSize: (() => {

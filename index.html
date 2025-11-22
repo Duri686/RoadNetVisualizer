@@ -10,9 +10,30 @@
     <div class="container">
       <!-- 移动端：横向Tab导航（仅在小屏显示） -->
       <nav id="mobile-tabs" aria-label="主模块切换" role="tablist">
-        <button class="tab-btn" role="tab" aria-selected="true" data-target="visualization-panel">地图</button>
-        <button class="tab-btn" role="tab" aria-selected="false" data-target="operation-panel">操作</button>
-        <button class="tab-btn" role="tab" aria-selected="false" data-target="interpretation-panel">解读</button>
+        <button
+          class="tab-btn"
+          role="tab"
+          aria-selected="true"
+          data-target="visualization-panel"
+        >
+          地图
+        </button>
+        <button
+          class="tab-btn"
+          role="tab"
+          aria-selected="false"
+          data-target="operation-panel"
+        >
+          操作
+        </button>
+        <button
+          class="tab-btn"
+          role="tab"
+          aria-selected="false"
+          data-target="interpretation-panel"
+        >
+          解读
+        </button>
       </nav>
       <!-- 左栏：操作面板 (Operation Panel) -->
       <section class="operation-panel">
@@ -47,7 +68,10 @@
                 启用视窗裁剪
               </label>
             </div>
-            <div class="input-group" title="裁剪边距（像素），避免临界闪烁。范围建议 64-256">
+            <div
+              class="input-group"
+              title="裁剪边距（像素），避免临界闪烁。范围建议 64-256"
+            >
               <label for="culling-margin-input">裁剪边距（像素）</label>
               <input
                 autocomplete="off"
@@ -68,13 +92,32 @@
               />
             </div>
             <div class="input-group">
-              <label for="layer-input">层数 (Layers)</label>
+              <label for="layer-input">楼层数 (Floors)</label>
               <input
                 autocomplete="off"
                 type="text"
                 id="layer-input"
-                value="1"
+                value="2"
                 placeholder="1-10"
+              />
+            </div>
+
+            <!-- Floor entrances input - shown only when floors > 1 -->
+            <div
+              class="input-group"
+              id="floor-entrance-group"
+              style="display: none"
+            >
+              <label for="floor-entrance-input"
+                >楼层出入口 (Stairs/Elevators)</label
+              >
+              <input
+                autocomplete="off"
+                type="text"
+                id="floor-entrance-input"
+                value="4"
+                placeholder="2-10"
+                title="每两层之间的楼梯和电梯数量"
               />
             </div>
             <div class="input-group">
@@ -169,7 +212,10 @@
                 使用 BitmapText（更高效）
               </label>
             </div>
-            <div class="input-group" title="当单元像素尺寸低于阈值时隐藏编号，0 表示始终显示">
+            <div
+              class="input-group"
+              title="当单元像素尺寸低于阈值时隐藏编号，0 表示始终显示"
+            >
               <label for="label-minpx-input">编号显示阈值（像素）</label>
               <input
                 autocomplete="off"
@@ -313,7 +359,9 @@
 
           <!-- 画布提示信息（简化版） -->
           <div class="canvas-hint">
-            <p id="canvas-hint-text">💡 鼠标滚轮缩放，拖拽平移，点击节点进行路径规划</p>
+            <p id="canvas-hint-text">
+              💡 鼠标滚轮缩放，拖拽平移，点击节点进行路径规划
+            </p>
           </div>
         </div>
       </section>
@@ -324,6 +372,28 @@
           <div class="panel-header">
             <h2>数据解读</h2>
             <p class="panel-subtitle">Interpretation</p>
+          </div>
+
+          <!-- 图层控制模块 -->
+          <div class="interpretation-card" id="layer-control-card">
+            <div class="card-header-row">
+              <h3>图层控制</h3>
+            </div>
+            <div id="layer-control-section" style="padding: 12px 0">
+              <!-- Layer checkboxes will be dynamically inserted here -->
+              <div
+                id="layer-info"
+                class="layer-info-text"
+                style="
+                  font-size: 11px;
+                  color: var(--text-secondary);
+                  line-height: 1.5;
+                  padding: 8px 0;
+                  border-top: 1px solid rgba(255, 255, 255, 0.08);
+                  margin-top: 8px;
+                "
+              ></div>
+            </div>
           </div>
 
           <!-- 图例模块 -->
@@ -533,6 +603,5 @@
     </div>
 
     <script type="module" src="/src/main.js"></script>
-    <script type="module" src="/src/utils/mobileUI.js"></script>
   </body>
 </html>

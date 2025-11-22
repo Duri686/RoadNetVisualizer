@@ -25,22 +25,14 @@ class LayerControl {
    * 初始化控件
    */
   init() {
-    if (!this.elements.selector || !this.elements.showAllBtn) {
-      // 进入无界面模式：不绑定任何 DOM，只提供回调能力
-      this._headless = true;
-      console.warn('⚠️ LayerControl running in headless mode (DOM elements not found).');
+    // Store notNullElementFound for headless check
+    const notNullElementFound = this.elements.section && this.elements.layerInfo;
+    this._headless = !notNullElementFound;
+
+    if (this._headless) {
+      console.debug('[LayerControl] Running in headless mode (DOM elements not found)');
       return;
     }
-
-    // 绑定事件
-    this.elements.selector.addEventListener('change', (e) => {
-      const layerIndex = parseInt(e.target.value, 10);
-      this.selectLayer(layerIndex);
-    });
-
-    this.elements.showAllBtn.addEventListener('click', () => {
-      this.showAllLayers();
-    });
 
     console.log('✅ Layer control initialized');
   }
@@ -72,31 +64,105 @@ class LayerControl {
     this.totalLayers = totalLayers;
 
     // 当 DOM 被注释或缺失时，直接返回，避免报错
-    if (this._headless || !this.elements.selector) {
+    if (this._headless || !this.elements.section) {
       this.currentLayer = 0;
       console.debug('[LayerControl] setLayers(headless): total=', totalLayers);
       return;
     }
 
     // 清空并重新填充选择器
-    this.elements.selector.innerHTML = '';
+    let cbContainer = document.getElementById('layer-checkboxes');
+    if (!cbContainer) {
+      cbContainer = document.createElement('div');
+      cbContainer.id = 'layer-checkboxes';
+      cbContainer.style.cssText = 'display:flex;flex-direction:column;gap:6px';
+      this.elements.section.insertBefore(cbContainer, this.elements.layerInfo);
+    }
+    cbContainer.innerHTML = '';
 
     for (let i = 0; i < totalLayers; i++) {
-      const option = document.createElement('option');
-      option.value = i;
-      option.textContent = `第 ${i + 1} 层`;
+      const label = document.createElement('label');
+      label.style.cssText = 'display:flex;align-items:center;font-size:13px;cursor:pointer;padding:4px 6px;border-radius:4px;transition:background 0.2s';
+      label.onmouseenter = () => label.style.background = 'rgba(255,255,255,0.05)';
+      label.onmouseleave = () => label.style.background = 'transparent';
+      
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = i;
+      cb.checked = true; // Default all visible
+      cb.style.cssText = 'margin-right:8px;cursor:pointer;width:14px;height:14px';
+      
+      cb.addEventListener('change', () => {
+        this.toggleLayerVisibility(i, cb.checked);
+      });
+      
+      const layerName = document.createElement('span');
+      layerName.textContent = `第 ${i + 1} 层`;
+      layerName.style.flex = '1';
+      label.appendChild(cb);
+      label.appendChild(layerName);
       
       if (metadata?.layers?.[i]) {
         const layerData = metadata.layers[i];
-        option.textContent += ` (${layerData.nodes.length} 节点, ${layerData.edges.length} 边)`;
+        const countSpan = document.createElement('span');
+        countSpan.style.cssText = 'font-size:11px;color:var(--text-secondary);opacity:0.7;margin-right:8px';
+        countSpan.textContent = `(${layerData.nodes.length})`;
+        label.appendChild(countSpan);
       }
+
+      // Stairs/Connectors Toggle
+      const stairsLabel = document.createElement('label');
+      stairsLabel.title = '显示/隐藏楼梯连接';
+      stairsLabel.style.cssText = 'display:flex;align-items:center;cursor:pointer;padding:2px 4px;border-radius:3px;background:rgba(255,255,255,0.1);margin-left:4px';
+      stairsLabel.onmouseenter = () => stairsLabel.style.background = 'rgba(255,255,255,0.2)';
+      stairsLabel.onmouseleave = () => stairsLabel.style.background = 'rgba(255,255,255,0.1)';
+
+      const stairsCb = document.createElement('input');
+      stairsCb.type = 'checkbox';
+      stairsCb.checked = true;
+      stairsCb.style.cssText = 'cursor:pointer;width:12px;height:12px;margin:0';
       
-      this.elements.selector.appendChild(option);
+      stairsCb.addEventListener('change', (e) => {
+        e.stopPropagation(); // Prevent triggering layer toggle
+        if (window.roadNetApp && window.roadNetApp.renderer && window.roadNetApp.renderer.roadNetRenderer) {
+          window.roadNetApp.renderer.roadNetRenderer.toggleConnections(stairsCb.checked, i);
+        }
+      });
+      
+      // Icon for stairs (simple text or svg)
+      const stairsIcon = document.createElement('span');
+      stairsIcon.innerHTML = '🪜'; // Ladder icon
+      stairsIcon.style.cssText = 'font-size:12px;margin-left:4px;line-height:1';
+
+      stairsLabel.appendChild(stairsCb);
+      stairsLabel.appendChild(stairsIcon);
+      
+      // Prevent label click from toggling the main layer checkbox
+      stairsLabel.addEventListener('click', (e) => e.stopPropagation());
+
+      label.appendChild(stairsLabel);
+      
+      cbContainer.appendChild(label);
     }
 
-    // 默认选择第一层
-    this.selectLayer(0, false);
+    // 默认全选
     this.updateLayerInfo(metadata);
+  }
+  
+  toggleLayerVisibility(index, visible) {
+    if (window.roadNetApp && window.roadNetApp.renderer) {
+      window.roadNetApp.renderer.showLayer(visible ? index : -1); 
+      // Wait, showLayer(index) usually shows ONLY that layer.
+      // We need a way to show multiple layers.
+      // Renderer3D.showLayer logic needs update to support multi-select or we call it differently.
+      // Let's check Renderer3D.showLayer.
+      // It sets visible = (index === null || child.userData.layerIndex === index).
+      // We need to update Renderer3D to support a set of visible layers.
+      
+      // Temporary fix: We can directly access scene children here or update Renderer3D.
+      // Better to update Renderer3D.
+      window.roadNetApp.renderer.setLayerVisibility(index, visible);
+    }
   }
 
   /**

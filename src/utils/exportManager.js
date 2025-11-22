@@ -1,10 +1,26 @@
 /**
  * 导出管理器
- * 负责导出 JSON、PNG、SVG 格式的数据
+ * 负责导出 JSON、PNG、SVG、GLB 格式的数据
+ * 适配 Three.js 3D 渲染器
  */
+
+import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 
 class ExportManager {
   constructor() {
+    this.downloadBtn = null;
+    // 延迟初始化，等待 DOM 加载
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => this.init());
+    } else {
+      this.init();
+    }
+  }
+
+  /**
+   * 初始化
+   */
+  init() {
     this.downloadBtn = document.getElementById('download-btn');
     this.setupEventListeners();
   }
@@ -17,6 +33,9 @@ class ExportManager {
       this.downloadBtn.addEventListener('click', () => {
         this.showDownloadOptions();
       });
+      console.log('✅ Export manager initialized');
+    } else {
+      console.warn('⚠️ Download button not found');
     }
   }
 
@@ -48,7 +67,15 @@ class ExportManager {
           <circle cx="8.5" cy="8.5" r="1.5"/>
           <polyline points="21 15 16 10 5 21"/>
         </svg>
-        <span>Export PNG</span>
+        <span>Screenshot PNG</span>
+      </button>
+      <button class="download-option" data-format="glb">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+          <line x1="12" y1="22.08" x2="12" y2="12"/>
+        </svg>
+        <span>Export 3D Model (GLB)</span>
       </button>
       <button class="download-option" data-format="svg">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -68,7 +95,7 @@ class ExportManager {
     document.body.appendChild(menu);
 
     // 绑定选项点击事件
-    menu.querySelectorAll('.download-option').forEach(option => {
+    menu.querySelectorAll('.download-option').forEach((option) => {
       option.addEventListener('click', (e) => {
         const format = e.currentTarget.dataset.format;
         this.handleDownload(format);
@@ -107,6 +134,9 @@ class ExportManager {
         case 'png':
           this.exportPNG();
           break;
+        case 'glb':
+          this.exportGLB();
+          break;
         case 'svg':
           this.exportSVG(roadNetData);
           break;
@@ -128,7 +158,7 @@ class ExportManager {
       layers: data.layers,
       obstacles: data.obstacles,
       exportTime: new Date().toISOString(),
-      version: '1.0'
+      version: '1.0',
     };
 
     const jsonStr = JSON.stringify(exportData, null, 2);
@@ -142,38 +172,72 @@ class ExportManager {
   }
 
   /**
-   * 导出 PNG 图片
+   * 导出 PNG 图片（Three.js截图）
    */
   exportPNG() {
-    const renderer = window.roadNetApp?.renderer;
-    if (!renderer || !renderer.app) {
+    const renderer3d = window.roadNetApp?.renderer;
+    if (!renderer3d || !renderer3d.renderer) {
       alert('⚠️ 渲染器未就绪');
       return;
     }
 
     try {
-      const app = renderer.app;
-      // 确保最新帧已渲染
-      app.renderer.render(app.stage);
-      // 使用 Extract 从 stage 导出，避免 WebGL 画布 toBlob 黑屏
-      const snapshotCanvas = app.renderer.extract.canvas(app.stage);
-      if (!snapshotCanvas) throw new Error('extract.canvas failed');
-      // 导出 PNG Blob
-      snapshotCanvas.toBlob((blob) => {
+      // 使用 Three.js 渲染器的 canvas
+      const canvas = renderer3d.renderer.domElement;
+
+      // 转换为 Blob
+      canvas.toBlob((blob) => {
         if (!blob) {
           alert('❌ PNG 导出失败（空图像）');
           return;
         }
         const url = URL.createObjectURL(blob);
-        const filename = `roadnet_${Date.now()}.png`;
+        const filename = `roadnet_3d_${Date.now()}.png`;
         this.downloadFile(url, filename);
-        console.log('✅ PNG exported:', filename);
-        // 尽快释放临时 canvas（防止内存占用）
-        try { snapshotCanvas.width = 0; snapshotCanvas.height = 0; } catch (e) { /* ignore */ }
+        console.log('✅ PNG screenshot exported:', filename);
       }, 'image/png');
     } catch (error) {
       console.error('PNG export failed:', error);
-      alert('❌ PNG 导出失败');
+      alert('❌ PNG 导出失败: ' + error.message);
+    }
+  }
+
+  /**
+   * 导出 GLB 3D模型
+   */
+  exportGLB() {
+    const renderer3d = window.roadNetApp?.renderer;
+    if (!renderer3d || !renderer3d.scene) {
+      alert('⚠️ 场景未就绪');
+      return;
+    }
+
+    try {
+      const exporter = new GLTFExporter();
+
+      // 显示导出提示
+      console.log('⏳ 正在导出 GLB 模型...');
+
+      // 导出场景
+      exporter.parse(
+        renderer3d.scene,
+        (gltf) => {
+          // gltf 是 ArrayBuffer（二进制 GLB 格式）
+          const blob = new Blob([gltf], { type: 'model/gltf-binary' });
+          const url = URL.createObjectURL(blob);
+          const filename = `roadnet_3d_${Date.now()}.glb`;
+          this.downloadFile(url, filename);
+          console.log('✅ GLB model exported:', filename);
+        },
+        (error) => {
+          console.error('GLB export failed:', error);
+          alert('❌ GLB 导出失败: ' + error.message);
+        },
+        { binary: true }, // 导出为二进制 GLB 格式
+      );
+    } catch (error) {
+      console.error('GLB export failed:', error);
+      alert('❌ GLB 导出失败: ' + error.message);
     }
   }
 
@@ -191,7 +255,8 @@ class ExportManager {
       networkEdgesVisible: true,
       voronoiVisible: true,
     };
-    const currentLayer = (typeof r.currentLayer === 'number') ? r.currentLayer : null;
+    const currentLayer =
+      typeof r.currentLayer === 'number' ? r.currentLayer : null;
 
     const COLORS = {
       bg: '#0F172A',
@@ -202,8 +267,10 @@ class ExportManager {
     };
 
     // 使用当前画布像素尺寸作为导出尺寸
-    const canvasW = (r.app && r.app.screen && r.app.screen.width) || Math.ceil(width);
-    const canvasH = (r.app && r.app.screen && r.app.screen.height) || Math.ceil(height);
+    const canvasW =
+      (r.app && r.app.screen && r.app.screen.width) || Math.ceil(width);
+    const canvasH =
+      (r.app && r.app.screen && r.app.screen.height) || Math.ceil(height);
     // 使用渲染时的坐标变换
     const tf = r.transform || { offsetX: 0, offsetY: 0, cellSize: 1 };
     const offsetX = tf.offsetX || 0;
@@ -216,36 +283,51 @@ class ExportManager {
 
     let parts = [];
     parts.push(`<?xml version="1.0" encoding="UTF-8"?>`);
-    parts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${canvasW}" height="${canvasH}" viewBox="0 0 ${canvasW} ${canvasH}">`);
+    parts.push(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${canvasW}" height="${canvasH}" viewBox="0 0 ${canvasW} ${canvasH}">`,
+    );
     parts.push(`  <rect width="100%" height="100%" fill="${COLORS.bg}"/>`);
     // 世界坐标组：应用 translate + scale，将所有几何以世界单位描述
-    parts.push(`  <g id="world" transform="translate(${offsetX}, ${offsetY}) scale(${cellSize})">`);
+    parts.push(
+      `  <g id="world" transform="translate(${offsetX}, ${offsetY}) scale(${cellSize})">`,
+    );
 
     // 障碍物
-    if (flags.obstaclesVisible && Array.isArray(data.obstacles) && data.obstacles.length) {
+    if (
+      flags.obstaclesVisible &&
+      Array.isArray(data.obstacles) &&
+      data.obstacles.length
+    ) {
       parts.push(`    <g id="obstacles">`);
       for (const obs of data.obstacles) {
         const w = (obs.w ?? obs.width) || 0;
         const h = (obs.h ?? obs.height) || 0;
         // 注意：障碍物描边也随缩放，因此使用较小的世界线宽即可
         const worldStroke = pxStroke / cellSize;
-        parts.push(`      <rect x="${obs.x}" y="${obs.y}" width="${w}" height="${h}" fill="${COLORS.obstacle}" fill-opacity="0.5" stroke="${COLORS.obstacle}" stroke-opacity="0.85" stroke-width="${worldStroke}"/>`);
+        parts.push(
+          `      <rect x="${obs.x}" y="${obs.y}" width="${w}" height="${h}" fill="${COLORS.obstacle}" fill-opacity="0.5" stroke="${COLORS.obstacle}" stroke-opacity="0.85" stroke-width="${worldStroke}"/>`,
+        );
       }
       parts.push(`    </g>`);
     }
 
     const layers = Array.isArray(data.layers) ? data.layers : [];
-    const indices = currentLayer === null ? layers.map((_, i) => i) : [currentLayer];
+    const indices =
+      currentLayer === null ? layers.map((_, i) => i) : [currentLayer];
 
     // 基础三角化
     if (flags.baseOverlayVisible) {
       // 使用实线导出以避免连接处不完整；保持像素级线宽
-      parts.push(`    <g id="base-overlay" stroke="${COLORS.base}" stroke-opacity="0.35" fill="none" vector-effect="non-scaling-stroke" stroke-width="${pxStroke}" stroke-linecap="round" stroke-linejoin="round">`);
+      parts.push(
+        `    <g id="base-overlay" stroke="${COLORS.base}" stroke-opacity="0.35" fill="none" vector-effect="non-scaling-stroke" stroke-width="${pxStroke}" stroke-linecap="round" stroke-linejoin="round">`,
+      );
       for (const li of indices) {
         const layer = layers[li];
         const edges = layer?.metadata?.overlayBase?.edges || [];
         for (const e of edges) {
-          parts.push(`      <line x1="${e.x1}" y1="${e.y1}" x2="${e.x2}" y2="${e.y2}"/>`);
+          parts.push(
+            `      <line x1="${e.x1}" y1="${e.y1}" x2="${e.x2}" y2="${e.y2}"/>`,
+          );
         }
       }
       parts.push(`    </g>`);
@@ -255,7 +337,9 @@ class ExportManager {
     for (const li of indices) {
       const layer = layers[li];
       if (!layer || !Array.isArray(layer.nodes)) continue;
-      const abstraction = String(layer?.metadata?.abstraction || '').toLowerCase();
+      const abstraction = String(
+        layer?.metadata?.abstraction || '',
+      ).toLowerCase();
       const isVor = abstraction.includes('voronoi');
 
       // id -> node 映射，避免用数组下标
@@ -263,23 +347,37 @@ class ExportManager {
       for (const n of layer.nodes) nodeMap.set(n.id, n);
 
       // Edges
-      const canDrawEdges = isVor ? flags.voronoiVisible : flags.networkEdgesVisible;
+      const canDrawEdges = isVor
+        ? flags.voronoiVisible
+        : flags.networkEdgesVisible;
       if (canDrawEdges && Array.isArray(layer.edges)) {
-        parts.push(`    <g id="${isVor ? 'voronoi' : 'network'}-edges-l${li}" stroke="${isVor ? COLORS.voronoi : COLORS.network}" stroke-opacity="${isVor ? '0.9' : '0.6'}" fill="none" vector-effect="non-scaling-stroke" stroke-width="${pxStroke}" stroke-linecap="round" stroke-linejoin="round">`);
+        parts.push(
+          `    <g id="${isVor ? 'voronoi' : 'network'}-edges-l${li}" stroke="${
+            isVor ? COLORS.voronoi : COLORS.network
+          }" stroke-opacity="${
+            isVor ? '0.9' : '0.6'
+          }" fill="none" vector-effect="non-scaling-stroke" stroke-width="${pxStroke}" stroke-linecap="round" stroke-linejoin="round">`,
+        );
         for (const e of layer.edges) {
           const from = nodeMap.get(e.from);
           const to = nodeMap.get(e.to);
           if (!from || !to) continue;
-          parts.push(`      <line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}"/>`);
+          parts.push(
+            `      <line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}"/>`,
+          );
         }
         parts.push(`    </g>`);
       }
 
       // Nodes（所有层统一蓝色）
       if (flags.networkNodesVisible) {
-        parts.push(`    <g id="network-nodes-l${li}" fill="${COLORS.network}" fill-opacity="0.95">`);
+        parts.push(
+          `    <g id="network-nodes-l${li}" fill="${COLORS.network}" fill-opacity="0.95">`,
+        );
         for (const n of layer.nodes) {
-          parts.push(`      <circle cx="${n.x}" cy="${n.y}" r="${worldNodeRadius}"/>`);
+          parts.push(
+            `      <circle cx="${n.x}" cy="${n.y}" r="${worldNodeRadius}"/>`,
+          );
         }
         parts.push(`    </g>`);
       }

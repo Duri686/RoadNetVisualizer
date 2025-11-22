@@ -36,10 +36,19 @@ export class SeededRandom {
  * @param {number} [opts.maxAttemptsPerObstacle=30] - 每个障碍的最大放置尝试次数
  * @returns {Array} 障碍物数组
  */
-export function generateObstacles(width, height, obstacleCount, rng, opts = {}) {
+export function generateObstacles(
+  width,
+  height,
+  obstacleCount,
+  rng,
+  opts = {},
+) {
   const obstacles = [];
   // 指标埋点：接受率/尝试次数/退出原因/占用率估算/耗时
-  const t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+  const t0 =
+    typeof performance !== 'undefined' && performance.now
+      ? performance.now()
+      : Date.now();
   let attemptsTotal = 0;
   let accepted = 0;
   let consecFail = 0;
@@ -48,8 +57,10 @@ export function generateObstacles(width, height, obstacleCount, rng, opts = {}) 
   let occupiedSum = 0; // 近似占用面积 (w+2p)*(h+2p)
 
   const minWH = Math.max(1, Math.min(width, height));
-  const minSizeRatio = typeof opts.minSizeRatio === 'number' ? opts.minSizeRatio : 0.01; // 1%
-  const maxSizeRatio = typeof opts.maxSizeRatio === 'number' ? opts.maxSizeRatio : 0.05; // 5%
+  const minSizeRatio =
+    typeof opts.minSizeRatio === 'number' ? opts.minSizeRatio : 0.01; // 1%
+  const maxSizeRatio =
+    typeof opts.maxSizeRatio === 'number' ? opts.maxSizeRatio : 0.05; // 5%
   const avoidOverlap = opts.avoidOverlap !== false;
   const padding = typeof opts.padding === 'number' ? opts.padding : 2;
   const perAttempts = Math.max(1, opts.maxAttemptsPerObstacle || 30);
@@ -68,7 +79,9 @@ export function generateObstacles(width, height, obstacleCount, rng, opts = {}) 
     for (let ix = x0; ix <= x1; ix++) {
       for (let iy = y0; iy <= y1; iy++) {
         const k = `${ix},${iy}`;
-        const a = grid.get(k); if (a) a.push(idx); else grid.set(k, [idx]);
+        const a = grid.get(k);
+        if (a) a.push(idx);
+        else grid.set(k, [idx]);
       }
     }
   };
@@ -77,11 +90,19 @@ export function generateObstacles(width, height, obstacleCount, rng, opts = {}) 
     const x1 = Math.floor(Math.min(width, x + w + padding) / cell);
     const y0 = Math.floor(Math.max(0, y - padding) / cell);
     const y1 = Math.floor(Math.min(height, y + h + padding) / cell);
-    const seen = new Set(); const out = [];
+    const seen = new Set();
+    const out = [];
     for (let ix = x0; ix <= x1; ix++) {
       for (let iy = y0; iy <= y1; iy++) {
-        const a = grid.get(`${ix},${iy}`); if (!a) continue;
-        for (let t = 0; t < a.length; t++) { const id = a[t]; if (!seen.has(id)) { seen.add(id); out.push(id); } }
+        const a = grid.get(`${ix},${iy}`);
+        if (!a) continue;
+        for (let t = 0; t < a.length; t++) {
+          const id = a[t];
+          if (!seen.has(id)) {
+            seen.add(id);
+            out.push(id);
+          }
+        }
       }
     }
     return out;
@@ -101,7 +122,12 @@ export function generateObstacles(width, height, obstacleCount, rng, opts = {}) 
 
       if (avoidOverlap) {
         // 使用网格索引快速检查重叠
-        const candIdx = query(newObstacle.x, newObstacle.y, newObstacle.w, newObstacle.h);
+        const candIdx = query(
+          newObstacle.x,
+          newObstacle.y,
+          newObstacle.w,
+          newObstacle.h,
+        );
         let hasOverlap = false;
         for (let ci = 0; ci < candIdx.length; ci++) {
           const obs = obstacles[candIdx[ci]];
@@ -113,17 +139,53 @@ export function generateObstacles(width, height, obstacleCount, rng, opts = {}) 
           const bR = obs.x + obs.w;
           const bT = obs.y;
           const bB = obs.y + obs.h;
-          if (!(aR < bL || bR < aL || aB < bT || bB < aT)) { hasOverlap = true; break; }
+          if (!(aR < bL || bR < aL || aB < bT || bB < aT)) {
+            hasOverlap = true;
+            break;
+          }
         }
         if (hasOverlap) continue;
       }
 
+      // Check avoid zones (e.g., floor entrances)
+      if (opts.avoidZones && opts.avoidZones.length > 0) {
+        let hasZoneOverlap = false;
+        const p = padding;
+        const aL = newObstacle.x - p;
+        const aR = newObstacle.x + newObstacle.w + p;
+        const aT = newObstacle.y - p;
+        const aB = newObstacle.y + newObstacle.h + p;
+
+        for (const zone of opts.avoidZones) {
+          // Simple bounding box check for zone (circle treated as square for safety)
+          const zr = zone.radius || 10;
+          const zL = zone.x - zr;
+          const zR = zone.x + zr;
+          const zT = zone.y - zr;
+          const zB = zone.y + zr;
+
+          if (!(aR < zL || zR < aL || aB < zT || zB < aT)) {
+            hasZoneOverlap = true;
+            break;
+          }
+        }
+        if (hasZoneOverlap) continue;
+      }
+
       obstacles.push(newObstacle);
-      if (avoidOverlap) put(newObstacle.x, newObstacle.y, newObstacle.w, newObstacle.h, newObstacle.id);
+      if (avoidOverlap)
+        put(
+          newObstacle.x,
+          newObstacle.y,
+          newObstacle.w,
+          newObstacle.h,
+          newObstacle.id,
+        );
       placed++;
       accepted++;
       consecFail = 0;
-      occupiedSum += (newObstacle.w + 2 * padding) * (newObstacle.h + 2 * padding);
+      occupiedSum +=
+        (newObstacle.w + 2 * padding) * (newObstacle.h + 2 * padding);
       ok = true;
       break;
     }
@@ -138,18 +200,27 @@ export function generateObstacles(width, height, obstacleCount, rng, opts = {}) 
 
   // 输出统计日志（不改变返回值）
   try {
-    const t1 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    const t1 =
+      typeof performance !== 'undefined' && performance.now
+        ? performance.now()
+        : Date.now();
     const used = Math.max(0, Math.round(t1 - t0));
     const area = Math.max(1, width * height);
-    const avgOccupied = accepted > 0 ? (occupiedSum / accepted) : 0;
+    const avgOccupied = accepted > 0 ? occupiedSum / accepted : 0;
     const capacityEst = avgOccupied > 0 ? Math.floor(area / avgOccupied) : 0;
-    const acceptRate = attemptsTotal > 0 ? (accepted / attemptsTotal) : 0;
+    const acceptRate = attemptsTotal > 0 ? accepted / attemptsTotal : 0;
     // 中文日志，便于性能观测
     console.log(
-      `[Obstacles] 目标 ${obstacleCount} 个 | 已放置 ${placed} 个 | 尝试 ${attemptsTotal} 次 | 接受率 ${(acceptRate * 100).toFixed(1)}% | ` +
-      `最大连续失败 ${maxConsecFail} | 退出原因 ${exitReason} | 近似平均占用 ${avgOccupied.toFixed(1)} px² | 估算容量≈ ${capacityEst} | 生成耗时 ${used} ms`
+      `[Obstacles] 目标 ${obstacleCount} 个 | 已放置 ${placed} 个 | 尝试 ${attemptsTotal} 次 | 接受率 ${(
+        acceptRate * 100
+      ).toFixed(1)}% | ` +
+        `最大连续失败 ${maxConsecFail} | 退出原因 ${exitReason} | 近似平均占用 ${avgOccupied.toFixed(
+          1,
+        )} px² | 估算容量≈ ${capacityEst} | 生成耗时 ${used} ms`,
     );
-  } catch (_) { /* 忽略日志异常 */ }
+  } catch (_) {
+    /* 忽略日志异常 */
+  }
 
   return obstacles;
 }
@@ -162,8 +233,26 @@ export function generateObstacles(width, height, obstacleCount, rng, opts = {}) 
  * @returns {boolean} 是否在障碍物内
  */
 export function isPointInObstacles(px, py, obstacles) {
-  return obstacles.some(obs =>
-    px >= obs.x && px <= obs.x + obs.w &&
-    py >= obs.y && py <= obs.y + obs.h
+  return obstacles.some(
+    (obs) =>
+      px >= obs.x && px <= obs.x + obs.w && py >= obs.y && py <= obs.y + obs.h,
+  );
+}
+
+/**
+ * 检查点是否在任何障碍物内（包含边缘间隙）
+ * @param {number} px - 点 x 坐标
+ * @param {number} py - 点 y 坐标
+ * @param {Array} obstacles - 障碍物数组
+ * @param {number} margin - 边缘间隙距离
+ * @returns {boolean} 是否在障碍物内或边缘范围内
+ */
+export function isPointInObstaclesMargin(px, py, obstacles, margin = 0) {
+  return obstacles.some(
+    (obs) =>
+      px >= obs.x - margin &&
+      px <= obs.x + obs.w + margin &&
+      py >= obs.y - margin &&
+      py <= obs.y + obs.h + margin,
   );
 }

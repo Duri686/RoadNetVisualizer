@@ -25,15 +25,21 @@ export class RoadNetRenderer {
 
     const centerX = (data.metadata.width || 100) / 2;
     const centerY = (data.metadata.height || 100) / 2;
+    const totalFloors = data.layers.length;
 
     // 渲染各层
     data.layers.forEach((layer, index) => {
       this.renderLayer(layer, index, centerX, centerY, data.metadata);
     });
 
-    // 渲染障碍物
+    // 渲染障碍物 (spanning all floors)
     if (data.obstacles && data.obstacles.length > 0) {
-      this.renderObstacles(data.obstacles, centerX, centerY);
+    this.renderObstacles(data.obstacles, centerX, centerY, totalFloors, data.layers);
+    }
+    
+    // 渲染楼梯/电梯
+    if (data.metadata.floorConnections && data.metadata.floorConnections.length > 0) {
+      this.renderFloorConnections(data.metadata.floorConnections, centerX, centerY);
     }
 
     return { centerX, centerY };
@@ -184,7 +190,7 @@ export class RoadNetRenderer {
     const lines = new THREE.LineSegments(geometry, material);
     lines.computeLineDistances(); // 计算虚线距离
     lines.name = 'baseTriangulation';
-    lines.visible = false; // 默认不显示
+    lines.visible = true; // 默认显示
     layerGroup.add(lines);
   }
 
@@ -207,49 +213,61 @@ export class RoadNetRenderer {
   }
 
   /**
-   * 渲染障碍物
+   * 渲染障碍物 - 支持每层独立渲染
    */
-  renderObstacles(obstacles, centerX, centerY) {
+  renderObstacles(obstacles, centerX, centerY, totalFloors, layers) {
+    if (!obstacles && (!layers || layers.length === 0)) return;
+    
     const config = Renderer3DConfig;
-    const obsGeometry = new THREE.BoxGeometry(1, 1, 1);
-    const obsMaterial = new THREE.MeshStandardMaterial({
+    const obstacleGroup = new THREE.Group();
+    obstacleGroup.name = 'obstacles';
+    
+    const geometry = new THREE.BoxGeometry(1, 1, 1);
+    const material = new THREE.MeshStandardMaterial({
       color: config.colors.obstacle,
-      emissive: config.colors.obstacleEmissive,
-      emissiveIntensity: config.materials.obstacle.emissiveIntensity,
-      metalness: config.materials.obstacle.metalness,
-      roughness: config.materials.obstacle.roughness
+      roughness: 0.7,
+      metalness: 0.2
     });
+    
+    // Helper to add obstacle mesh
+    const addObstacleMesh = (obs, layerIdx) => {
+      const mesh = new THREE.Mesh(geometry, material);
+      const w = obs.w;
+      const h = obs.h;
+      const cx = obs.x + w / 2;
+      const cy = obs.y + h / 2;
+      
+      // Height based on layer
+      const layerY = config.layerHeight * layerIdx;
+      const obsHeight = config.layerHeight * 0.2; // Reduced to 1/5th of layer height
+      
+      mesh.position.set(cx - centerX, layerY + obsHeight / 2, cy - centerY);
+      mesh.scale.set(w, obsHeight, h);
+      
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      obstacleGroup.add(mesh);
+    };
 
-    const instancedObs = new THREE.InstancedMesh(obsGeometry, obsMaterial, obstacles.length);
-    instancedObs.castShadow = true;
-    instancedObs.receiveShadow = true;
-
-    const dummy = new THREE.Object3D();
-
-    obstacles.forEach((obs, i) => {
-      const w = obs.w || 1;
-      const h = obs.h || 1;
-      const cx = (obs.x || 0) + w / 2;
-      const cy = (obs.y || 0) + h / 2;
-
-      dummy.position.set(cx - centerX, 1, cy - centerY);
-      dummy.scale.set(w, 2, h);
-      dummy.updateMatrix();
-      instancedObs.setMatrixAt(i, dummy.matrix);
-    });
-
-    const obsGroup = new THREE.Group();
-    obsGroup.name = 'obstacles';
-    obsGroup.add(instancedObs);
-    this.scene.add(obsGroup);
-    this.obstacleGroup = obsGroup;
-  }
-
-  /**
-   * 获取节点数据
-   */
-  getNodesMesh() {
-    return this.nodesMesh;
+    // Render per-layer obstacles if available
+    if (layers && layers.length > 0) {
+      layers.forEach((layer, idx) => {
+        if (layer.obstacles) {
+          layer.obstacles.forEach(obs => addObstacleMesh(obs, idx));
+        } else if (idx === 0 && obstacles) {
+          // Fallback for layer 0 if no per-layer obstacles found but global obstacles exist
+          obstacles.forEach(obs => addObstacleMesh(obs, 0));
+        }
+      });
+    } else if (obstacles) {
+      // Fallback: render global obstacles on all floors (old behavior but per floor)
+      for (let i = 0; i < totalFloors; i++) {
+        obstacles.forEach(obs => addObstacleMesh(obs, i));
+      }
+    }
+    
+    this.scene.add(obstacleGroup);
+    this.obstacleGroup = obstacleGroup;
   }
 
   /**
@@ -288,6 +306,115 @@ export class RoadNetRenderer {
     this.layerGroups.forEach(group => {
       const base = group.getObjectByName('baseTriangulation');
       if (base) base.visible = visible;
+    });
+  }
+
+  /**
+   * 渲染楼层出入口 (楼梯和电梯)
+   */
+  /**
+   * 渲染楼层出入口 (楼梯和电梯)
+   */
+  renderFloorConnections(connections, centerX, centerY) {
+    if (!connections || connections.length === 0) return;
+    
+    const config = Renderer3DConfig;
+    
+    connections.forEach(conn => {
+      const layerIdx = conn.lowerLayer;
+      if (layerIdx === undefined || layerIdx >= this.layerGroups.length) return;
+
+      const layerGroup = this.layerGroups[layerIdx];
+      let connectionsGroup = layerGroup.getObjectByName('connections');
+      if (!connectionsGroup) {
+        connectionsGroup = new THREE.Group();
+        connectionsGroup.name = 'connections';
+        layerGroup.add(connectionsGroup);
+      }
+
+      const accessInfo = conn.accessPosition ? ` | Access: (${Math.round(conn.accessPosition.x)}, ${Math.round(conn.accessPosition.y)})` : '';
+      console.log(`[FloorConnection] ${conn.type} L${conn.lowerLayer}->L${conn.upperLayer} | Center: (${Math.round(conn.position.x)}, ${Math.round(conn.position.y)})${accessInfo}`);
+      
+      const fromPos = new THREE.Vector3(
+        conn.fromNode.x - centerX,
+        config.layerHeight * conn.lowerLayer,
+        conn.fromNode.y - centerY
+      );
+      const toPos = new THREE.Vector3(
+        conn.toNode.x - centerX,
+        config.layerHeight * conn.upperLayer,
+        conn.toNode.y - centerY
+      );
+      
+      const conf = conn.type === 'elevator' ? config.floorEntrance.elevator : config.floorEntrance.stairs;
+      
+      // Create tube connecting floors
+      const curve = new THREE.LineCurve3(fromPos, toPos);
+      const tubeGeo = new THREE.TubeGeometry(curve, 8, conf.radius, conf.segments, false);
+      const tubeMat = new THREE.MeshStandardMaterial({
+        color: conf.color,
+        emissive: conf.color,
+        emissiveIntensity: 0.3,
+        transparent: true,
+        opacity: conf.opacity
+      });
+      const tube = new THREE.Mesh(tubeGeo, tubeMat);
+      connectionsGroup.add(tube);
+      
+      // Add platform marker at top (for elevators) or midpoint (for stairs)
+      if (conn.type === 'elevator') {
+        const platformGeo = new THREE.CylinderGeometry(conf.platformSize, conf.platformSize, 0.5, 16);
+        const platformMat = new THREE.MeshStandardMaterial({
+          color: conf.color,
+          emissive: conf.color,
+          emissiveIntensity: 0.5
+        });
+        const platform = new THREE.Mesh(platformGeo, platformMat);
+        platform.position.copy(toPos);
+        platform.position.y -= 0.25; // Slightly below endpoint
+        connectionsGroup.add(platform);
+      }
+
+      // [NEW] Visualize Direct Path (Access -> Access)
+      if (conn.accessPosition) {
+        const fromAccessPos = new THREE.Vector3(
+          conn.accessPosition.x - centerX,
+          config.layerHeight * conn.lowerLayer,
+          conn.accessPosition.y - centerY
+        );
+        const toAccessPos = new THREE.Vector3(
+          conn.accessPosition.x - centerX,
+          config.layerHeight * conn.upperLayer,
+          conn.accessPosition.y - centerY
+        );
+        
+        // Draw a thinner, dashed-like tube or line for the direct path
+        const directCurve = new THREE.LineCurve3(fromAccessPos, toAccessPos);
+        const directTubeGeo = new THREE.TubeGeometry(directCurve, 4, conf.radius * 0.5, 8, false);
+        const directTubeMat = new THREE.MeshStandardMaterial({
+          color: conf.color,
+          emissive: conf.color,
+          emissiveIntensity: 0.8, // Brighter
+          transparent: true,
+          opacity: 0.6
+        });
+        const directTube = new THREE.Mesh(directTubeGeo, directTubeMat);
+        connectionsGroup.add(directTube);
+      }
+    });
+    
+    console.log(`[RoadNetRenderer] Rendered ${connections.length} floor connections distributed to layers`);
+  }
+
+  /**
+   * 切换连接器可见性
+   */
+  toggleConnections(visible, layerIndex = -1) {
+    this.layerGroups.forEach((group, idx) => {
+      if (layerIndex === -1 || layerIndex === idx) {
+        const connections = group.getObjectByName('connections');
+        if (connections) connections.visible = visible;
+      }
     });
   }
 

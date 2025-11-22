@@ -1,11 +1,24 @@
 // Voronoi 骨架构建（裁剪+避障）
 // 保持与原逻辑一致（功能等价）
 import { Delaunay } from 'd3-delaunay';
-import { extractAllObstacleVertices, getBoundaryVertices, lineIntersectsObstacleWithTurf } from '../obstacleGeometry.js';
+import {
+  extractAllObstacleVertices,
+  getBoundaryVertices,
+  lineIntersectsObstacleWithTurf,
+} from '../obstacleGeometry.js';
 import { isPointInObstacles } from '../obstacleGeneration.js';
-import { createSpatialIndex, getPotentialObstacles, getObstaclesAlongLineDDA } from '../spatialIndex.js';
+import {
+  createSpatialIndex,
+  getPotentialObstacles,
+  getObstaclesAlongLineDDA,
+} from '../spatialIndex.js';
 
-export function buildVoronoiSkeleton(width, height, obstacles, options = { useSpatialIndex: true }) {
+export function buildVoronoiSkeleton(
+  width,
+  height,
+  obstacles,
+  options = { useSpatialIndex: true },
+) {
   // 计时：提取顶点/边界
   const tExtract0 = performance?.now ? performance.now() : Date.now();
   const obstacleVertices = extractAllObstacleVertices(obstacles);
@@ -16,7 +29,7 @@ export function buildVoronoiSkeleton(width, height, obstacles, options = { useSp
     return { nodes: [], edges: [], triangles: [], delaunay: null };
   }
 
-  const pts = allVertices.map(v => [v.x, v.y]);
+  const pts = allVertices.map((v) => [v.x, v.y]);
   // 计时：Delaunay 构建
   const tDel0 = performance?.now ? performance.now() : Date.now();
   const delaunay = Delaunay.from(pts);
@@ -47,7 +60,14 @@ export function buildVoronoiSkeleton(width, height, obstacles, options = { useSp
   const addNode = (p) => {
     const key = `${Math.round(p.x * 1000)}-${Math.round(p.y * 1000)}`;
     if (usedNodes.has(key)) return usedNodes.get(key);
-    const idx = nodes.push({ id: `L0-V${nodes.length}`, x: p.x, y: p.y, layer: 0, source: 'voronoi' }) - 1;
+    const idx =
+      nodes.push({
+        id: `L0-V${nodes.length}`,
+        x: p.x,
+        y: p.y,
+        layer: 0,
+        source: 'voronoi',
+      }) - 1;
     usedNodes.set(key, idx);
     return idx;
   };
@@ -71,7 +91,7 @@ export function buildVoronoiSkeleton(width, height, obstacles, options = { useSp
     tPoolQueryMs: 0,
     tLosMs: 0,
     losChecks: 0,
-    losFastReject: 0
+    losFastReject: 0,
   };
   let sIndex = null;
   if (useSI) {
@@ -91,7 +111,21 @@ export function buildVoronoiSkeleton(width, height, obstacles, options = { useSp
 
     const P = centers[tA];
     const Q = centers[tB];
-    if (!P || !Q || !isFinite(P.x) || !isFinite(P.y) || !isFinite(Q.x) || !isFinite(Q.y)) continue;
+    if (
+      !P ||
+      !Q ||
+      !isFinite(P.x) ||
+      !isFinite(P.y) ||
+      !isFinite(Q.x) ||
+      !isFinite(Q.y)
+    )
+      continue;
+    // 额外过滤：外接圆心不能落在障碍内
+    if (
+      isPointInObstacles(P.x, P.y, obstacles) ||
+      isPointInObstacles(Q.x, Q.y, obstacles)
+    )
+      continue;
 
     const clipped = clipSegmentToBox(P, Q, bbox);
     if (!clipped) continue;
@@ -102,23 +136,46 @@ export function buildVoronoiSkeleton(width, height, obstacles, options = { useSp
     const tPool0 = performance?.now ? performance.now() : Date.now();
     let pool;
     if (useSI) {
-      pool = getObstaclesAlongLineDDA(sIndex, S.x, S.y, T.x, T.y);
-      if (!pool || pool.length === 0) pool = getPotentialObstacles(sIndex, S.x, S.y, T.x, T.y);
+      const poolA = getObstaclesAlongLineDDA(sIndex, S.x, S.y, T.x, T.y);
+      const poolB = getPotentialObstacles(sIndex, S.x, S.y, T.x, T.y);
+      const seenIds = new Set();
+      pool = [];
+      if (Array.isArray(poolA)) {
+        for (const ob of poolA) {
+          const id = ob.id != null ? ob.id : ob;
+          if (!seenIds.has(id)) {
+            seenIds.add(id);
+            pool.push(ob);
+          }
+        }
+      }
+      if (Array.isArray(poolB)) {
+        for (const ob of poolB) {
+          const id = ob.id != null ? ob.id : ob;
+          if (!seenIds.has(id)) {
+            seenIds.add(id);
+            pool.push(ob);
+          }
+        }
+      }
     } else {
       pool = obstacles;
     }
     const tPool1 = performance?.now ? performance.now() : Date.now();
-    profile.tPoolQueryMs += (tPool1 - tPool0);
+    profile.tPoolQueryMs += tPool1 - tPool0;
     profile.edgesChecked += 1;
     profile.candidatesAccum += pool.length;
     // 穿障检测
     const tLos0 = performance?.now ? performance.now() : Date.now();
     for (const obs of pool) {
       profile.losChecks += 1;
-      if (lineIntersectsObstacleWithTurf(S.x, S.y, T.x, T.y, obs)) { blocked = true; break; }
+      if (lineIntersectsObstacleWithTurf(S.x, S.y, T.x, T.y, obs, 0.5)) {
+        blocked = true;
+        break;
+      }
     }
     const tLos1 = performance?.now ? performance.now() : Date.now();
-    profile.tLosMs += (tLos1 - tLos0);
+    profile.tLosMs += tLos1 - tLos0;
     if (blocked) continue;
 
     const u = addNode(S);
@@ -129,40 +186,61 @@ export function buildVoronoiSkeleton(width, height, obstacles, options = { useSp
 
   const tIter1 = performance?.now ? performance.now() : Date.now();
   // 边遍历净耗时（不含候选查询与穿障）
-  profile.tEdgeIterMs = Math.max(0, Math.round((tIter1 - tIter0) - profile.tPoolQueryMs - profile.tLosMs));
+  profile.tEdgeIterMs = Math.max(
+    0,
+    Math.round(tIter1 - tIter0 - profile.tPoolQueryMs - profile.tLosMs),
+  );
   profile.tPoolQueryMs = Math.max(0, Math.round(profile.tPoolQueryMs));
   profile.tLosMs = Math.max(0, Math.round(profile.tLosMs));
 
-  const nodeDelaunay = nodes.length > 0 ? Delaunay.from(nodes.map(n => [n.x, n.y])) : null;
+  const nodeDelaunay =
+    nodes.length > 0 ? Delaunay.from(nodes.map((n) => [n.x, n.y])) : null;
   return { nodes, edges, triangles: [], delaunay: nodeDelaunay, profile };
 }
 
 // === 内部工具 ===
 function computeCircumcenter(ax, ay, bx, by, cx, cy) {
-  const d = 2 * (ax*(by-cy) + bx*(cy-ay) + cx*(ay-by));
+  const d = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by));
   if (Math.abs(d) < 1e-6) {
     return { x: (ax + bx + cx) / 3, y: (ay + by + cy) / 3 };
   }
-  const ux = ((ax*ax + ay*ay)*(by-cy) + (bx*bx + by*by)*(cy-ay) + (cx*cx + cy*cy)*(ay-by)) / d;
-  const uy = ((ax*ax + ay*ay)*(cx-bx) + (bx*bx + by*by)*(ax-cx) + (cx*cx + cy*cy)*(bx-ax)) / d;
+  const ux =
+    ((ax * ax + ay * ay) * (by - cy) +
+      (bx * bx + by * by) * (cy - ay) +
+      (cx * cx + cy * cy) * (ay - by)) /
+    d;
+  const uy =
+    ((ax * ax + ay * ay) * (cx - bx) +
+      (bx * bx + by * by) * (ax - cx) +
+      (cx * cx + cy * cy) * (bx - ax)) /
+    d;
   return { x: ux, y: uy };
 }
 
 function clip(vi, qi, t0, t1) {
   const r = qi / vi;
-  if (vi < 0) { if (r > t1) return null; if (r > t0) t0 = r; }
-  else { if (r < t0) return null; if (r < t1) t1 = r; }
+  if (vi < 0) {
+    if (r > t1) return null;
+    if (r > t0) t0 = r;
+  } else {
+    if (r < t0) return null;
+    if (r < t1) t1 = r;
+  }
   return [t0, t1];
 }
 
 function clipSegmentToBox(P, Q, box) {
-  let t0 = 0; let t1 = 1;
-  const dx = Q.x - P.x; const dy = Q.y - P.y;
+  let t0 = 0;
+  let t1 = 1;
+  const dx = Q.x - P.x;
+  const dy = Q.y - P.y;
   const p = [-dx, dx, -dy, dy];
   const q = [P.x - box.xmin, box.xmax - P.x, P.y - box.ymin, box.ymax - P.y];
   for (let i = 0; i < 4; i++) {
-    const res = p[i] === 0 ? (q[i] < 0 ? null : [t0, t1]) : clip(p[i], q[i], t0, t1);
-    if (res === null) return null; [t0, t1] = res;
+    const res =
+      p[i] === 0 ? (q[i] < 0 ? null : [t0, t1]) : clip(p[i], q[i], t0, t1);
+    if (res === null) return null;
+    [t0, t1] = res;
   }
   const S = { x: P.x + t0 * dx, y: P.y + t0 * dy };
   const T = { x: P.x + t1 * dx, y: P.y + t1 * dy };

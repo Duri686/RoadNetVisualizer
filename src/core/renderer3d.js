@@ -114,6 +114,7 @@ class Renderer3D {
     window.addEventListener('resize', this.onWindowResize.bind(this));
     this.renderer.domElement.addEventListener('pointermove', this.onPointerMove.bind(this));
     this.renderer.domElement.addEventListener('click', this.onClick.bind(this));
+    this.renderer.domElement.addEventListener('dblclick', this.onDoubleClick.bind(this));
   }
 
   /**
@@ -179,10 +180,16 @@ class Renderer3D {
   }
 
   /**
-   * 点击事件
+   * 点击事件 (Single Click)
+   * 仅用于选择起点/终点。如果导航已完成（有终点），则忽略单击。
    */
   onClick(event) {
     if (!this.roadNetData) return;
+
+    // 如果已经有终点（导航完成/进行中），忽略单击，防止意外重置
+    if (this.interactionManager.state.endNode) {
+      return;
+    }
 
     this.interactionManager.updatePointer(event, this.renderer.domElement);
     
@@ -208,9 +215,40 @@ class Renderer3D {
         window.dispatchEvent(new CustomEvent('renderer-path-request', {
           detail: { start: result.start, end: result.node }
         }));
-      } else if (result.type === 'reset') {
-        this.clearPath();
       }
+      // 注意：单击不再处理 reset，reset 移至双击
+    }
+  }
+
+  /**
+   * 双击事件 (Double Click)
+   * 用于重置导航或重新开始
+   */
+  onDoubleClick(event) {
+    if (!this.roadNetData) return;
+
+    // 1. 无论点击哪里，首先清除当前路径和状态
+    this.clearPath();
+    this.interactionManager.clear();
+    this.interaction.state.startNode = null;
+    this.interaction.state.endNode = null;
+    this.updateInteractionMarkers();
+
+    // 2. 检查是否双击了某个节点，如果是，将其设为新的起点
+    this.interactionManager.updatePointer(event, this.renderer.domElement);
+    const { node } = this.interactionManager.findNearestNode(
+      this.roadNetData,
+      Renderer3DConfig.layerHeight,
+      this.currentLayer
+    );
+
+    if (node) {
+      console.log('🔄 双击重置并选中起点:', node);
+      this.interactionManager.handleNodeClick(node); // 设置为起点
+      this.interaction.state.startNode = node;
+      this.updateInteractionMarkers();
+    } else {
+      console.log('🔄 双击重置导航');
     }
   }
 
@@ -246,6 +284,17 @@ class Renderer3D {
 
     this.pathRenderer.drawPath(path, Renderer3DConfig.layerHeight, centerX, centerY);
     this.animatePath(path);
+  }
+
+  /**
+   * 绘制分层数据
+   */
+  drawHierarchicalData(zones, abstractPath, width, height, gridSize) {
+    if (this.roadNetRenderer) {
+      const centerX = (width || 100) / 2;
+      const centerY = (height || 100) / 2;
+      this.roadNetRenderer.renderHierarchicalData(zones, abstractPath, width, height, gridSize, centerX, centerY);
+    }
   }
 
   /**
@@ -356,12 +405,23 @@ class Renderer3D {
   }
 
   showLayer(index) {
-    this.currentLayer = index;
-    if (!this.scene || !this.roadNetData) return;
+    // Legacy support or "Show All" (index === null)
+    if (index === null) {
+       this.scene.children.forEach(child => {
+        if (child.userData && typeof child.userData.layerIndex === 'number') {
+          child.visible = true;
+        }
+      });
+      return;
+    }
+    this.setLayerVisibility(index, true);
+  }
 
+  setLayerVisibility(index, visible) {
+    if (!this.scene) return;
     this.scene.children.forEach(child => {
-      if (child.userData && typeof child.userData.layerIndex === 'number') {
-        child.visible = index === null || child.userData.layerIndex === index;
+      if (child.userData && child.userData.layerIndex === index) {
+        child.visible = visible;
       }
     });
   }

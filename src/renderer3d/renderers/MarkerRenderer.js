@@ -33,7 +33,7 @@ export class MarkerRenderer {
    * 渲染起点标记（蓝色脉冲波纹）
    */
   renderStartMarker(node, layerHeight, centerX, centerY) {
-    const y = node.layer * layerHeight;
+    const y = Renderer3DConfig.layerHeight * (node.layer || 0); // Multi-floor height
     const posX = node.x - centerX;
     const posZ = node.y - centerY;
 
@@ -87,7 +87,7 @@ export class MarkerRenderer {
    * 渲染终点标记（红色带脉冲波纹）
    */
   renderEndMarker(node, layerHeight, centerX, centerY) {
-    const y = node.layer * layerHeight;
+    const y = Renderer3DConfig.layerHeight * (node.layer || 0); // Multi-floor height
     const posX = node.x - centerX;
     const posZ = node.y - centerY;
 

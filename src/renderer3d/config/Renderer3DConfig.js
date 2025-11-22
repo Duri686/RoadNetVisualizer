@@ -4,8 +4,25 @@
  */
 
 export const Renderer3DConfig = {
-  // 层配置
-  layerHeight: 20,
+  // 层配置 - Multi-floor building
+  layerHeight: 100, // Height between floors (was 20, now 100 for clear separation)
+  
+  // Floor entrance (stairs/elevators) configuration
+  floorEntrance: {
+    stairs: {
+      color: 0xffff00,      // Yellow
+      radius: 1.5,          // Increased from 0.6
+      segments: 8,
+      opacity: 0.9          // Increased from 0.7
+    },
+    elevator: {
+      color: 0x00ffff,      // Cyan
+      radius: 2.0,          // Increased from 1.0
+      segments: 12,
+      opacity: 0.95,        // Increased from 0.8
+      platformSize: 5       // Increased from 3
+    }
+  },
   
   // 节点配置
   node: {

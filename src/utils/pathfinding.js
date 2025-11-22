@@ -40,7 +40,7 @@ export function reconstructPath(cameFrom, current, nodes) {
  * 最小堆（用于 open 集）
  * 简化实现：允许重复入堆，出堆时以 fScore 校验是否为最新
  */
-class MinHeap {
+export class MinHeap {
   constructor() {
     this.arr = [];
   }
@@ -105,16 +105,41 @@ export function findPathAStar(layer, startNode, endNode) {
   // 构建邻接表
   const graph = new Map();
   nodes.forEach((node) => graph.set(node.id, []));
+  
+  // id->node 映射（加速邻接取坐标和调试）
+  const idToNode = new Map(nodes.map((n) => [n.id, n]));
 
+  let crossFloorEdgeCount = 0;
   edges.forEach((edge) => {
     const from = edge.from;
     const to = edge.to;
+    
+    // 获取节点信息以检查楼层
+    const fromNode = idToNode.get(from);
+    const toNode = idToNode.get(to);
+    
+    // 检查是否是跨楼层边
+    const isDifferentLayer = fromNode && toNode && fromNode.layer !== toNode.layer;
+    
+    // ⚠️ 关键修复：如果节点在不同楼层，但边没有被标记为 crossFloor，则跳过这条边
+    if (isDifferentLayer && !edge.crossFloor) {
+      console.warn(`[A*] ⛔ Skipping invalid cross-layer edge (not marked as crossFloor): ${from} (L${fromNode.layer}) -> ${to} (L${toNode.layer})`);
+      return; // 跳过这条边，不加入图中
+    }
+    
+    // Debug cross-floor edges
+    if (edge.crossFloor) {
+      crossFloorEdgeCount++;
+      console.log(`[A*] ✅ Cross-floor edge: ${from} (${fromNode?.x}, ${fromNode?.y}, L${fromNode?.layer}) -> ${to} (${toNode?.x}, ${toNode?.y}, L${toNode?.layer}) | type: ${edge.entranceType} | cost: ${edge.cost.toFixed(2)}`);
+    }
+    
     graph.get(from).push({ nodeId: to, cost: edge.cost });
     graph.get(to).push({ nodeId: from, cost: edge.cost });
   });
-
-  // id->node 映射（加速邻接取坐标）
-  const idToNode = new Map(nodes.map((n) => [n.id, n]));
+  
+  if (crossFloorEdgeCount > 0) {
+    console.log(`[A*] Total cross-floor edges in graph: ${crossFloorEdgeCount}`);
+  }
 
   // A* 算法（最小堆）
   const openHeap = new MinHeap();

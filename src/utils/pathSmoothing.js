@@ -26,6 +26,21 @@ export function smoothPathVisibility(path, obstacles, options = {}) {
   const timeBudgetMs = typeof options.timeBudgetMs === 'number' ? options.timeBudgetMs : 0;
   const t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
 
+  // Mark nodes that must be preserved (floor transition points)
+  const mustPreserve = new Set();
+  mustPreserve.add(0); // Always keep start
+  mustPreserve.add(path.length - 1); // Always keep end
+  
+  for (let i = 0; i < path.length - 1; i++) {
+    const currentLayer = path[i].layer || 0;
+    const nextLayer = path[i + 1].layer || 0;
+    if (currentLayer !== nextLayer) {
+      // Floor transition - preserve both nodes (entry and exit)
+      mustPreserve.add(i);     // Exit node from current floor
+      mustPreserve.add(i + 1); // Entry node to next floor
+    }
+  }
+
   const result = [];
   let i = 0;
   result.push(path[0]);
@@ -39,10 +54,23 @@ export function smoothPathVisibility(path, obstacles, options = {}) {
         break;
       }
     }
+    
     let j = i + 1;
     const limit = Math.min(path.length - 1, i + maxLookahead);
+    const currentLayer = path[i].layer || 0;
 
-    for (let k = j + 0; k <= limit; k++) {
+    for (let k = j; k <= limit; k++) {
+      // Can't skip past nodes that must be preserved
+      if (k > i + 1 && mustPreserve.has(k)) {
+        break;
+      }
+      
+      // Don't skip over floor transitions
+      const targetLayer = path[k].layer || 0;
+      if (targetLayer !== currentLayer) {
+        break;
+      }
+      
       const a = path[i];
       const b = path[k];
       if (hasLineOfSight(a.x, a.y, b.x, b.y, obstacles, si, clearance)) {
@@ -57,11 +85,18 @@ export function smoothPathVisibility(path, obstacles, options = {}) {
   }
 
   // 去重（防止相邻重复）
+  // ⚠️ 关键修复：跨楼层节点可能 x,y 相同但 layer 不同，必须保留
   const dedup = [];
   for (let t = 0; t < result.length; t++) {
     const prev = dedup[dedup.length - 1];
     const cur = result[t];
-    if (!prev || prev.x !== cur.x || prev.y !== cur.y) dedup.push(cur);
+    const prevLayer = prev ? (prev.layer || 0) : -1;
+    const curLayer = cur.layer || 0;
+    
+    // 只有 x, y, layer 都相同才认为重复
+    if (!prev || prev.x !== cur.x || prev.y !== cur.y || prevLayer !== curLayer) {
+      dedup.push(cur);
+    }
   }
   return dedup;
 }

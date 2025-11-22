@@ -9,9 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@turf/turf": "^7.2.0",
     "d3-delaunay": "^6.0.4",
-    "pixi.js": "^7.3.2",
     "stats.js": "^0.17.0",
     "three": "^0.181.2"
   },

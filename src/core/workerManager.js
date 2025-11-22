@@ -14,7 +14,7 @@ class WorkerManager {
       onComplete: null,
       onError: null,
       onCancel: null,
-      onObstacleReady: null
+      onObstacleReady: null,
     };
     this.isProcessing = false;
   }
@@ -32,7 +32,9 @@ class WorkerManager {
       this.setupMessageHandler();
       console.log('✅ Obstacle Worker initialized successfully');
       // 预热：提升首轮稳定性
-      try { this.worker.postMessage({ type: 'WARMUP' }); } catch (_) {}
+      try {
+        this.worker.postMessage({ type: 'WARMUP' });
+      } catch (_) {}
     } catch (error) {
       console.error('❌ Failed to initialize worker:', error);
       throw error;
@@ -44,7 +46,15 @@ class WorkerManager {
    */
   setupMessageHandler() {
     this.worker.onmessage = (e) => {
-      const { type, data, progress, error, currentLayer, totalLayers, payload } = e.data;
+      const {
+        type,
+        data,
+        progress,
+        error,
+        currentLayer,
+        totalLayers,
+        payload,
+      } = e.data;
 
       switch (type) {
         case 'WARMUP_DONE':
@@ -66,10 +76,21 @@ class WorkerManager {
           break;
 
         case 'PROGRESS':
-          const nodeCountInfo = e.data.layerNodeCount ? ` (${e.data.layerNodeCount} nodes)` : '';
-          console.log(`⏳ Progress: ${(progress * 100).toFixed(1)}% - Layer ${currentLayer + 1}/${totalLayers}${nodeCountInfo}`);
+          const nodeCountInfo = e.data.layerNodeCount
+            ? ` (${e.data.layerNodeCount} nodes)`
+            : '';
+          console.log(
+            `⏳ Progress: ${(progress * 100).toFixed(1)}% - Layer ${
+              currentLayer + 1
+            }/${totalLayers}${nodeCountInfo}`,
+          );
           if (this.callbacks.onProgress) {
-            this.callbacks.onProgress(progress, currentLayer, totalLayers, e.data.layerNodeCount);
+            this.callbacks.onProgress(
+              progress,
+              currentLayer,
+              totalLayers,
+              e.data.layerNodeCount,
+            );
           }
           break;
 
@@ -78,11 +99,19 @@ class WorkerManager {
           // 主线程统计接收的 edgesPacked（TypedArray）大小与边数
           try {
             const layers = data && data.layers ? data.layers : [];
-            let bufCount = 0, byteSum = 0, edgeSum = 0;
-            let nodeBufs = 0, nodeBytes = 0, nodeCount = 0;
+            let bufCount = 0,
+              byteSum = 0,
+              edgeSum = 0;
+            let nodeBufs = 0,
+              nodeBytes = 0,
+              nodeCount = 0;
             for (let i = 0; i < layers.length; i++) {
               const packed = layers[i] && layers[i].edgesPacked;
-              if (packed && packed.buffer && typeof packed.byteLength === 'number') {
+              if (
+                packed &&
+                packed.buffer &&
+                typeof packed.byteLength === 'number'
+              ) {
                 bufCount++;
                 byteSum += packed.byteLength;
                 edgeSum += Math.floor(packed.length / 4);
@@ -95,14 +124,24 @@ class WorkerManager {
               }
             }
             const kb = byteSum > 0 ? Math.round(byteSum / 1024) : 0;
-            console.log(`[Main] received edgesPacked: layers=${layers.length} | buffers=${bufCount} | edges=${edgeSum} | ${kb} KB`);
+            console.log(
+              `[Main] received edgesPacked: layers=${layers.length} | buffers=${bufCount} | edges=${edgeSum} | ${kb} KB`,
+            );
             const nkb = nodeBytes > 0 ? Math.round(nodeBytes / 1024) : 0;
-            console.log(`[Main] received nodesPacked: buffers=${nodeBufs} | nodes=${nodeCount} | ${nkb} KB`);
+            console.log(
+              `[Main] received nodesPacked: buffers=${nodeBufs} | nodes=${nodeCount} | ${nkb} KB`,
+            );
             const ob = data && data.obstaclesPacked;
-            const obKb = ob && ob.byteLength ? Math.round(ob.byteLength / 1024) : 0;
+            const obKb =
+              ob && ob.byteLength ? Math.round(ob.byteLength / 1024) : 0;
             const obCount = ob && ob.length ? Math.floor(ob.length / 4) : 0;
-            if (ob) console.log(`[Main] received obstaclesPacked: rects=${obCount} | ${obKb} KB`);
-          } catch (_) { /* ignore */ }
+            if (ob)
+              console.log(
+                `[Main] received obstaclesPacked: rects=${obCount} | ${obKb} KB`,
+              );
+          } catch (_) {
+            /* ignore */
+          }
           console.log('✅ Worker completed processing:', data.metadata);
           if (this.callbacks.onComplete) {
             this.callbacks.onComplete(data);
@@ -131,14 +170,33 @@ class WorkerManager {
     };
 
     this.worker.onerror = (error) => {
+      if (!this.isProcessing) {
+        return;
+      }
       this.isProcessing = false;
-      console.error('❌ Worker error event:', error);
+      const msg =
+        error.message ||
+        (error.error && error.error.message) ||
+        'Unknown worker error';
+      console.error('❌ Worker error event:', msg, error);
       if (this.callbacks.onError) {
         this.callbacks.onError({
-          message: error.message,
+          message: msg,
           filename: error.filename,
-          lineno: error.lineno
+          lineno: error.lineno,
+          colno: error.colno,
+          stack: error.error && error.error.stack,
         });
+      }
+    };
+    this.worker.onmessageerror = (ev) => {
+      if (!this.isProcessing) {
+        return;
+      }
+      this.isProcessing = false;
+      console.error('❌ Worker messageerror:', ev);
+      if (this.callbacks.onError) {
+        this.callbacks.onError({ message: 'Worker message cloning failed' });
       }
     };
   }
@@ -159,9 +217,19 @@ class WorkerManager {
    * @param {number} obstacleCount - 障碍物数量
    * @param {number} seed - 随机种子（可选）
    */
-  generateNavGraph(width, height, layerCount, obstacleCount = 0, seed, mode = 'centroid', options = {}) {
+  generateNavGraph(
+    width,
+    height,
+    layerCount,
+    obstacleCount = 0,
+    seed,
+    mode = 'centroid',
+    options = {},
+  ) {
     if (this.isProcessing) {
-      console.warn('⚠️ Worker is already processing, please wait or cancel current task');
+      console.warn(
+        '⚠️ Worker is already processing, please wait or cancel current task',
+      );
       return false;
     }
 
@@ -174,17 +242,31 @@ class WorkerManager {
     if (width < 10 || height < 10 || layerCount < 1) {
       console.error('❌ Invalid parameters');
       if (this.callbacks.onError) {
-        this.callbacks.onError({ message: 'Invalid parameters: width/height >= 10, layerCount >= 1' });
+        this.callbacks.onError({
+          message: 'Invalid parameters: width/height >= 10, layerCount >= 1',
+        });
       }
       return false;
     }
 
     try {
       // 记录主线程发送时间，传递到 Worker 再回传 START，便于端到端计时对齐
-      const clientStart = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      const clientStart =
+        typeof performance !== 'undefined' && performance.now
+          ? performance.now()
+          : Date.now();
       this.worker.postMessage({
         type: 'GENERATE_NAVGRAPH',
-        payload: { width, height, layerCount, obstacleCount, seed, mode, options, clientStart }
+        payload: {
+          width,
+          height,
+          layerCount,
+          obstacleCount,
+          seed,
+          mode,
+          options,
+          clientStart,
+        },
       });
       return true;
     } catch (error) {
@@ -224,7 +306,7 @@ class WorkerManager {
   getStatus() {
     return {
       isProcessing: this.isProcessing,
-      hasWorker: !!this.worker
+      hasWorker: !!this.worker,
     };
   }
 }
