@@ -17,6 +17,14 @@ class WorkerManager {
       onObstacleReady: null,
     };
     this.isProcessing = false;
+    // Worker 是否已就绪（收到 WORKER_READY）
+    this.isReady = false;
+    // 挂起的首条生成请求（在未就绪时缓存一次）
+    this.pendingGenerate = null;
+    // 全局 Loading 覆盖层引用
+    this._loadingEl = null;
+    // 仅首次加载显示全局 Loading；首轮完成后自动关闭
+    this._bootLoadingEnabled = true;
   }
 
   /**
@@ -31,6 +39,11 @@ class WorkerManager {
       this.worker = new ObstacleWorker();
       this.setupMessageHandler();
       console.log('✅ Obstacle Worker initialized successfully');
+      // 重置就绪与挂起状态
+      this.isReady = false;
+      this.pendingGenerate = null;
+      // 显示全局 Loading（仅首屏白屏阶段）
+      if (this._bootLoadingEnabled) this.showGlobalLoading('加载引擎中…');
       // 预热：提升首轮稳定性
       try {
         this.worker.postMessage({ type: 'WARMUP' });
@@ -63,6 +76,8 @@ class WorkerManager {
         case 'START':
           this.isProcessing = true;
           console.log('🚀 Worker started processing:', payload);
+          // 首轮生成阶段更新文案；后续点击不再显示全局 Loading
+          this.updateGlobalLoading('生成中…');
           if (this.callbacks.onStart) {
             this.callbacks.onStart(payload);
           }
@@ -96,6 +111,7 @@ class WorkerManager {
 
         case 'COMPLETE':
           this.isProcessing = false;
+          this.hideGlobalLoading();
           // 主线程统计接收的 edgesPacked（TypedArray）大小与边数
           try {
             const layers = data && data.layers ? data.layers : [];
@@ -150,6 +166,7 @@ class WorkerManager {
 
         case 'ERROR':
           this.isProcessing = false;
+          this.hideGlobalLoading();
           console.error('❌ Worker error:', error);
           if (this.callbacks.onError) {
             this.callbacks.onError(error);
@@ -158,6 +175,7 @@ class WorkerManager {
 
         case 'CANCELLED':
           this.isProcessing = false;
+          this.hideGlobalLoading();
           console.log('🛑 Worker cancelled');
           if (this.callbacks.onCancel) {
             this.callbacks.onCancel();
@@ -167,6 +185,18 @@ class WorkerManager {
         case 'WORKER_READY':
           // Worker 初始化完成 / 模块加载成功的通知，仅用于调试
           console.log('🧩 Worker reported ready:', e.data && e.data.message);
+          this.isReady = true;
+          // 若存在挂起的生成请求，立刻发送并清空
+          if (this.pendingGenerate) {
+            try {
+              this.worker.postMessage(this.pendingGenerate);
+            } catch (err) {
+              console.error('❌ Failed to flush pending generate:', err);
+              if (this.callbacks.onError) this.callbacks.onError(err);
+            } finally {
+              this.pendingGenerate = null;
+            }
+          }
           break;
 
         default:
@@ -260,7 +290,7 @@ class WorkerManager {
         typeof performance !== 'undefined' && performance.now
           ? performance.now()
           : Date.now();
-      this.worker.postMessage({
+      const message = {
         type: 'GENERATE_NAVGRAPH',
         payload: {
           width,
@@ -272,7 +302,13 @@ class WorkerManager {
           options,
           clientStart,
         },
-      });
+      };
+      // 若 Worker 尚未就绪，先缓存，待 WORKER_READY 后发送
+      if (!this.isReady) {
+        this.pendingGenerate = message;
+      } else {
+        this.worker.postMessage(message);
+      }
       return true;
     } catch (error) {
       console.error('❌ Failed to post message to worker:', error);
@@ -301,6 +337,7 @@ class WorkerManager {
       this.worker.terminate();
       this.worker = null;
       this.isProcessing = false;
+      this.hideGlobalLoading();
       console.log('🛑 Worker terminated');
     }
   }
@@ -313,6 +350,65 @@ class WorkerManager {
       isProcessing: this.isProcessing,
       hasWorker: !!this.worker,
     };
+  }
+
+  // —— 全局 Loading 覆盖层 ——
+  showGlobalLoading(text = '加载中…') {
+    try {
+      if (!this._bootLoadingEnabled) return; // 首轮之外不再展示
+      if (!this._loadingEl) {
+        const el = document.createElement('div');
+        el.id = 'global-loading-overlay';
+        el.setAttribute(
+          'style',
+          [
+            'position:fixed',
+            'inset:0',
+            'display:flex',
+            'align-items:center',
+            'justify-content:center',
+            'background:rgba(15,23,42,0.85)',
+            'backdrop-filter:saturate(1.1) blur(2px)',
+            'z-index:9999',
+            'color:#cbd5e1',
+            'font-family: ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial,Apple Color Emoji,Segoe UI Emoji',
+            'font-weight:600',
+            'letter-spacing:.3px',
+          ].join(';'),
+        );
+        const txt = document.createElement('div');
+        txt.id = 'global-loading-text';
+        txt.textContent = text;
+        txt.style.fontSize = '14px';
+        txt.style.opacity = '0.9';
+        el.appendChild(txt);
+        document.body.appendChild(el);
+        this._loadingEl = el;
+      } else {
+        this.updateGlobalLoading(text);
+      }
+    } catch (_) {}
+  }
+
+  updateGlobalLoading(text = '加载中…') {
+    try {
+      // 仅当首轮开关开启且覆盖层已存在时才更新
+      if (!this._bootLoadingEnabled || !this._loadingEl) return;
+      const t = this._loadingEl.querySelector('#global-loading-text');
+      if (t) t.textContent = text;
+      this._loadingEl.style.display = 'flex';
+    } catch (_) {}
+  }
+
+  hideGlobalLoading() {
+    try {
+      if (this._loadingEl) {
+        this._loadingEl.remove();
+        this._loadingEl = null;
+      }
+      // 关闭首轮 Loading 开关，后续不再展示
+      this._bootLoadingEnabled = false;
+    } catch (_) {}
   }
 }
 

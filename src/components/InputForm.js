@@ -9,11 +9,12 @@ class InputForm {
       widthInput: document.getElementById('width-input'),
       heightInput: document.getElementById('height-input'),
       layerInput: document.getElementById('layer-input'),
-      floorEntranceInput: document.getElementById('floor-entrance-input'),
       floorEntranceGroup: document.getElementById('floor-entrance-group'),
       obstacleInput: document.getElementById('obstacle-input'),
       generateBtn: document.getElementById('generate-btn'),
       modeOptions: document.querySelectorAll('.mode-option'),
+      stairsCountInput: document.getElementById('stairs-count-input'),
+      elevatorCountInput: document.getElementById('elevator-count-input'),
     };
 
     this.onSubmitCallback = null;
@@ -147,10 +148,18 @@ class InputForm {
       height: parseInt(this.elements.heightInput.value, 10),
       layerCount: parseInt(this.elements.layerInput.value, 10),
       obstacleCount: parseInt(this.elements.obstacleInput.value, 10),
-      floorEntranceCount: (() => {
-        if (!this.elements.floorEntranceInput) return 4;
-        const v = parseInt(this.elements.floorEntranceInput.value, 10);
-        return isNaN(v) ? 4 : Math.max(2, Math.min(10, v)); // Clamp 2-10
+      // 楼层连接点：分离为“楼梯数/电梯数”
+      stairsCount: (() => {
+        const el = this.elements.stairsCountInput;
+        if (!el) return 4;
+        const v = parseInt(el.value, 10);
+        return isNaN(v) ? 4 : Math.max(0, Math.min(50, v));
+      })(),
+      elevatorCount: (() => {
+        const el = this.elements.elevatorCountInput;
+        if (!el) return 4;
+        const v = parseInt(el.value, 10);
+        return isNaN(v) ? 4 : Math.max(0, Math.min(50, v));
       })(),
       mode,
       useSpatialIndex: !!document.getElementById('use-spatial-index')?.checked,

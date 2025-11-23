@@ -18,27 +18,92 @@ function preCalculateConnectors(width, height, layerCount, options) {
   const connectors = [];
   if (layerCount <= 1) return connectors;
 
-  const entranceCount = options.floorEntranceCount || 4;
   const rng = new SeededRandom(options.seed || Date.now());
   const padding = 20;
 
-  for (let i = 0; i < entranceCount; i++) {
-    const x = rng.randomInt(padding, width - padding);
-    const y = rng.randomInt(padding, height - padding);
-    const type = rng.random() < 0.5 ? 'stairs' : 'elevator';
-    // 随机生成入口角度 (0 ~ 2PI)
-    const entranceAngle = rng.random() * Math.PI * 2;
-    const accessX = x + Math.cos(entranceAngle) * 15; // radius = 15
-    const accessY = y + Math.sin(entranceAngle) * 15;
-    connectors.push({
-      x,
-      y,
-      type,
-      radius: 15,
-      entranceAngle,
-      accessX,
-      accessY,
-    });
+  // 方案B：精确楼梯/电梯数量
+  const stairsCountRaw =
+    options && typeof options.stairsCount === 'number'
+      ? options.stairsCount
+      : undefined;
+  const elevatorCountRaw =
+    options && typeof options.elevatorCount === 'number'
+      ? options.elevatorCount
+      : undefined;
+
+  // 回退：兼容旧参数 floorEntranceCount（总数，50/50 随机类型）
+  const legacyTotal =
+    options && typeof options.floorEntranceCount === 'number'
+      ? options.floorEntranceCount
+      : undefined;
+
+  const stairsCount = Number.isFinite(stairsCountRaw)
+    ? Math.max(0, Math.floor(stairsCountRaw))
+    : undefined;
+  const elevatorCount = Number.isFinite(elevatorCountRaw)
+    ? Math.max(0, Math.floor(elevatorCountRaw))
+    : undefined;
+
+  if (stairsCount === undefined && elevatorCount === undefined) {
+    const total = Number.isFinite(legacyTotal)
+      ? Math.max(0, Math.floor(legacyTotal))
+      : 4;
+    for (let i = 0; i < total; i++) {
+      const x = rng.randomInt(padding, width - padding);
+      const y = rng.randomInt(padding, height - padding);
+      const type = rng.random() < 0.5 ? 'stairs' : 'elevator';
+      const entranceAngle = rng.random() * Math.PI * 2;
+      const accessX = x + Math.cos(entranceAngle) * 15;
+      const accessY = y + Math.sin(entranceAngle) * 15;
+      connectors.push({
+        x,
+        y,
+        type,
+        radius: 15,
+        entranceAngle,
+        accessX,
+        accessY,
+      });
+    }
+  } else {
+    const sCount = stairsCount ?? 0;
+    const eCount = elevatorCount ?? 0;
+
+    // 先生成楼梯
+    for (let i = 0; i < sCount; i++) {
+      const x = rng.randomInt(padding, width - padding);
+      const y = rng.randomInt(padding, height - padding);
+      const entranceAngle = rng.random() * Math.PI * 2;
+      const accessX = x + Math.cos(entranceAngle) * 15;
+      const accessY = y + Math.sin(entranceAngle) * 15;
+      connectors.push({
+        x,
+        y,
+        type: 'stairs',
+        radius: 15,
+        entranceAngle,
+        accessX,
+        accessY,
+      });
+    }
+
+    // 再生成电梯
+    for (let i = 0; i < eCount; i++) {
+      const x = rng.randomInt(padding, width - padding);
+      const y = rng.randomInt(padding, height - padding);
+      const entranceAngle = rng.random() * Math.PI * 2;
+      const accessX = x + Math.cos(entranceAngle) * 15;
+      const accessY = y + Math.sin(entranceAngle) * 15;
+      connectors.push({
+        x,
+        y,
+        type: 'elevator',
+        radius: 15,
+        entranceAngle,
+        accessX,
+        accessY,
+      });
+    }
   }
 
   return connectors;

@@ -78,14 +78,29 @@ class OperationPanelElement extends HTMLElement {
               id="floor-entrance-group"
               style="display: none"
             >
-              <label for="floor-entrance-input" class="block mb-[var(--space-xs)] text-[var(--text-secondary)] text-[12px] font-medium uppercase tracking-wide">楼层连接点 (Stairs/Elevators)</label>
-              <input
-                autocomplete="off"
-                type="text"
-                id="floor-entrance-input"
-                value="4"
-                class="glass-input w-full px-[var(--space-md)] py-[var(--space-sm)] rounded-[var(--radius-md)] text-[var(--text-primary)] text-[14px] font-mono"
-              />
+              <label class="block mb-[var(--space-xs)] text-[var(--text-secondary)] text-[12px] font-medium uppercase tracking-wide">楼层连接点 (Stairs / Elevators)</label>
+              <div class="grid grid-cols-2 gap-[var(--space-md)]">
+                <div>
+                  <label for="stairs-count-input" class="block mb-[var(--space-xs)] text-[var(--text-secondary)] text-[12px] font-medium">楼梯数</label>
+                  <input
+                    autocomplete="off"
+                    type="text"
+                    id="stairs-count-input"
+                    value="4"
+                    class="glass-input w-full px-[var(--space-md)] py-[var(--space-sm)] rounded-[var(--radius-md)] text-[var(--text-primary)] text-[14px] font-mono"
+                  />
+                </div>
+                <div>
+                  <label for="elevator-count-input" class="block mb-[var(--space-xs)] text-[var(--text-secondary)] text-[12px] font-medium">电梯数</label>
+                  <input
+                    autocomplete="off"
+                    type="text"
+                    id="elevator-count-input"
+                    value="4"
+                    class="glass-input w-full px-[var(--space-md)] py-[var(--space-sm)] rounded-[var(--radius-md)] text-[var(--text-primary)] text-[14px] font-mono"
+                  />
+                </div>
+              </div>
             </div>
 
             <div class="flex flex-col gap-[var(--space-sm)] mt-[var(--space-md)] pt-[var(--space-md)] border-t border-[var(--border-light)]">

@@ -32,6 +32,9 @@ class App {
     this.isInitialized = false;
     // 性能计时（仅记录耗时，不显示 Loading）
     this.perf = { start: 0 };
+    this._firstBootTriggered = false;
+    this._initGenerateTimerId = null;
+    this._initFallbackTimerId = null;
 
     // Managers
     this.uiManager = new UIManager(this);
@@ -100,16 +103,40 @@ class App {
       const hasUrlParams = shareManager.loadFromUrl();
 
       // 等待首屏布局稳定后再触发一次默认生成，避免初始测量抖动
-      setTimeout(() => {
+      this._initGenerateTimerId = setTimeout(() => {
+        if (this._firstBootTriggered) return;
         if (hasUrlParams) {
           // 如果有 URL 参数，使用 URL 参数生成
           const values = this.inputForm.getValues();
+          this._firstBootTriggered = true;
           this.handleGenerate(values);
         } else {
           // 否则使用默认参数
+          this._firstBootTriggered = true;
           this.autoGenerateOnce();
         }
+        if (this._initFallbackTimerId) {
+          clearTimeout(this._initFallbackTimerId);
+          this._initFallbackTimerId = null;
+        }
       }, 120);
+      // 兜底：若首屏存在阻塞导致上述回调延迟/丢失，则在 2 秒后检查状态再触发一次
+      this._initFallbackTimerId = setTimeout(() => {
+        if (this._firstBootTriggered) return;
+        try {
+          const status = workerManager.getStatus
+            ? workerManager.getStatus()
+            : { isProcessing: false };
+          if (!status.isProcessing && !this.roadNetData) {
+            this._firstBootTriggered = true;
+            if (this._initGenerateTimerId) {
+              clearTimeout(this._initGenerateTimerId);
+              this._initGenerateTimerId = null;
+            }
+            this.autoGenerateOnce();
+          }
+        } catch (_) {}
+      }, 2000);
     } catch (error) {
       console.error('❌ Failed to initialize application:', error);
       this.showError('应用初始化失败: ' + error.message);

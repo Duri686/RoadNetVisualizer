@@ -237,7 +237,13 @@ export default class GenerationManager {
       obstacleCount,
       undefined,
       mode,
-      { useSpatialIndex, cellSize, overlayMode: 'auto' },
+      {
+        useSpatialIndex,
+        cellSize,
+        overlayMode: 'auto',
+        stairsCount: values.stairsCount,
+        elevatorCount: values.elevatorCount,
+      },
     );
 
     if (!success) {
