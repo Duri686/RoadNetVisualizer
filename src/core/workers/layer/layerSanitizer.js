@@ -11,6 +11,159 @@ import {
   getPotentialObstacles,
 } from '../../../utils/spatialIndex.js';
 
+function repairConnectivity(
+  result,
+  spatialIndex,
+  obstacles,
+  clearance,
+  width,
+  height,
+) {
+  const nodes = result.nodes || [];
+  const edges = result.edges || [];
+  if (!nodes.length || !edges.length) return;
+
+  const idToIndex = new Map();
+  const adj = [];
+  for (let i = 0; i < nodes.length; i++) {
+    idToIndex.set(nodes[i].id, i);
+    adj.push([]);
+  }
+
+  let edgeLenSum = 0;
+  let edgeLenCount = 0;
+  for (let i = 0; i < edges.length; i++) {
+    const e = edges[i];
+    const a = idToIndex.get(e.from);
+    const b = idToIndex.get(e.to);
+    if (typeof a !== 'number' || typeof b !== 'number' || a === b) continue;
+    adj[a].push(b);
+    adj[b].push(a);
+
+    const na = nodes[a];
+    const nb = nodes[b];
+    const dx = na.x - nb.x;
+    const dy = na.y - nb.y;
+    edgeLenSum += Math.sqrt(dx * dx + dy * dy);
+    edgeLenCount += 1;
+  }
+
+  const visited = new Array(nodes.length).fill(false);
+  const components = [];
+  for (let i = 0; i < nodes.length; i++) {
+    if (visited[i]) continue;
+    const stack = [i];
+    visited[i] = true;
+    const comp = [];
+    while (stack.length) {
+      const idx = stack.pop();
+      comp.push(idx);
+      const list = adj[idx];
+      for (let j = 0; j < list.length; j++) {
+        const nb = list[j];
+        if (!visited[nb]) {
+          visited[nb] = true;
+          stack.push(nb);
+        }
+      }
+    }
+    components.push(comp);
+  }
+
+  if (components.length <= 1) return;
+
+  const baseLen = edgeLenCount > 0 ? edgeLenSum / edgeLenCount : 0;
+  const diag = Math.sqrt(width * width + height * height);
+  const maxBridgeLen = baseLen > 0 ? baseLen * 4 : diag * 0.5;
+
+  components.sort((a, b) => b.length - a.length);
+  const mainSet = new Set(components[0]);
+  const mainIndices = components[0].slice();
+
+  const getPool = (ax, ay, bx, by) => {
+    if (!spatialIndex) return obstacles;
+    const poolA = getObstaclesAlongLineDDA(spatialIndex, ax, ay, bx, by) || [];
+    const poolB = getPotentialObstacles(spatialIndex, ax, ay, bx, by) || [];
+    if (!poolA.length && !poolB.length) return obstacles;
+    const seen = new Set();
+    const pool = [];
+    for (let i = 0; i < poolA.length; i++) {
+      const ob = poolA[i];
+      const id = ob.id != null ? ob.id : ob;
+      if (!seen.has(id)) {
+        seen.add(id);
+        pool.push(ob);
+      }
+    }
+    for (let i = 0; i < poolB.length; i++) {
+      const ob = poolB[i];
+      const id = ob.id != null ? ob.id : ob;
+      if (!seen.has(id)) {
+        seen.add(id);
+        pool.push(ob);
+      }
+    }
+    return pool.length ? pool : obstacles;
+  };
+
+  for (let ci = 1; ci < components.length; ci++) {
+    const comp = components[ci];
+    let bestU = -1;
+    let bestV = -1;
+    let bestDist = Infinity;
+
+    for (let i = 0; i < comp.length; i++) {
+      const ui = comp[i];
+      const u = nodes[ui];
+      for (let m = 0; m < mainIndices.length; m++) {
+        const vi = mainIndices[m];
+        const v = nodes[vi];
+        const dx = u.x - v.x;
+        const dy = u.y - v.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist >= bestDist || dist > maxBridgeLen) continue;
+
+        const pool = getPool(u.x, u.y, v.x, v.y);
+        let blocked = false;
+        for (let k = 0; k < pool.length; k++) {
+          const ob = pool[k];
+          if (
+            lineIntersectsObstacleWithTurf(u.x, u.y, v.x, v.y, ob, clearance)
+          ) {
+            blocked = true;
+            break;
+          }
+        }
+        if (blocked) continue;
+
+        bestDist = dist;
+        bestU = ui;
+        bestV = vi;
+      }
+    }
+
+    if (bestU >= 0 && bestV >= 0) {
+      const fromNode = nodes[bestU];
+      const toNode = nodes[bestV];
+      const cost = bestDist;
+      result.edges.push({ from: fromNode.id, to: toNode.id, cost });
+      adj[bestU].push(bestV);
+      adj[bestV].push(bestU);
+      if (!mainSet.has(bestU)) {
+        mainSet.add(bestU);
+        mainIndices.push(bestU);
+      }
+      for (let i = 0; i < comp.length; i++) {
+        const idx = comp[i];
+        if (!mainSet.has(idx)) {
+          mainSet.add(idx);
+          mainIndices.push(idx);
+        }
+      }
+    }
+  }
+}
+
 /**
  * 过滤障碍内部节点
  * @param {Array} nodes - 节点数组
@@ -203,6 +356,15 @@ export function sanitizeLayer(result, width, height, obstacles, options = {}) {
     const removedUnrefNodes = beforeFinalNodes - result.nodes.length;
     console.log(
       `   [步骤3] 清理未引用节点: ${beforeFinalNodes}个 → ${result.nodes.length}个 (❌移除 ${removedUnrefNodes}个)`,
+    );
+
+    repairConnectivity(
+      result,
+      spatialIndex,
+      obstacles,
+      clearance,
+      width,
+      height,
     );
 
     console.log(
