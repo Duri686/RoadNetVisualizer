@@ -13,7 +13,7 @@ class InputForm {
       floorEntranceGroup: document.getElementById('floor-entrance-group'),
       obstacleInput: document.getElementById('obstacle-input'),
       generateBtn: document.getElementById('generate-btn'),
-      modeOptions: document.querySelectorAll('.mode-option')
+      modeOptions: document.querySelectorAll('.mode-option'),
     };
 
     this.onSubmitCallback = null;
@@ -28,18 +28,30 @@ class InputForm {
    */
   init() {
     // 验证元素是否存在
-    if (!this.elements.widthInput || !this.elements.heightInput || 
-        !this.elements.layerInput || !this.elements.obstacleInput || !this.elements.generateBtn) {
+    if (
+      !this.elements.widthInput ||
+      !this.elements.heightInput ||
+      !this.elements.layerInput ||
+      !this.elements.obstacleInput ||
+      !this.elements.generateBtn
+    ) {
       console.error('❌ Required form elements not found');
       return;
     }
 
     // 绑定事件
-    this.elements.generateBtn.addEventListener('click', () => this.handleSubmit());
+    this.elements.generateBtn.addEventListener('click', () =>
+      this.handleSubmit(),
+    );
 
     // 添加回车键提交
-    const inputs = [this.elements.widthInput, this.elements.heightInput, this.elements.layerInput, this.elements.obstacleInput];
-    inputs.forEach(input => {
+    const inputs = [
+      this.elements.widthInput,
+      this.elements.heightInput,
+      this.elements.layerInput,
+      this.elements.obstacleInput,
+    ];
+    inputs.forEach((input) => {
       input.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
           this.handleSubmit();
@@ -52,10 +64,14 @@ class InputForm {
       this.elements.modeOptions.forEach((cb) => {
         cb.addEventListener('change', () => {
           if (cb.checked) {
-            this.elements.modeOptions.forEach(other => { if (other !== cb) other.checked = false; });
+            this.elements.modeOptions.forEach((other) => {
+              if (other !== cb) other.checked = false;
+            });
           } else {
             // 确保至少一个选中
-            const anyChecked = Array.from(this.elements.modeOptions).some(x => x.checked);
+            const anyChecked = Array.from(this.elements.modeOptions).some(
+              (x) => x.checked,
+            );
             if (!anyChecked) cb.checked = true;
           }
         });
@@ -63,10 +79,10 @@ class InputForm {
     }
 
     // 添加实时验证
-    inputs.forEach(input => {
+    inputs.forEach((input) => {
       input.addEventListener('input', () => this.validateInputs());
     });
-    
+
     // 监听楼层数变化,动态显示/隐藏楼层出入口输入框
     if (this.elements.layerInput && this.elements.floorEntranceGroup) {
       this.elements.layerInput.addEventListener('input', () => {
@@ -118,7 +134,9 @@ class InputForm {
     // 读取模式：互斥checkbox组
     let mode = 'centroid';
     if (this.elements.modeOptions && this.elements.modeOptions.length) {
-      const checked = Array.from(this.elements.modeOptions).find(cb => cb.checked);
+      const checked = Array.from(this.elements.modeOptions).find(
+        (cb) => cb.checked,
+      );
       if (checked && checked.dataset && checked.dataset.value) {
         mode = checked.dataset.value;
       }
@@ -142,15 +160,6 @@ class InputForm {
         const v = parseInt(el.value, 10);
         return isNaN(v) ? undefined : Math.max(4, v);
       })(),
-      // 障碍编号显示相关开关
-      showLabels: !!document.getElementById('show-labels')?.checked,
-      useBitmapText: !!document.getElementById('use-bitmaptext')?.checked,
-      labelMinPx: (() => {
-        const el = document.getElementById('label-minpx-input');
-        if (!el) return undefined;
-        const v = parseInt(el.value, 10);
-        return isNaN(v) ? undefined : Math.max(0, v);
-      })(),
       // 静态缓存与裁剪
       staticCache: !!document.getElementById('static-cache')?.checked,
       cullingEnabled: !!document.getElementById('culling-enabled')?.checked,
@@ -159,7 +168,7 @@ class InputForm {
         if (!el) return undefined;
         const v = parseInt(el.value, 10);
         return isNaN(v) ? undefined : Math.max(0, v);
-      })()
+      })(),
     };
   }
 
@@ -177,7 +186,11 @@ class InputForm {
       errors.push('高度必须在 10-100000 之间');
     }
 
-    if (isNaN(values.layerCount) || values.layerCount < 1 || values.layerCount > 10) {
+    if (
+      isNaN(values.layerCount) ||
+      values.layerCount < 1 ||
+      values.layerCount > 10
+    ) {
       errors.push('层数必须在 1-10 之间');
     }
 
@@ -194,7 +207,7 @@ class InputForm {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -204,7 +217,7 @@ class InputForm {
   validateInputs() {
     const values = this.getValues();
     const validation = this.validate(values);
-    
+
     // 更新按钮状态
     if (!validation.valid && !this.isDisabled) {
       this.elements.generateBtn.style.opacity = '0.6';
@@ -232,7 +245,9 @@ class InputForm {
     this.elements.obstacleInput.disabled = true;
     this.elements.generateBtn.disabled = true;
     if (this.elements.modeOptions && this.elements.modeOptions.length) {
-      this.elements.modeOptions.forEach(cb => { cb.disabled = true; });
+      this.elements.modeOptions.forEach((cb) => {
+        cb.disabled = true;
+      });
     }
     this.setButtonLoading(true);
   }
@@ -249,7 +264,9 @@ class InputForm {
     this.elements.obstacleInput.disabled = false;
     this.elements.generateBtn.disabled = false;
     if (this.elements.modeOptions && this.elements.modeOptions.length) {
-      this.elements.modeOptions.forEach(cb => { cb.disabled = false; });
+      this.elements.modeOptions.forEach((cb) => {
+        cb.disabled = false;
+      });
     }
     this.setButtonLoading(false);
   }
@@ -276,7 +293,8 @@ class InputForm {
     if (loading) {
       if (!this._btnOriginalHTML) this._btnOriginalHTML = btn.innerHTML;
       btn.classList.add('is-loading');
-      btn.innerHTML = '<span class="btn__spinner" aria-hidden="true"></span><span class="btn__text">生成中…</span>';
+      btn.innerHTML =
+        '<svg class="animate-spin h-4 w-4 mr-2 text-white" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg><span class="btn__text">生成中…</span>';
     } else {
       btn.classList.remove('is-loading');
       if (this._btnOriginalHTML) {

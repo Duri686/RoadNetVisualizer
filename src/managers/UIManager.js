@@ -33,13 +33,16 @@ export default class UIManager {
         const btn = item.querySelector('.legend-eye');
         const isOn = visible !== false;
         item.classList.toggle('off', !isOn);
-        if (btn) btn.setAttribute('aria-pressed', isOn ? 'true' : 'false');
+        if (btn) {
+          btn.setAttribute('aria-pressed', isOn ? 'true' : 'false');
+          btn.setAttribute('aria-checked', isOn ? 'true' : 'false');
+        }
       }
     };
 
     try {
       const states = layerToggleManager.getLayerStates();
-      Object.keys(states).forEach(key => {
+      Object.keys(states).forEach((key) => {
         updateUI(key, states[key]);
       });
     } catch (e) {
@@ -59,10 +62,10 @@ export default class UIManager {
       const item = btn.closest('.legend-item-new');
       const key = item && item.getAttribute('data-layer');
       if (!key) return;
-      
+
       const currentPressed = btn.getAttribute('aria-pressed') === 'true';
       const next = !currentPressed;
-      
+
       layerToggleManager.toggleLayer(key, next);
     });
   }
@@ -74,14 +77,19 @@ export default class UIManager {
     const clearBtn = document.getElementById('path-clear-btn');
     if (clearBtn) {
       clearBtn.addEventListener('click', () => {
-        try { this.renderer.interaction && this.renderer.interaction.clearPath(); } catch (e) {}
+        try {
+          this.renderer.interaction && this.renderer.interaction.clearPath();
+        } catch (e) {}
       });
     }
 
     const refreshBtn = document.getElementById('path-refresh-btn');
     if (refreshBtn) {
       refreshBtn.addEventListener('click', () => {
-        try { this.renderer.interaction && this.renderer.interaction.redrawLastPath(); } catch (e) {}
+        try {
+          this.renderer.interaction &&
+            this.renderer.interaction.redrawLastPath();
+        } catch (e) {}
       });
     }
 
@@ -106,7 +114,8 @@ export default class UIManager {
     if (zoomInBtn) {
       zoomInBtn.addEventListener('click', () => {
         this.renderer.zoomIn();
-        const vp = this.renderer.getViewportRect && this.renderer.getViewportRect();
+        const vp =
+          this.renderer.getViewportRect && this.renderer.getViewportRect();
         if (vp) console.debug('[Zoom] in, viewport=', vp);
       });
     }
@@ -114,7 +123,8 @@ export default class UIManager {
     if (zoomOutBtn) {
       zoomOutBtn.addEventListener('click', () => {
         this.renderer.zoomOut();
-        const vp = this.renderer.getViewportRect && this.renderer.getViewportRect();
+        const vp =
+          this.renderer.getViewportRect && this.renderer.getViewportRect();
         if (vp) console.debug('[Zoom] out, viewport=', vp);
       });
     }
@@ -122,7 +132,8 @@ export default class UIManager {
     if (zoomResetBtn) {
       zoomResetBtn.addEventListener('click', () => {
         this.renderer.resetView();
-        const vp = this.renderer.getViewportRect && this.renderer.getViewportRect();
+        const vp =
+          this.renderer.getViewportRect && this.renderer.getViewportRect();
         if (vp) console.debug('[Zoom] reset, viewport=', vp);
       });
     }
@@ -159,7 +170,8 @@ export default class UIManager {
         let newWidth, newHeight;
         if (isFullscreen) {
           newWidth = screen.width;
-          const infoH = canvasInfo && canvasInfo.offsetHeight ? canvasInfo.offsetHeight : 0;
+          const infoH =
+            canvasInfo && canvasInfo.offsetHeight ? canvasInfo.offsetHeight : 0;
           newHeight = screen.height - infoH;
         } else {
           newWidth = pixiContainer.clientWidth;
@@ -201,7 +213,9 @@ export default class UIManager {
           const newW = Math.max(1, Math.round(cr.width));
           const newH = Math.max(1, Math.round(cr.height));
           if (this.app.appLastW !== newW || this.app.appLastH !== newH) {
-            console.log(`[ResizeObserver] Container size changed: ${newW}x${newH}`);
+            console.log(
+              `[ResizeObserver] Container size changed: ${newW}x${newH}`,
+            );
             this.app.appLastW = newW;
             this.app.appLastH = newH;
             this.renderer.resize(newW, newH);

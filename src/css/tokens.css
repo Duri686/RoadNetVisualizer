@@ -1,66 +1,66 @@
 /* 设计令牌（变量）- 深色赛博风格 */
 :root {
-  /* 主色系 - 电蓝 */
-  --primary-color: #3B82F6;
-  --primary-hover: #2563EB;
-  --primary-active: #1D4ED8;
-  
-  /* 强调色 - 霓虹青 */
-  --accent-color: #22D3EE;
-  --accent-hover: #06B6D4;
-  
-  /* 背景色 - 深空蓝灰 */
-  --bg-page: #0F172A;
-  --bg-card: rgba(15, 23, 42, 0.6); /* 半透明深色 */
-  --bg-input: rgba(255, 255, 255, 0.05);
-  --bg-input-hover: rgba(255, 255, 255, 0.08);
-  --bg-glass: rgba(255, 255, 255, 0.04);
-  
+  /* 主色系 - 电蓝 (更加鲜亮) */
+  --primary-color: #3b82f6;
+  --primary-hover: #2563eb;
+  --primary-active: #1d4ed8;
+
+  /* 强调色 - 霓虹青 (高饱和度) */
+  --accent-color: #06b6d4;
+  --accent-hover: #0891b2;
+
+  /* 背景色 - 深空极夜 */
+  --bg-page: #0b1121; /* 更深的蓝黑 */
+  --bg-card: rgba(15, 23, 42, 0.75); /* 增加不透明度，提升对比 */
+  --bg-input: rgba(2, 6, 23, 0.4); /* 更深的输入框背景 */
+  --bg-input-hover: rgba(2, 6, 23, 0.6);
+  --bg-glass: rgba(15, 23, 42, 0.6);
+
   /* 文字色 */
-  --text-primary: #E2E8F0;
-  --text-secondary: #94A3B8;
-  --text-muted: #64748B;
-  --text-white: #FFFFFF;
-  
+  --text-primary: #f1f5f9; /* 更亮的白 */
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-white: #ffffff;
+
   /* 边框色 */
-  --border-light: rgba(255, 255, 255, 0.06);
-  --border-input: rgba(255, 255, 255, 0.1);
-  --border-focus: #3B82F6;
-  --border-glass: rgba(255, 255, 255, 0.08);
-  
+  --border-light: rgba(255, 255, 255, 0.08);
+  --border-input: rgba(255, 255, 255, 0.12);
+  --border-focus: #3b82f6;
+  --border-glass: rgba(255, 255, 255, 0.1);
+
   /* 状态色 */
-  --success-color: #22C55E;
-  --error-color: #EF4444;
-  --warning-color: #F59E0B;
-  --info-color: #3B82F6;
-  
+  --success-color: #10b981;
+  --error-color: #ef4444;
+  --warning-color: #f59e0b;
+  --info-color: #3b82f6;
+
   /* 统计图标色 */
-  --stat-node-color: #22D3EE;
-  --stat-edge-color: #3B82F6;
-  --stat-layer-color: #F472B6;
-  
+  --stat-node-color: #22d3ee;
+  --stat-edge-color: #3b82f6;
+  --stat-layer-color: #f472b6;
+
   /* 可视化元素色（对应设计稿图例） */
-  --viz-start-point: #10B981;  /* 绿色 - 起点 */
-  --viz-end-point: #EF4444;    /* 红色 - 终点 */
-  --viz-path: #F59E0B;         /* 黄色 - 路径 */
-  --viz-network-edge: #38BDF8; /* 电蓝 - 网络边 */
-  --viz-obstacle: #EF4444;     /* 亮红 - 障碍物 */
-  --viz-voronoi: #22D3EE;      /* 青色 - Voronoi */
-  --viz-canvas-bg: #020617;    /* 深空黑 - 画布背景 */
-  
+  --viz-start-point: #07996f; /* 绿色 - 起点 (参考图1) */
+  --viz-end-point: #ef4444; /* 红色 - 终点 */
+  --viz-path: #f59e0b; /* 黄色 - 路径 */
+  --viz-network-edge: #0ea5e9; /* 天蓝 - 网络边 */
+  --viz-obstacle: #a855f7; /* 紫色 - 障碍物 (参考图3) */
+  --viz-voronoi: #22d3ee; /* 青色 - Voronoi */
+  --viz-canvas-bg: #020617; /* 深空黑 - 画布背景 */
+
   /* 阴影 */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
-  --shadow-glass: 0 4px 30px rgba(0, 0, 0, 0.3);
-  
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6);
+  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
+
   /* 圆角 */
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
   --radius-full: 9999px;
-  
+
   /* 间距 */
   --space-xs: 4px;
   --space-sm: 8px;
@@ -68,7 +68,7 @@
   --space-lg: 16px;
   --space-xl: 20px;
   --space-2xl: 24px;
-  
+
   /* 模糊 */
-  --backdrop-blur: blur(12px);
+  --backdrop-blur: blur(16px);
 }

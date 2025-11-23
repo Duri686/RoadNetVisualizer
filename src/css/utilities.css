@@ -36,13 +36,38 @@
 .input-section,
 .canvas-container,
 .control-panel .panel-header {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease;
+  backdrop-filter: var(--backdrop-blur);
+  -webkit-backdrop-filter: var(--backdrop-blur);
 }
 
 .interpretation-card:hover,
 .input-section:hover {
   transform: translateY(-2px);
+  box-shadow: var(--shadow-glass);
+  border-color: var(--border-focus);
+}
+
+/* 玻璃拟态工具类 */
+.glass-panel {
+  background: var(--bg-glass);
+  backdrop-filter: var(--backdrop-blur);
+  -webkit-backdrop-filter: var(--backdrop-blur);
+  border: 1px solid var(--border-glass);
   box-shadow: var(--shadow-lg);
+}
+
+.glass-input {
+  background: var(--bg-input);
+  border: 1px solid var(--border-input);
+  backdrop-filter: blur(4px);
+  transition: all 0.2s ease;
+}
+
+.glass-input:focus {
+  background: var(--bg-input-hover);
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
 /* 焦点可见性优化 */
@@ -234,52 +259,89 @@ html {
   font-size: 12px;
   line-height: 1.8;
 }
+.operation-panel::-webkit-scrollbar,
+.interpretation-panel::-webkit-scrollbar {
+  width: 6px;
+}
+.operation-panel::-webkit-scrollbar-track,
+.interpretation-panel::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 4px;
+}
+.operation-panel::-webkit-scrollbar-thumb,
+.interpretation-panel::-webkit-scrollbar-thumb {
+  background: var(--border-input);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+.operation-panel::-webkit-scrollbar-thumb:hover,
+.interpretation-panel::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
 
-/* 响应式布局 */
-@media (max-width: 768px) {
-  .container {
-    padding: var(--space-md);
-    flex-direction: column;
-    height: auto;
-    overflow-y: auto;
-  }
+.legend-item-new.off {
+  opacity: 0.45;
+}
 
-  .container > section:first-of-type,
-  .container > section:last-of-type {
-    flex: 1 1 auto;
-    max-width: none;
-    height: auto;
-    overflow-y: visible;
-    max-height: calc(100vh - 80px);
-  }
+/* 下载菜单样式 */
+.download-menu {
+  position: absolute;
+  z-index: 1000;
+  min-width: 220px;
+  background: var(--bg-card);
+  backdrop-filter: var(--backdrop-blur);
+  -webkit-backdrop-filter: var(--backdrop-blur);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-glass);
+  padding: var(--space-xs);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: slideUp 0.2s ease-out;
+  transform-origin: bottom center;
+}
 
-  .canvas-container {
-    min-height: 400px;
-    height: auto;
-  }
+.download-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  width: 100%;
+}
 
-  .control-panel > p {
-    font-size: 20px;
-  }
+.download-option:hover {
+  background: var(--bg-input-hover);
+  color: var(--text-primary);
+  border-color: var(--border-input);
+}
 
-  .control-panel {
-    flex-direction: column;
-  }
+.download-option svg {
+  color: var(--primary-color);
+  opacity: 0.8;
+  transition: transform 0.2s ease;
+}
 
-  .layer-controls {
-    flex-direction: column;
-    align-items: stretch;
-  }
+.download-option:hover svg {
+  opacity: 1;
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 5px var(--primary-color));
+}
 
-  .btn-secondary {
-    width: 100%;
-  }
-
-  .stats {
-    gap: var(--space-sm);
-  }
-
-  .legend {
-    gap: var(--space-md);
-  }
+.legend-eye[aria-pressed="true"]::after {
+  content: "";
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--primary-color);
+  border-radius: 50%;
 }

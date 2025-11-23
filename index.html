@@ -4,18 +4,46 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RoadNet Visualizer - 多层道路网络可视化</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              brand: 'var(--primary-color)',
+              accent: 'var(--accent-color)',
+              page: 'var(--bg-page)',
+              card: 'var(--bg-card)',
+              input: 'var(--bg-input)',
+              'input-hover': 'var(--bg-input-hover)',
+              border: {
+                light: 'var(--border-light)',
+                input: 'var(--border-input)',
+              },
+              textc: {
+                primary: 'var(--text-primary)',
+                secondary: 'var(--text-secondary)',
+                muted: 'var(--text-muted)',
+                white: 'var(--text-white)',
+              },
+            },
+          },
+        },
+      };
+    </script>
     <link rel="stylesheet" href="/src/css/index.css" />
     <style>
       .github-link {
         position: fixed;
-        bottom: 24px;
+        bottom: 32px;
         left: 50%;
         transform: translateX(-50%);
         display: inline-flex;
         align-items: center;
         gap: 10px;
         padding: 8px 14px;
-        border-radius: 10px;
+        border-radius: 50px;
         background: rgba(255, 255, 255, 0.08);
         backdrop-filter: blur(8px);
         color: #cbd5e1;
@@ -36,10 +64,12 @@
       }
     </style>
   </head>
-  <body>
+  <body
+    class="bg-[var(--bg-page)] text-[var(--text-primary)] selection:bg-[var(--primary-color)] selection:text-[var(--text-white)]"
+  >
     <a
       href="https://github.com/Duri686/RoadNetVisualizer"
-      class="github-link"
+      class="github-link hidden md:inline-flex"
       target="_blank"
       rel="noopener noreferrer"
       aria-label="View project on GitHub"
@@ -51,47 +81,78 @@
       </svg>
       <span>GitHub repository</span>
     </a>
-    <div class="container">
+    <div
+      class="rn-container flex flex-col lg:grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)_320px] gap-4 lg:gap-6 p-3 lg:p-6 h-[100dvh] lg:h-screen overflow-hidden items-stretch"
+    >
+      <input
+        class="peer/vis sr-only"
+        type="radio"
+        name="mobile-view"
+        id="tab-visualization"
+        checked
+      />
+      <input
+        class="peer/op sr-only"
+        type="radio"
+        name="mobile-view"
+        id="tab-operation"
+      />
+      <input
+        class="peer/int sr-only"
+        type="radio"
+        name="mobile-view"
+        id="tab-interpretation"
+      />
       <!-- 移动端：横向Tab导航（仅在小屏显示） -->
-      <nav id="mobile-tabs" aria-label="主模块切换" role="tablist">
-        <button
-          class="tab-btn"
+      <nav
+        id="mobile-tabs"
+        aria-label="主模块切换"
+        role="tablist"
+        class="lg:hidden sticky top-2 z-50 mb-2 flex gap-2 p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-light)] shadow-[var(--shadow-sm)] backdrop-blur"
+      >
+        <label
+          for="tab-visualization"
           role="tab"
-          aria-selected="true"
-          data-target="visualization-panel"
+          class="flex-1 text-center px-3 py-2 text-sm rounded-md border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-secondary)] hover:bg-[var(--bg-input-hover)] hover:text-[var(--text-primary)] cursor-pointer peer-checked/vis:bg-[var(--primary-color)] peer-checked/vis:text-[var(--text-white)] peer-checked/vis:border-[var(--primary-color)]"
         >
           地图
-        </button>
-        <button
-          class="tab-btn"
+        </label>
+        <label
+          for="tab-operation"
           role="tab"
-          aria-selected="false"
-          data-target="operation-panel"
+          class="flex-1 text-center px-3 py-2 text-sm rounded-md border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-secondary)] hover:bg-[var(--bg-input-hover)] hover:text-[var(--text-primary)] cursor-pointer peer-checked/op:bg-[var(--primary-color)] peer-checked/op:text-[var(--text-white)] peer-checked/op:border-[var(--primary-color)]"
         >
           操作
-        </button>
-        <button
-          class="tab-btn"
+        </label>
+        <label
+          for="tab-interpretation"
           role="tab"
-          aria-selected="false"
-          data-target="interpretation-panel"
+          class="flex-1 text-center px-3 py-2 text-sm rounded-md border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-secondary)] hover:bg-[var(--bg-input-hover)] hover:text-[var(--text-primary)] cursor-pointer peer-checked/int:bg-[var(--primary-color)] peer-checked/int:text-[var(--text-white)] peer-checked/int:border-[var(--primary-color)]"
         >
           解读
-        </button>
+        </label>
       </nav>
       <!-- 左栏：操作面板 (Operation Panel) -->
-      <section class="operation-panel">
+      <section
+        class="operation-panel hidden lg:flex peer-checked/op:flex peer-checked/op:flex-1 flex-col min-w-[280px] max-w-[340px] min-h-0 overflow-y-auto lg:h-full"
+      >
         <!-- Control Panel -->
         <rn-operation-panel></rn-operation-panel>
       </section>
 
       <!-- 中栏：可视化面板 (Visualization Panel) -->
-      <section class="visualization-panel">
-        <rn-visualization-panel></rn-visualization-panel>
+      <section
+        class="visualization-panel hidden lg:flex peer-checked/vis:flex peer-checked/vis:flex-1 flex-col min-w-0 min-h-0 overflow-hidden lg:h-full"
+      >
+        <rn-visualization-panel
+          class="flex flex-col flex-1 min-h-0"
+        ></rn-visualization-panel>
       </section>
 
       <!-- 右栏：解读面板 (Interpretation Panel) -->
-      <section class="interpretation-panel">
+      <section
+        class="interpretation-panel hidden lg:flex peer-checked/int:flex peer-checked/int:flex-1 flex-col min-w-[280px] max-w-[340px] min-h-0 overflow-y-auto lg:h-full"
+      >
         <rn-interpretation-panel></rn-interpretation-panel>
       </section>
     </div>

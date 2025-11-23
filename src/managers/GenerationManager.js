@@ -188,9 +188,6 @@ export default class GenerationManager {
       mode,
       useSpatialIndex,
       cellSize,
-      showLabels,
-      useBitmapText,
-      labelMinPx,
       staticCache,
       cullingEnabled,
       cullingMargin,
@@ -219,13 +216,6 @@ export default class GenerationManager {
       const cfg =
         app.renderer && app.renderer.config ? app.renderer.config : null;
       if (cfg) {
-        cfg.labels = cfg.labels || {};
-        if (typeof showLabels === 'boolean') cfg.labels.enabled = showLabels;
-        if (typeof useBitmapText === 'boolean')
-          cfg.labels.useBitmapText = useBitmapText;
-        if (typeof labelMinPx === 'number' && isFinite(labelMinPx))
-          cfg.labels.minPixelForLabel = Math.max(0, labelMinPx);
-
         cfg.caching = cfg.caching || {};
         if (typeof staticCache === 'boolean')
           cfg.caching.staticLayers = staticCache;

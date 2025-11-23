@@ -12,213 +12,204 @@ class InterpretationPanelElement extends HTMLElement {
 
   render() {
     this.innerHTML = `
-        <div class="interpretation-wrapper">
-          <div class="panel-header">
-            <h2>数据解读</h2>
-            <p class="panel-subtitle">Interpretation</p>
-          </div>
+        <div class="interpretation-wrapper flex flex-col gap-[var(--space-lg)] w-full h-full">
 
-          <div class="interpretation-card" id="layer-control-card">
-            <div class="card-header-row">
-              <h3>图层控制</h3>
+          <div class="interpretation-card glass-panel rounded-[var(--radius-xl)] p-[var(--space-xl)] px-[var(--space-lg)]" id="layer-control-card">
+            <div class="card-header-row mb-[var(--space-md)]">
+              <h3 class="text-[15px] font-bold text-[var(--accent-color)] uppercase tracking-wider flex items-center gap-2 m-0">
+                <span class="w-1 h-4 bg-[var(--accent-color)] rounded-full"></span>
+                图层控制
+              </h3>
             </div>
-            <div id="layer-control-section" style="padding: 12px 0">
-            </div>
-          </div>
-
-          <div class="interpretation-card" id="legend-card">
-            <h3>图例</h3>
-            <div class="legend-grid">
-              <div class="legend-item-new" data-layer="obstacles">
-                <button
-                  class="legend-eye"
-                  aria-pressed="true"
-                  title="显示/隐藏"
-                ></button>
-                <span
-                  class="legend-icon obstacle-icon"
-                  aria-hidden="true"
-                ></span>
-                <span class="legend-label">障碍物</span>
-              </div>
-              <div class="legend-item-new" data-layer="networkNodes">
-                <button
-                  class="legend-eye"
-                  aria-pressed="true"
-                  title="显示/隐藏"
-                ></button>
-                <span class="legend-icon node-icon" aria-hidden="true"></span>
-                <span class="legend-label">网络节点</span>
-              </div>
-              <div class="legend-item-new" data-layer="networkEdges">
-                <button
-                  class="legend-eye"
-                  aria-pressed="true"
-                  title="显示/隐藏"
-                ></button>
-                <span class="legend-icon edge-icon" aria-hidden="true"></span>
-                <span class="legend-label">网络边</span>
-              </div>
-              <div class="legend-item-new" data-layer="baseTriangulation">
-                <button
-                  class="legend-eye"
-                  aria-pressed="true"
-                  title="显示/隐藏"
-                ></button>
-                <span class="legend-icon base-icon" aria-hidden="true"></span>
-                <span class="legend-label">基础三角化</span>
-              </div>
-              <div class="legend-item-new" data-layer="voronoi">
-                <button
-                  class="legend-eye"
-                  aria-pressed="true"
-                  title="显示/隐藏"
-                ></button>
-                <span
-                  class="legend-icon voronoi-icon"
-                  aria-hidden="true"
-                ></span>
-                <span class="legend-label">Voronoi 骨架</span>
-              </div>
-              <div class="legend-sep"></div>
-              <div class="legend-item-new-wrap">
-                <div class="legend-item-new" aria-hidden="true">
-                  <span class="legend-icon start-icon"></span>
-                  <span class="legend-label">起点</span>
-                </div>
-                <div class="legend-item-new" aria-hidden="true">
-                  <span class="legend-icon end-icon"></span>
-                  <span class="legend-label">终点</span>
-                </div>
-                <div class="legend-item-new" aria-hidden="true">
-                  <span class="legend-icon path-icon"></span>
-                  <span class="legend-label">路径</span>
-                </div>
-              </div>
+            <div id="layer-control-section" class="space-y-[var(--space-sm)]">
             </div>
           </div>
 
-          <div class="interpretation-card" id="path-card">
-            <div class="card-header-row">
-              <h3>路径统计</h3>
-              <div class="card-actions">
+          <div class="interpretation-card glass-panel rounded-[var(--radius-xl)] p-[var(--space-xl)] px-[var(--space-lg)]" id="legend-card">
+            <h3 class="text-[15px] font-bold text-[var(--accent-color)] uppercase tracking-wider mb-[var(--space-lg)] flex items-center gap-2">
+              <span class="w-1 h-4 bg-[var(--accent-color)] rounded-full"></span>
+              图例
+            </h3>
+            <div class="legend-grid grid grid-cols-1 gap-[var(--space-sm)]">
+              <div class="legend-item-new flex items-center gap-[var(--space-md)] py-1.5 px-2 rounded-[var(--radius-md)] hover:bg-[var(--bg-input-hover)] transition-colors" data-layer="obstacles">
+                <button class="legend-eye relative w-5 h-5 rounded-full border border-[var(--border-light)]
+         bg-[var(--bg-input)] text-[var(--text-secondary)]
+         inline-flex items-center justify-center transition-all
+         hover:text-[var(--text-primary)] hover:border-[var(--text-muted)]
+         aria-[pressed=true]:border-[var(--primary-color)]
+         aria-[pressed=true]:bg-[var(--bg-input)]
+         aria-[pressed=true]:text-[var(--primary-color)]
+         aria-[pressed=true]:shadow-[0_0_0_2px_var(--primary-color)/20]" aria-pressed="true" aria-checked="true" role="switch" title="显示/隐藏">
+                  <span class="hidden aria-[pressed=true]:inline text-[10px]">👁</span>
+                  <span class="hidden aria-[pressed=false]:inline text-[10px]">✕</span>
+                </button>
+                <span class="legend-icon obstacle-icon inline-block w-3 h-3 rounded-[2px] bg-[var(--viz-obstacle)] border border-[var(--viz-obstacle)] shadow-[0_0_8px_var(--viz-obstacle)]" aria-hidden="true"></span>
+                <span class="legend-label flex-1 text-[13px] text-[var(--text-secondary)] font-medium">障碍物</span>
+              </div>
+              <div class="legend-item-new flex items-center gap-[var(--space-md)] py-1.5 px-2 rounded-[var(--radius-md)] hover:bg-[var(--bg-input-hover)] transition-colors" data-layer="networkNodes">
+                <button class="legend-eye relative w-5 h-5 rounded-full border border-[var(--border-light)]
+         bg-[var(--bg-input)] text-[var(--text-secondary)]
+         inline-flex items-center justify-center transition-all
+         hover:text-[var(--text-primary)] hover:border-[var(--text-muted)]
+         aria-[pressed=true]:border-[var(--primary-color)]
+         aria-[pressed=true]:bg-[var(--bg-input)]
+         aria-[pressed=true]:text-[var(--primary-color)]
+         aria-[pressed=true]:shadow-[0_0_0_2px_var(--primary-color)/20]" aria-pressed="true" aria-checked="true" role="switch" title="显示/隐藏">
+                  <span class="hidden aria-[pressed=true]:inline text-[10px]">👁</span>
+                  <span class="hidden aria-[pressed=false]:inline text-[10px]">✕</span>
+                </button>
+                <span class="legend-icon node-icon inline-block w-2.5 h-2.5 rounded-full bg-[var(--viz-network-edge)] shadow-[0_0_6px_var(--viz-network-edge)]" aria-hidden="true"></span>
+                <span class="legend-label flex-1 text-[13px] text-[var(--text-secondary)] font-medium">网络节点</span>
+              </div>
+              <div class="legend-item-new flex items-center gap-[var(--space-md)] py-1.5 px-2 rounded-[var(--radius-md)] hover:bg-[var(--bg-input-hover)] transition-colors" data-layer="networkEdges">
+                <button class="legend-eye relative w-5 h-5 rounded-full border border-[var(--border-light)]
+         bg-[var(--bg-input)] text-[var(--text-secondary)]
+         inline-flex items-center justify-center transition-all
+         hover:text-[var(--text-primary)] hover:border-[var(--text-muted)]
+         aria-[pressed=true]:border-[var(--primary-color)]
+         aria-[pressed=true]:bg-[var(--bg-input)]
+         aria-[pressed=true]:text-[var(--primary-color)]
+         aria-[pressed=true]:shadow-[0_0_0_2px_var(--primary-color)/20]" aria-pressed="true" aria-checked="true" role="switch" title="显示/隐藏">
+                  <span class="hidden aria-[pressed=true]:inline text-[10px]">👁</span>
+                  <span class="hidden aria-[pressed=false]:inline text-[10px]">✕</span>
+                </button>
+                <span class="legend-icon edge-icon inline-block w-4 h-0.5 rounded-[2px] bg-[var(--viz-network-edge)] shadow-[0_0_4px_var(--viz-network-edge)]" aria-hidden="true"></span>
+                <span class="legend-label flex-1 text-[13px] text-[var(--text-secondary)] font-medium">网络边</span>
+              </div>
+              <div class="legend-item-new flex items-center gap-[var(--space-md)] py-1.5 px-2 rounded-[var(--radius-md)] hover:bg-[var(--bg-input-hover)] transition-colors" data-layer="baseTriangulation">
+                <button class="legend-eye relative w-5 h-5 rounded-full border border-[var(--border-light)]
+         bg-[var(--bg-input)] text-[var(--text-secondary)]
+         inline-flex items-center justify-center transition-all
+         hover:text-[var(--text-primary)] hover:border-[var(--text-muted)]
+         aria-[pressed=true]:border-[var(--primary-color)]
+         aria-[pressed=true]:bg-[var(--bg-input)]
+         aria-[pressed=true]:text-[var(--primary-color)]
+         aria-[pressed=true]:shadow-[0_0_0_2px_var(--primary-color)/20]" aria-pressed="true" aria-checked="true" role="switch" title="显示/隐藏">
+                  <span class="hidden aria-[pressed=true]:inline text-[10px]">👁</span>
+                  <span class="hidden aria-[pressed=false]:inline text-[10px]">✕</span>
+                </button>
+                <span class="legend-icon base-icon inline-block w-4 h-0.5 opacity-40" style="background-image:repeating-linear-gradient(to right, var(--text-muted), var(--text-muted) 2px, transparent 2px, transparent 4px)" aria-hidden="true"></span>
+                <span class="legend-label flex-1 text-[13px] text-[var(--text-secondary)] font-medium">基础三角化</span>
+              </div>
+              <div class="legend-item-new flex items-center gap-[var(--space-md)] py-1.5 px-2 rounded-[var(--radius-md)] hover:bg-[var(--bg-input-hover)] transition-colors" data-layer="voronoi">
+                <button class="legend-eye relative w-5 h-5 rounded-full border border-[var(--border-light)]
+         bg-[var(--bg-input)] text-[var(--text-secondary)]
+         inline-flex items-center justify-center transition-all
+         hover:text-[var(--text-primary)] hover:border-[var(--text-muted)]
+         aria-[pressed=true]:border-[var(--primary-color)]
+         aria-[pressed=true]:bg-[var(--bg-input)]
+         aria-[pressed=true]:text-[var(--primary-color)]
+         aria-[pressed=true]:shadow-[0_0_0_2px_var(--primary-color)/20]" aria-pressed="true" aria-checked="true" role="switch" title="显示/隐藏">
+                  <span class="hidden aria-[pressed=true]:inline text-[10px]">👁</span>
+                  <span class="hidden aria-[pressed=false]:inline text-[10px]">✕</span>
+                </button>
+                <span class="legend-icon voronoi-icon inline-block w-4 h-0.5 rounded-[2px] bg-[var(--viz-voronoi)] shadow-[0_0_4px_var(--viz-voronoi)]" aria-hidden="true"></span>
+                <span class="legend-label flex-1 text-[13px] text-[var(--text-secondary)] font-medium">Voronoi 骨架</span>
+              </div>
+              
+              <div class="legend-sep h-px bg-[var(--border-light)] my-2 mx-2"></div>
+              
+              <div class="legend-item-new-wrap grid grid-cols-3 gap-2 px-2">
+                <div class="legend-item-new flex flex-col items-center gap-1" aria-hidden="true">
+                  <span class="legend-icon start-icon inline-block w-2.5 h-2.5 rounded-full bg-[var(--viz-start-point)] shadow-[0_0_8px_var(--viz-start-point)]"></span>
+                  <span class="legend-label text-[11px] text-[var(--text-muted)]">起点</span>
+                </div>
+                <div class="legend-item-new flex flex-col items-center gap-1" aria-hidden="true">
+                  <span class="legend-icon end-icon inline-block w-2.5 h-2.5 rounded-full bg-[var(--viz-end-point)] shadow-[0_0_8px_var(--viz-end-point)]"></span>
+                  <span class="legend-label text-[11px] text-[var(--text-muted)]">终点</span>
+                </div>
+                <div class="legend-item-new flex flex-col items-center gap-1" aria-hidden="true">
+                  <span class="legend-icon path-icon inline-block w-4 h-0.5 rounded-[2px] bg-[var(--viz-path)] shadow-[0_0_6px_var(--viz-path)]"></span>
+                  <span class="legend-label text-[11px] text-[var(--text-muted)]">路径</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="interpretation-card glass-panel rounded-[var(--radius-xl)] p-[var(--space-xl)] px-[var(--space-lg)]" id="path-card">
+            <div class="card-header-row flex items-center justify-between gap-[var(--space-md)] pb-[var(--space-md)] border-b border-[var(--border-light)] mb-[var(--space-md)]">
+              <h3 class="text-[15px] font-bold text-[var(--accent-color)] uppercase tracking-wider flex items-center gap-2 m-0">
+                <span class="w-1 h-4 bg-[var(--accent-color)] rounded-full"></span>
+                路径统计
+              </h3>
+              <div class="card-actions inline-flex gap-1">
                 <button
                   id="path-refresh-btn"
-                  class="btn-secondary btn-compact"
+                  class="btn-icon w-7 h-7 inline-flex items-center justify-center rounded-[var(--radius-md)] text-[var(--text-secondary)] hover:bg-[var(--bg-input-hover)] hover:text-[var(--text-primary)] transition"
                   title="刷新上次路径"
                 >
-                  刷新
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
                 </button>
                 <button
                   id="path-clear-btn"
-                  class="btn-secondary btn-compact"
+                  class="btn-icon w-7 h-7 inline-flex items-center justify-center rounded-[var(--radius-md)] text-[var(--text-secondary)] hover:bg-[var(--bg-input-hover)] hover:text-[var(--text-primary)] transition"
                   title="清空当前路径"
                 >
-                  清空
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 </button>
                 <button
                   id="path-collapse-btn"
-                  class="btn-secondary btn-icon"
+                  class="btn-icon w-7 h-7 inline-flex items-center justify-center text-[var(--text-muted)] rounded-[var(--radius-md)] hover:bg-[var(--bg-input-hover)] transition"
                   title="折叠/展开"
                   aria-expanded="true"
                 >
-                  ▾
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
                 </button>
               </div>
             </div>
-            <div id="path-stats" class="stats-grid">
-              <div class="stat-item">
-                <span class="stat-label">当前路径</span>
-                <span class="stat-value" id="path-status">未选择</span>
+            <div id="path-stats" class="stats-grid grid grid-cols-2 gap-[var(--space-md)]">
+              <div class="stat-item col-span-2 bg-[var(--bg-input)] rounded-[var(--radius-md)] p-3 border border-[var(--border-input)]">
+                <span class="stat-label block text-[11px] text-[var(--text-muted)] uppercase tracking-wider mb-1">当前状态</span>
+                <span class="stat-value block text-[16px] text-[var(--primary-color)] font-bold truncate" id="path-status">等待选择...</span>
               </div>
               <div class="stat-item">
-                <span class="stat-label">路径长度</span>
-                <span class="stat-value" id="path-length">--</span>
+                <span class="stat-label block text-[11px] text-[var(--text-muted)] uppercase tracking-wider mb-0.5">路径长度</span>
+                <span class="stat-value block text-[20px] text-[var(--text-primary)] font-mono font-medium tracking-tight" id="path-length">--</span>
               </div>
               <div class="stat-item">
-                <span class="stat-label">节点数量</span>
-                <span class="stat-value" id="path-nodes">--</span>
+                <span class="stat-label block text-[11px] text-[var(--text-muted)] uppercase tracking-wider mb-0.5">节点数量</span>
+                <span class="stat-value block text-[20px] text-[var(--text-primary)] font-mono font-medium tracking-tight" id="path-nodes">--</span>
               </div>
               <div class="stat-item">
-                <span class="stat-label">转折次数</span>
-                <span class="stat-value" id="path-turns">--</span>
+                <span class="stat-label block text-[11px] text-[var(--text-muted)] uppercase tracking-wider mb-0.5">转折次数</span>
+                <span class="stat-value block text-[20px] text-[var(--text-primary)] font-mono font-medium tracking-tight" id="path-turns">--</span>
               </div>
               <div class="stat-item">
-                <span class="stat-label">平滑耗时</span>
-                <span class="stat-value" id="path-smooth-ms">-- ms</span>
+                <span class="stat-label block text-[11px] text-[var(--text-muted)] uppercase tracking-wider mb-0.5">平滑耗时</span>
+                <span class="stat-value block text-[20px] text-[var(--text-primary)] font-mono font-medium tracking-tight" id="path-smooth-ms">--</span>
               </div>
             </div>
-            <div id="path-info" class="path-detail">
-              <p>💡 单击画布上的节点选择起点和终点，系统将自动计算最短路径并启动 3D 导航模拟</p>
+            <div id="path-info" class="path-detail mt-[var(--space-md)] p-[var(--space-md)] bg-[rgba(59,130,246,0.05)] rounded-[var(--radius-md)] border border-[rgba(59,130,246,0.1)] text-[12px] text-[var(--text-secondary)] leading-[1.6] flex gap-2">
+              <span class="text-[var(--info-color)]">💡</span>
+              <p class="m-0">左键点击节点设置起点/终点，系统将自动计算最短路径。</p>
             </div>
           </div>
 
-          <div class="interpretation-card" id="perf-card">
-            <div class="card-header-row">
-              <h3>性能数据</h3>
+          <div class="interpretation-card glass-panel rounded-[var(--radius-xl)] p-[var(--space-xl)] px-[var(--space-lg)] mt-auto" id="perf-card">
+            <div class="card-header-row flex items-center justify-between gap-[var(--space-md)] pb-[var(--space-sm)] mb-[var(--space-sm)]">
+              <h3 class="text-[13px] font-bold text-[var(--text-secondary)] uppercase tracking-wider m-0">性能监控</h3>
               <span
                 id="perf-status-dot"
-                class="status-dot ok"
-                title="系统状态"
+                class="status-dot ok inline-block w-2 h-2 rounded-full bg-[var(--success-color)] shadow-[0_0_6px_var(--success-color)]"
+                title="系统状态正常"
               ></span>
             </div>
-            <div class="stats-grid">
-              <div class="stat-item">
-                <span class="stat-label">总节点数</span>
-                <span class="stat-value" id="node-count">0</span>
+            <div class="stats-grid grid grid-cols-2 gap-x-[var(--space-md)] gap-y-[var(--space-sm)]">
+              <div class="stat-item flex justify-between items-baseline border-b border-[var(--border-light)] pb-1">
+                <span class="stat-label text-[11px] text-[var(--text-muted)]">节点总数</span>
+                <span class="stat-value text-[14px] text-[var(--text-primary)] font-mono" id="node-count">0</span>
               </div>
-              <div class="stat-item">
-                <span class="stat-label">总边数</span>
-                <span class="stat-value" id="edge-count">0</span>
+              <div class="stat-item flex justify-between items-baseline border-b border-[var(--border-light)] pb-1">
+                <span class="stat-label text-[11px] text-[var(--text-muted)]">边总数</span>
+                <span class="stat-value text-[14px] text-[var(--text-primary)] font-mono" id="edge-count">0</span>
               </div>
-              <div class="stat-item">
-                <span class="stat-label">层数</span>
-                <span class="stat-value" id="layer-count">0</span>
+              <div class="stat-item flex justify-between items-baseline border-b border-[var(--border-light)] pb-1">
+                <span class="stat-label text-[11px] text-[var(--text-muted)]">生成耗时</span>
+                <span class="stat-value text-[14px] text-[var(--text-primary)] font-mono" id="gen-time">--</span>
               </div>
-              <div class="stat-item">
-                <span class="stat-label">生成耗时</span>
-                <span class="stat-value" id="gen-time">-- ms</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">3D渲染</span>
-                <span class="stat-value" id="render-time">-- ms</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">数据体积</span>
-                <span class="stat-value" id="data-size">-- KB</span>
-              </div>
-            </div>
-            <div id="perf-info" class="perf-detail">
-              <p>等待生成模型...</p>
-            </div>
-          </div>
-
-          <div class="interpretation-card">
-            <h3>操作提示</h3>
-            <div class="insights-list">
-              <div class="insight-item">
-                <span class="insight-icon">•</span>
-                <span class="insight-text">
-                  悬停：显示白色十字星，定位最近节点
-                </span>
-              </div>
-              <div class="insight-item">
-                <span class="insight-icon">•</span>
-                <span class="insight-text">
-                  单击：第一次选择<strong>起点</strong>，第二次选择<strong>终点</strong>，自动开始 3D 导航
-                </span>
-              </div>
-              <div class="insight-item">
-                <span class="insight-icon">•</span>
-                <span class="insight-text">
-                  自动导航：使用 A* 算法计算最短路径并驱动 3D 模拟
-                </span>
-              </div>
-              <div class="insight-item">
-                <span class="insight-icon">•</span>
-                <span class="insight-text">
-                  双击：在导航过程中结束当前导航并回到选点模式；鼠标滚轮缩放，拖拽平移视图
-                </span>
+              <div class="stat-item flex justify-between items-baseline border-b border-[var(--border-light)] pb-1">
+                <span class="stat-label text-[11px] text-[var(--text-muted)]">渲染耗时</span>
+                <span class="stat-value text-[14px] text-[var(--text-primary)] font-mono" id="render-time">--</span>
               </div>
             </div>
           </div>

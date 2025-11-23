@@ -153,9 +153,6 @@ class App {
       const l = document.getElementById('layer-input');
       const o = document.getElementById('obstacle-input');
       const si = document.getElementById('use-spatial-index');
-      const lbl = document.getElementById('show-labels');
-      const bmt = document.getElementById('use-bitmaptext');
-      const lpx = document.getElementById('label-minpx-input');
       const sc = document.getElementById('static-cache');
       const ce = document.getElementById('culling-enabled');
       const cm = document.getElementById('culling-margin-input');
@@ -164,9 +161,6 @@ class App {
       if (l) l.value = '2';
       if (o) o.value = '200';
       if (si) si.checked = true;
-      if (lbl) lbl.checked = true;
-      if (bmt) bmt.checked = true;
-      if (lpx) lpx.value = '0';
       if (sc) sc.checked = false;
       if (ce) ce.checked = true;
       if (cm) cm.value = '128';
