@@ -10,12 +10,12 @@ export class InteractionManager {
     this.camera = camera;
     this.raycaster = new THREE.Raycaster();
     this.pointer = new THREE.Vector2();
-    
+
     // 交互状态
     this.state = {
       startNode: null,
       endNode: null,
-      lastPath: null
+      lastPath: null,
     };
   }
 
@@ -31,7 +31,7 @@ export class InteractionManager {
   /**
    * 查找最近的节点
    */
-  findNearestNode(roadNetData, layerHeight, currentLayer) {
+  findNearestNode(roadNetData, layerHeight, currentLayer, visibleLayers) {
     if (!roadNetData) return null;
 
     this.raycaster.setFromCamera(this.pointer, this.camera);
@@ -41,6 +41,13 @@ export class InteractionManager {
 
     roadNetData.layers.forEach((layer, index) => {
       if (currentLayer !== null && currentLayer !== index) return;
+      if (
+        visibleLayers &&
+        typeof visibleLayers.has === 'function' &&
+        !visibleLayers.has(index)
+      ) {
+        return;
+      }
 
       const layerY = index * layerHeight;
       const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -layerY);
@@ -49,7 +56,7 @@ export class InteractionManager {
 
       if (intersection) {
         const centerX = (roadNetData.metadata.width || 100) / 2;
-        const centerY = (roadNetData. metadata.height || 100) / 2;
+        const centerY = (roadNetData.metadata.height || 100) / 2;
         const hitX = target.x + centerX;
         const hitY = target.z + centerY;
 

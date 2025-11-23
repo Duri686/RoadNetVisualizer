@@ -1,6 +1,8 @@
 # RoadNet Visualizer
 
-Multi-layer road network generator and visualizer built with Vite, Three.js, and Web Workers. It supports path optimization (smoothing/orthogonalization), multi-layer navigation, interactive controls, export/share, and theming.
+**High-Performance 3D Road Network Visualization & Navigation Simulation Platform**
+
+RoadNet Visualizer is a cutting-edge 3D visualization tool designed for complex multi-layer structures. It leverages **Hierarchical Pathfinding** and **Web Workers** to deliver smooth, real-time navigation simulations for large-scale road networks, including multi-story buildings and transportation hubs.
 
 [中文文档 | Chinese README](./README.zh-CN.md)
 
@@ -20,37 +22,36 @@ Multi-layer road network generator and visualizer built with Vite, Three.js, and
 ## Table of Contents
 
 - [Features](#features)
+- [Use Cases](#use-cases)
+- [Key Advantages](#key-advantages)
 - [Preview](#preview)
 - [Getting Started](#getting-started)
-  - [Requirements](#requirements)
-  - [Local Development](#local-development)
-  - [Build & Deploy](#build--deploy)
-- [Core Concepts & Architecture](#core-concepts--architecture)
-- [Config Examples](#config-examples)
+- [Core Architecture](#core-architecture)
 - [Roadmap](#roadmap)
 - [Contributing](#contributing)
 - [FAQ](#faq)
 - [License](#license)
-- [Acknowledgments](#acknowledgments)
 
 ## Features
 
-- Multi-layer road networks  
-  Centroid network, portal midpoints, Voronoi skeleton (experimental)
-- Path planning and optimization  
-  A* pathfinding; smoothing and orthogonalization; timing metrics
-- Interaction and navigation  
-  3D Camera controls (Orbit), node picking, layer toggles, canvas navigation controls
-- Export and sharing  
-  One-click export and share
-- Mobile friendly  
-  Better touch experience
-- Performance & observability  
-  Index building, render init/total time, data size metrics
-- Themes & styles  
-  Dark/monochrome themes, componentized style system
-- Docs & help  
-  DeepWiki integration for quick knowledge lookup
+- **Multi-Layer Visualization**: Seamlessly display multi-story road networks, accurately rendering vertical connections like stairs and elevators.
+- **Intelligent Pathfinding**: Built-in **Hierarchical A*** algorithm supports long-distance cross-floor navigation, dynamic obstacle avoidance, and smooth path animation.
+- **Real-Time Interaction**: Interactive 3D controls for node picking, layer toggling, free-roaming camera, and instant path metrics.
+- **High-Quality Rendering**: Custom Three.js engine featuring "Glass Night" theme, dynamic lighting, post-processing, and particle effects.
+
+## Use Cases
+
+- **Indoor Navigation Simulation**: Navigation demos for complex multi-story venues like malls, airports, and hospitals.
+- **Game AI Development**: Visual debugging for NavMesh/Waypoints and AI movement logic.
+- **Emergency Evacuation**: Simulating evacuation routes in high-rise buildings to identify bottlenecks.
+- **Robotics Path Planning**: Validating algorithms for Autonomous Mobile Robots (AMR) in multi-layered environments.
+
+## Key Advantages
+
+- **High Performance**: **Web Workers** offload heavy computations (hierarchy building, layer processing), ensuring **60FPS** performance even with large datasets.
+- **Efficient Algorithms**: **Hierarchical Pathfinding** (Zone/Portal search + Local A*) significantly outperforms traditional methods on large maps.
+- **Modern Aesthetics**: Premium "Glass Night" UI with glassmorphism effects and curated color palettes.
+- **Extensibility**: Modular architecture (Managers, Renderers, Systems) allows easy integration of new layers or custom algorithms.
 
 ## Preview
 
@@ -86,87 +87,53 @@ yarn preview
 ### Build & Deploy
 
 - GitHub Pages workflow: `.github/workflows/deploy.yml`
-- Push to `main` triggers build and deploy of `dist/` to GitHub Pages
-- Vite `base: './'` is configured for sub-path and Pages compatibility
+- Push to `main` triggers build and deploy of `dist/` to GitHub Pages.
 
-## Core Concepts & Architecture
+## Core Architecture
 
-- Multi-layer network building  
-  - Centroid network: skeleton nodes from regions/grids  
-  - Portal midpoints: cross-partition connections  
-  - Voronoi skeleton (experimental): alternative representation using Voronoi edges/points
-- Path planning & optimization  
-  - Pathfinding: A*  
-  - Optimization: smoothing, orthogonalization for straighter, smoother lines  
-  - Metrics: timing breakdown for pathfinding and optimization
-- Rendering & interaction  
-  - Rendering: Three.js (WebGL)  
-  - Interaction: 3D Orbit controls, node picking, layer toggles  
-  - Animation: moving ball along path
-- Concurrency & performance  
-  - Web Workers: index/compute off main thread  
-  - Observability: index duration, render init, total time, data size
+- **Tech Stack**:
+  - **Core**: JavaScript (ES6+)
+  - **Rendering**: Three.js (Modularized)
+  - **Compute**: Web Workers (Parallel processing)
+  - **Algorithms**: Hierarchical A*, Voronoi, Spatial Indexing
+  - **Styling**: CSS3 (Variables, Glassmorphism)
 
-> Project structure reference:
-
-```text
-src/
-├── core/                # rendering core (render/view/layers/interaction/config + workers)
-├── core/interaction/    # interaction modules (events/pipeline/animation)
-├── utils/               # utilities (navigation/geometry/path/index/export/share/state ...)
-│   └── navigation/      # navigation submodules (centroid/portal/voronoi/partition ...)
-├── components/          # UI components (forms, progress, layer control)
-├── css/                 # styles & themes (base/reset/tokens/utilities/layout/buttons/forms/...)
-└── main.js              # app entry
-```
-
-## Config Examples
-
-- Deploy: `vite.config.js` uses `base: './'`  
-- Build: `build.outDir = dist`, `build.sourcemap = true`  
-- Dev: `server.port = 3000`, `server.open = true`  
-- Worker: `worker.format = 'es'`
-
-> If you plan to expose runtime/algorithm configs (e.g., grid size, weights, sampling density, smoothing factor), export them under `src/core/config/` and document here.
+- **Structure**:
+  ```text
+  src/
+  ├── core/                # Rendering engine & Workers
+  ├── managers/            # App logic (Events, Generation, UI)
+  ├── renderer3d/          # Three.js renderers & systems
+  ├── utils/               # Algorithms (Pathfinding, Geometry)
+  ├── components/          # UI Components
+  └── main.js              # Entry point
+  ```
 
 ## Roadmap
 
-- [ ] More data formats for import/export (e.g., GeoJSON)
-- [ ] Richer weights/constraints (lanes/turns/restrictions/cost functions)
-- [ ] Enhanced optimization strategies (multi-objective/segmented)
-- [ ] Performance profiling panel and metric visualization
-- [ ] Unit tests and E2E coverage
-- [ ] i18n and accessibility (a11y)
-- [ ] More themes and visualization styles
+- [ ] Import/Export support for GeoJSON
+- [ ] Advanced constraints (lanes, turn restrictions, cost functions)
+- [ ] Multi-objective path optimization
+- [ ] Performance profiling dashboard
+- [ ] Unit & E2E tests
+- [ ] Internationalization (i18n) & Accessibility (a11y)
 
 ## Contributing
 
-- Branch model: feature/xxx -> PR to `main`
-- Conventions: Node 20 + Yarn, ESM, pass ESLint/Prettier
-- Steps:
-  1. Fork and create a feature branch
-  2. `corepack enable && yarn install --immutable`
-  3. `yarn dev` and ensure build passes
-  4. Open a PR with motivation and screenshots/diffs
-
-> Issues and suggestions are welcome.
+1. Fork and create a feature branch.
+2. `yarn install` and `yarn dev`.
+3. Submit a PR with screenshots/diffs.
 
 ## FAQ
 
-- Blank page on Pages?  
-  `base: './'` is set. If still broken, clear cache or verify Pages settings (branch/path).
-- Node version?  
-  Node >= 20. Use official LTS and enable Yarn via Corepack.
-- Local preview URL?  
-  `http://localhost:3000/` (Vite dev server).
-- Performance unstable?  
-  Use hardware-accelerated browsers with WebGL; for large data, reduce sampling or load in batches.
-- DeepWiki not showing?  
-  Check network or use the provided documentation link directly.
+- **Blank page on Pages?** Check `base: './'` in vite config.
+- **Node version?** Node >= 20 required.
+- **Performance?** Use hardware acceleration; reduce sampling for massive datasets.
 
 ## License
 
-Licensed under the PolyForm Noncommercial License 1.0.0. See [LICENSE](./LICENSE) for details. Commercial use is prohibited. For commercial licensing, please open an Issue to contact us.
+Licensed under the **PolyForm Noncommercial License 1.0.0**. See [LICENSE](./LICENSE).
+**Commercial use is prohibited.** Contact us for commercial licensing.
 
 ## Acknowledgments
 

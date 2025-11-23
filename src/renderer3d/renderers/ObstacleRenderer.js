@@ -37,6 +37,9 @@ export function renderObstacles(
     mesh.position.set(cx - centerX, layerY + obsHeight / 2, cy - centerY);
     mesh.scale.set(w, obsHeight, h);
 
+    // 记录该障碍所属楼层，便于按楼层控制可见性
+    mesh.userData.layerIndex = layerIdx;
+
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     obstacleGroup.add(mesh);

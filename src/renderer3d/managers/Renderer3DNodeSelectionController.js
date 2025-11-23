@@ -32,10 +32,16 @@ export function onClickHandler(renderer, event) {
     renderer.renderer.domElement,
   );
 
+  const visibleLayers =
+    renderer.visibleLayers && typeof renderer.visibleLayers.has === 'function'
+      ? renderer.visibleLayers
+      : null;
+
   const { node, distance } = renderer.interactionManager.findNearestNode(
     renderer.roadNetData,
     Renderer3DConfig.layerHeight,
     renderer.currentLayer,
+    visibleLayers,
   );
 
   if (node) {
@@ -81,10 +87,15 @@ export function onDoubleClickHandler(renderer, event) {
     event,
     renderer.renderer.domElement,
   );
+  const visibleLayers =
+    renderer.visibleLayers && typeof renderer.visibleLayers.has === 'function'
+      ? renderer.visibleLayers
+      : null;
   const { node } = renderer.interactionManager.findNearestNode(
     renderer.roadNetData,
     Renderer3DConfig.layerHeight,
     renderer.currentLayer,
+    visibleLayers,
   );
 
   if (node) {

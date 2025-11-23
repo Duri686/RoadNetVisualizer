@@ -184,10 +184,15 @@ class Renderer3D {
 
     this.interactionManager.updatePointer(event, this.renderer.domElement);
 
+    const visibleLayers =
+      this.visibleLayers && typeof this.visibleLayers.has === 'function'
+        ? this.visibleLayers
+        : null;
     const { node, distance } = this.interactionManager.findNearestNode(
       this.roadNetData,
       Renderer3DConfig.layerHeight,
       this.currentLayer,
+      visibleLayers,
     );
 
     if (node) {
