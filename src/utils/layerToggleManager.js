@@ -11,7 +11,7 @@ class LayerToggleManager {
       obstacles: true,
       networkNodes: true,
       networkEdges: true,
-      baseTriangulation: false,
+      baseTriangulation: true, // Match renderer default (lines.visible = true)
       voronoi: true
     };
     // 构造阶段可能 DOM 未就绪，延迟绑定

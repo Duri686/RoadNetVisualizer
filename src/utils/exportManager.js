@@ -86,13 +86,16 @@ class ExportManager {
       </button>
     `;
 
-    // 定位菜单
-    const btnRect = this.downloadBtn.getBoundingClientRect();
-    menu.style.position = 'absolute';
-    menu.style.top = `${btnRect.bottom + 8}px`;
-    menu.style.left = `${btnRect.left}px`;
-
+    // 先添加到 DOM 以获取菜单高度
     document.body.appendChild(menu);
+    
+    // 定位菜单到按钮上方
+    const btnRect = this.downloadBtn.getBoundingClientRect();
+    const menuHeight = menu.offsetHeight;
+    
+    menu.style.position = 'absolute';
+    menu.style.top = `${btnRect.top - menuHeight - 8}px`;
+    menu.style.left = `${btnRect.left}px`;
 
     // 绑定选项点击事件
     menu.querySelectorAll('.download-option').forEach((option) => {

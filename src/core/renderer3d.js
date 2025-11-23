@@ -15,6 +15,25 @@ import { PathAnimationManager } from '../renderer3d/managers/PathAnimationManage
 import { RoadNetRenderer } from '../renderer3d/renderers/RoadNetRenderer.js';
 import { PathRenderer } from '../renderer3d/renderers/PathRenderer.js';
 import { MarkerRenderer } from '../renderer3d/renderers/MarkerRenderer.js';
+import {
+  onPointerMoveHandler,
+  onClickHandler,
+  onDoubleClickHandler,
+  updateInteractionMarkersForRenderer,
+  clearPathForRenderer,
+  drawPathForRenderer,
+  animatePathForRenderer,
+  redrawLastPathForRenderer,
+  clearInteractionGraphicsForRenderer,
+  resetPathInfoForRenderer,
+  zoomInCamera,
+  zoomOutCamera,
+  resetViewCamera,
+  getViewportRectForRenderer,
+  centerOnWorld,
+  showLayerInScene,
+  setLayerVisibilityInScene,
+} from '../renderer3d/managers/Renderer3DInteractionController.js';
 
 class Renderer3D {
   constructor() {
@@ -50,7 +69,7 @@ class Renderer3D {
       cancelAnimationIfAny: () => this.pathAnimationManager?.stop(),
       clearInteractionGraphics: () => this.clearInteractionGraphics(),
       resetPathInfo: () => this.resetPathInfo(),
-      animatePath: (path) => this.animatePath(path)
+      animatePath: (path) => this.animatePath(path),
     };
 
     // 配置（用于兼容）
@@ -65,7 +84,10 @@ class Renderer3D {
       this.container = container;
 
       // 初始化场景
-      const { scene, camera, renderer, controls } = this.sceneManager.init(container, options);
+      const { scene, camera, renderer, controls } = this.sceneManager.init(
+        container,
+        options,
+      );
       this.scene = scene;
       this.camera = camera;
       this.renderer = renderer;
@@ -82,7 +104,11 @@ class Renderer3D {
       // 初始化管理器
       this.animationController = new AnimationController(scene);
       this.interactionManager = new InteractionManager(camera);
-      this.pathAnimationManager = new PathAnimationManager(scene, camera, controls);
+      this.pathAnimationManager = new PathAnimationManager(
+        scene,
+        camera,
+        controls,
+      );
 
       // 初始化渲染器
       this.roadNetRenderer = new RoadNetRenderer(scene);
@@ -112,9 +138,15 @@ class Renderer3D {
    */
   bindEvents() {
     window.addEventListener('resize', this.onWindowResize.bind(this));
-    this.renderer.domElement.addEventListener('pointermove', this.onPointerMove.bind(this));
+    this.renderer.domElement.addEventListener(
+      'pointermove',
+      this.onPointerMove.bind(this),
+    );
     this.renderer.domElement.addEventListener('click', this.onClick.bind(this));
-    this.renderer.domElement.addEventListener('dblclick', this.onDoubleClick.bind(this));
+    this.renderer.domElement.addEventListener(
+      'dblclick',
+      this.onDoubleClick.bind(this),
+    );
   }
 
   /**
@@ -128,7 +160,7 @@ class Renderer3D {
 
     // 渲染道路网络
     const { centerX, centerY } = this.roadNetRenderer.render(data);
-    
+
     // 初始化交互标记层和路径层（必须在这里创建！）
     if (!this.markerRenderer.markersGroup.parent) {
       this.scene.add(this.markerRenderer.markersGroup);
@@ -150,16 +182,16 @@ class Renderer3D {
    */
   _animate() {
     this._animationId = requestAnimationFrame(this._animate);
-    
+
     this.statsManager.begin();
-    
+
     if (this.controls) this.controls.update();
-    
+
     // 更新所有动画 - 传入performance.now()用于脉冲环，传入秒数用于节点脉动
     this.animationController.update(performance.now());
 
     this.postProcessing.render();
-    
+
     this.statsManager.end();
   }
 
@@ -176,7 +208,7 @@ class Renderer3D {
    * 鼠标移动
    */
   onPointerMove(event) {
-    this.interactionManager.updatePointer(event, this.renderer.domElement);
+    onPointerMoveHandler(this, event);
   }
 
   /**
@@ -184,40 +216,7 @@ class Renderer3D {
    * 仅用于选择起点/终点。如果导航已完成（有终点），则忽略单击。
    */
   onClick(event) {
-    if (!this.roadNetData) return;
-
-    // 如果已经有终点（导航完成/进行中），忽略单击，防止意外重置
-    if (this.interactionManager.state.endNode) {
-      return;
-    }
-
-    this.interactionManager.updatePointer(event, this.renderer.domElement);
-    
-    const { node, distance } = this.interactionManager.findNearestNode(
-      this.roadNetData,
-      Renderer3DConfig.layerHeight,
-      this.currentLayer
-    );
-
-    if (node) {
-      console.log('✅ 选中节点:', node, '距离:', distance.toFixed(2));
-      const result = this.interactionManager.handleNodeClick(node);
-      
-      // 更新状态
-      this.interaction.state.startNode = this.interactionManager.state.startNode;
-      this.interaction.state.endNode = this.interactionManager.state.endNode;
-      
-      // 更新标记
-      this.updateInteractionMarkers();
-
-      // 触发路径请求
-      if (result.type === 'end') {
-        window.dispatchEvent(new CustomEvent('renderer-path-request', {
-          detail: { start: result.start, end: result.node }
-        }));
-      }
-      // 注意：单击不再处理 reset，reset 移至双击
-    }
+    onClickHandler(this, event);
   }
 
   /**
@@ -225,65 +224,21 @@ class Renderer3D {
    * 用于重置导航或重新开始
    */
   onDoubleClick(event) {
-    if (!this.roadNetData) return;
-
-    // 1. 无论点击哪里，首先清除当前路径和状态
-    this.clearPath();
-    this.interactionManager.clear();
-    this.interaction.state.startNode = null;
-    this.interaction.state.endNode = null;
-    this.updateInteractionMarkers();
-
-    // 2. 检查是否双击了某个节点，如果是，将其设为新的起点
-    this.interactionManager.updatePointer(event, this.renderer.domElement);
-    const { node } = this.interactionManager.findNearestNode(
-      this.roadNetData,
-      Renderer3DConfig.layerHeight,
-      this.currentLayer
-    );
-
-    if (node) {
-      console.log('🔄 双击重置并选中起点:', node);
-      this.interactionManager.handleNodeClick(node); // 设置为起点
-      this.interaction.state.startNode = node;
-      this.updateInteractionMarkers();
-    } else {
-      console.log('🔄 双击重置导航');
-    }
+    onDoubleClickHandler(this, event);
   }
 
   /**
    * 更新交互标记
    */
   updateInteractionMarkers() {
-    if (!this.roadNetData) return;
-
-    const centerX = (this.roadNetData.metadata.width || 100) / 2;
-    const centerY = (this.roadNetData.metadata.height || 100) / 2;
-
-    this.markerRenderer.update(
-      this.interactionManager.state.startNode,
-      this.interactionManager.state.endNode,
-      Renderer3DConfig.layerHeight,
-      centerX,
-      centerY
-    );
+    updateInteractionMarkersForRenderer(this);
   }
 
   /**
    * 绘制路径
    */
   drawPath(path) {
-    this.clearPath();
-    if (!path || path.length === 0) return;
-
-    this.interaction.state.lastPath = path;
-
-    const centerX = (this.roadNetData.metadata.width || 100) / 2;
-    const centerY = (this.roadNetData.metadata.height || 100) / 2;
-
-    this.pathRenderer.drawPath(path, Renderer3DConfig.layerHeight, centerX, centerY);
-    this.animatePath(path);
+    drawPathForRenderer(this, path);
   }
 
   /**
@@ -293,7 +248,15 @@ class Renderer3D {
     if (this.roadNetRenderer) {
       const centerX = (width || 100) / 2;
       const centerY = (height || 100) / 2;
-      this.roadNetRenderer.renderHierarchicalData(zones, abstractPath, width, height, gridSize, centerX, centerY);
+      this.roadNetRenderer.renderHierarchicalData(
+        zones,
+        abstractPath,
+        width,
+        height,
+        gridSize,
+        centerX,
+        centerY,
+      );
     }
   }
 
@@ -301,129 +264,75 @@ class Renderer3D {
    * 动画化路径
    */
   animatePath(path) {
-    const centerX = (this.roadNetData.metadata.width || 100) / 2;
-    const centerY = (this.roadNetData.metadata.height || 100) / 2;
-
-    this.pathAnimationManager.start(
-      path,
-      Renderer3DConfig.layerHeight,
-      centerX,
-      centerY,
-      this.pathRenderer.pathShader
-    );
+    animatePathForRenderer(this, path);
   }
 
   /**
    * 清除路径
    */
   clearPath() {
-    this.pathRenderer.clear();
-    this.pathAnimationManager.stop();
+    clearPathForRenderer(this);
   }
 
   /**
    * 重绘最后的路径
    */
   redrawLastPath() {
-    if (this.interaction.state.lastPath) {
-      this.drawPath(this.interaction.state.lastPath);
-    }
+    redrawLastPathForRenderer(this);
   }
 
   /**
    * 清除交互图形
    */
   clearInteractionGraphics() {
-    this.clearPath();
-    this.interactionManager.clear();
-    this.interaction.state.startNode = null;
-    this.interaction.state.endNode = null;
-    this.updateInteractionMarkers();
+    clearInteractionGraphicsForRenderer(this);
   }
 
   /**
    * 重置路径信息
    */
   resetPathInfo() {
-    this.interactionManager.clearPath();
-    this.interaction.state.lastPath = null;
+    resetPathInfoForRenderer(this);
   }
 
   // ==================== 兼容接口 ====================
 
-  resize() { this.onWindowResize(); }
-  
+  resize() {
+    this.onWindowResize();
+  }
+
   clearCanvas() {
     this.sceneManager.clear();
     this.roadNetData = null;
   }
 
   zoomIn() {
-    if (this.camera) {
-      this.camera.position.multiplyScalar(0.8);
-      this.controls.update();
-    }
+    zoomInCamera(this);
   }
 
   zoomOut() {
-    if (this.camera) {
-      this.camera.position.multiplyScalar(1.2);
-      this.controls.update();
-    }
+    zoomOutCamera(this);
   }
 
   resetView() {
-    this.sceneManager.setCameraPosition(100, 100, 100);
-    this.sceneManager.setControlsTarget(0, 0, 0);
+    resetViewCamera(this);
   }
 
   getViewportRect() {
-    if (!this.camera || !this.roadNetData) {
-      return { x: 0, y: 0, width: 100, height: 100 };
-    }
-
-    const aspect = this.camera.aspect;
-    const fov = this.camera.fov * (Math.PI / 180);
-    const distance = this.camera.position.length();
-    const target = this.controls.target;
-    const height = 2 * Math.tan(fov / 2) * distance;
-    const width = height * aspect;
-
-    return {
-      x: target.x - width / 2,
-      y: target.z - height / 2,
-      width,
-      height
-    };
+    return getViewportRectForRenderer(this);
   }
 
   centerOn(worldX, worldY) {
-    const centerX = (this.roadNetData?.metadata.width || 100) / 2;
-    const centerY = (this.roadNetData?.metadata.height || 100) / 2;
-    this.sceneManager.setControlsTarget(worldX - centerX, 0, worldY - centerY);
-    window.dispatchEvent(new CustomEvent('renderer-viewport-changed'));
+    centerOnWorld(this, worldX, worldY);
   }
 
   showLayer(index) {
     // Legacy support or "Show All" (index === null)
-    if (index === null) {
-       this.scene.children.forEach(child => {
-        if (child.userData && typeof child.userData.layerIndex === 'number') {
-          child.visible = true;
-        }
-      });
-      return;
-    }
-    this.setLayerVisibility(index, true);
+    showLayerInScene(this, index);
   }
 
   setLayerVisibility(index, visible) {
-    if (!this.scene) return;
-    this.scene.children.forEach(child => {
-      if (child.userData && child.userData.layerIndex === index) {
-        child.visible = visible;
-      }
-    });
+    setLayerVisibilityInScene(this, index, visible);
   }
 
   setFpsVisible() {}
@@ -472,7 +381,6 @@ class Renderer3D {
       this.roadNetRenderer.toggleVoronoi(visible);
     }
   }
-
 
   destroy() {
     if (this._animationId) cancelAnimationFrame(this._animationId);

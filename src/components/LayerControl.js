@@ -9,7 +9,7 @@ class LayerControl {
       section: document.getElementById('layer-control-section'),
       selector: document.getElementById('layer-selector'),
       showAllBtn: document.getElementById('show-all-btn'),
-      layerInfo: document.getElementById('layer-info')
+      // layerInfo: document.getElementById('layer-info')
     };
 
     this.onLayerChangeCallback = null;
@@ -26,7 +26,7 @@ class LayerControl {
    */
   init() {
     // Store notNullElementFound for headless check
-    const notNullElementFound = this.elements.section && this.elements.layerInfo;
+    const notNullElementFound = this.elements.section; //&& this.elements.layerInfo;
     this._headless = !notNullElementFound;
 
     if (this._headless) {
