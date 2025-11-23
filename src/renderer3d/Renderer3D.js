@@ -50,7 +50,7 @@ class Renderer3D {
       cancelAnimationIfAny: () => this.pathAnimationManager?.stop(),
       clearInteractionGraphics: () => this.clearInteractionGraphics(),
       resetPathInfo: () => this.resetPathInfo(),
-      animatePath: (path) => this.animatePath(path)
+      animatePath: (path) => this.animatePath(path),
     };
 
     // 配置（用于兼容）
@@ -65,7 +65,10 @@ class Renderer3D {
       this.container = container;
 
       // 初始化场景
-      const { scene, camera, renderer, controls } = this.sceneManager.init(container, options);
+      const { scene, camera, renderer, controls } = this.sceneManager.init(
+        container,
+        options,
+      );
       this.scene = scene;
       this.camera = camera;
       this.renderer = renderer;
@@ -112,7 +115,10 @@ class Renderer3D {
    */
   bindEvents() {
     window.addEventListener('resize', this.onWindowResize.bind(this));
-    this.renderer.domElement.addEventListener('pointermove', this.onPointerMove.bind(this));
+    this.renderer.domElement.addEventListener(
+      'pointermove',
+      this.onPointerMove.bind(this),
+    );
     this.renderer.domElement.addEventListener('click', this.onClick.bind(this));
   }
 
@@ -141,16 +147,16 @@ class Renderer3D {
    */
   _animate() {
     this._animationId = requestAnimationFrame(this._animate);
-    
+
     this.statsManager.begin();
-    
+
     if (this.controls) this.controls.update();
-    
+
     const time = performance.now() * 0.001;
     this.animationController.update(performance.now());
 
     this.postProcessing.render();
-    
+
     this.statsManager.end();
   }
 
@@ -177,29 +183,32 @@ class Renderer3D {
     if (!this.roadNetData) return;
 
     this.interactionManager.updatePointer(event, this.renderer.domElement);
-    
+
     const { node, distance } = this.interactionManager.findNearestNode(
       this.roadNetData,
       Renderer3DConfig.layerHeight,
-      this.currentLayer
+      this.currentLayer,
     );
 
     if (node) {
       console.log('✅ 选中节点:', node, '距离:', distance.toFixed(2));
       const result = this.interactionManager.handleNodeClick(node);
-      
+
       // 更新状态
-      this.interaction.state.startNode = this.interactionManager.state.startNode;
+      this.interaction.state.startNode =
+        this.interactionManager.state.startNode;
       this.interaction.state.endNode = this.interactionManager.state.endNode;
-      
+
       // 更新标记
       this.updateInteractionMarkers();
 
       // 触发路径请求
       if (result.type === 'end') {
-        window.dispatchEvent(new CustomEvent('renderer-path-request', {
-          detail: { start: result.start, end: result.node }
-        }));
+        window.dispatchEvent(
+          new CustomEvent('renderer-path-request', {
+            detail: { start: result.start, end: result.node },
+          }),
+        );
       } else if (result.type === 'reset') {
         this.clearPath();
       }
@@ -220,7 +229,7 @@ class Renderer3D {
       this.interactionManager.state.endNode,
       Renderer3DConfig.layerHeight,
       centerX,
-      centerY
+      centerY,
     );
   }
 
@@ -236,7 +245,12 @@ class Renderer3D {
     const centerX = (this.roadNetData.metadata.width || 100) / 2;
     const centerY = (this.roadNetData.metadata.height || 100) / 2;
 
-    this.pathRenderer.drawPath(path, Renderer3DConfig.layerHeight, centerX, centerY);
+    this.pathRenderer.drawPath(
+      path,
+      Renderer3DConfig.layerHeight,
+      centerX,
+      centerY,
+    );
     this.animatePath(path);
   }
 
@@ -252,7 +266,7 @@ class Renderer3D {
       Renderer3DConfig.layerHeight,
       centerX,
       centerY,
-      this.pathRenderer.pathShader
+      this.pathRenderer.pathShader,
     );
   }
 
@@ -294,8 +308,10 @@ class Renderer3D {
 
   // ==================== 兼容接口 ====================
 
-  resize() { this.onWindowResize(); }
-  
+  resize() {
+    this.onWindowResize();
+  }
+
   clearCanvas() {
     this.sceneManager.clear();
     this.roadNetData = null;
@@ -336,7 +352,7 @@ class Renderer3D {
       x: target.x - width / 2,
       y: target.z - height / 2,
       width,
-      height
+      height,
     };
   }
 
@@ -351,14 +367,18 @@ class Renderer3D {
     this.currentLayer = index;
     if (!this.scene || !this.roadNetData) return;
 
-    this.scene.children.forEach(child => {
+    this.scene.children.forEach((child) => {
       if (child.userData && typeof child.userData.layerIndex === 'number') {
         child.visible = index === null || child.userData.layerIndex === index;
       }
     });
   }
 
-  setFpsVisible() {}
+  setFpsVisible(visible) {
+    if (this.statsManager) {
+      this.statsManager.setVisible(visible);
+    }
+  }
 
   destroy() {
     if (this._animationId) cancelAnimationFrame(this._animationId);

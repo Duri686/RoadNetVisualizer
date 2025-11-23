@@ -29,10 +29,59 @@ function preCalculateConnectors(width, height, layerCount, options) {
     const entranceAngle = rng.random() * Math.PI * 2;
     const accessX = x + Math.cos(entranceAngle) * 15; // radius = 15
     const accessY = y + Math.sin(entranceAngle) * 15;
-    connectors.push({ x, y, type, radius: 15, entranceAngle, accessX, accessY });
+    connectors.push({
+      x,
+      y,
+      type,
+      radius: 15,
+      entranceAngle,
+      accessX,
+      accessY,
+    });
   }
 
   return connectors;
+}
+
+// 构建连接器周围及通道方向上的避让区域，用于障碍生成时绕开通道
+function buildConnectorAvoidZones(connectors) {
+  const zones = [];
+  if (!Array.isArray(connectors) || connectors.length === 0) {
+    return zones;
+  }
+
+  const shaftRadius = 17; // 竖井中心避让半径
+  const accessRadius = 25; // access 入口周围避让半径
+  const corridorLength = 60; // 通道总长度
+  const corridorStep = 20; // 采样步长：20 -> 40 -> 60
+  const corridorRadius = 25; // 通道半宽
+
+  for (let i = 0; i < connectors.length; i++) {
+    const c = connectors[i];
+    if (!c) continue;
+
+    const angle = typeof c.entranceAngle === 'number' ? c.entranceAngle : 0;
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    const baseRadius = typeof c.radius === 'number' ? c.radius : 15;
+    const ax =
+      typeof c.accessX === 'number' ? c.accessX : c.x + cos * baseRadius;
+    const ay =
+      typeof c.accessY === 'number' ? c.accessY : c.y + sin * baseRadius;
+
+    zones.push({ x: c.x, y: c.y, radius: shaftRadius });
+    zones.push({ x: ax, y: ay, radius: accessRadius });
+
+    for (let d = corridorStep; d <= corridorLength; d += corridorStep) {
+      zones.push({
+        x: ax + cos * d,
+        y: ay + sin * d,
+        radius: corridorRadius,
+      });
+    }
+  }
+
+  return zones;
 }
 
 /**
@@ -49,8 +98,9 @@ function generateLayerObstacles(
   const layerRng = new SeededRandom(
     (options.seed || Date.now()) + layerIdx * 100,
   );
+  const avoidZones = buildConnectorAvoidZones(connectors);
   return generateObstacles(width, height, obstacleCount, layerRng, {
-    avoidZones: connectors,
+    avoidZones,
     padding: 2,
   });
 }
@@ -90,7 +140,7 @@ export function buildLayers(
   // 2. 逐层构建
   for (let i = 0; i < layerCount; i++) {
     let layerObstacles;
-    
+
     // 如果是第一层且提供了初始障碍物，直接使用
     if (i === 0 && initialObstacles) {
       layerObstacles = initialObstacles;
@@ -111,7 +161,7 @@ export function buildLayers(
       x: c.accessX,
       y: c.accessY,
       id: `${idx}-access`, // ID will be prefixed with L{layer}- in buildLayer
-      type: 'connector-access'
+      type: 'connector-access',
     }));
 
     const layer = buildLayer(
@@ -122,7 +172,7 @@ export function buildLayers(
       baseZones,
       mode,
       options,
-      fixedPoints // Pass fixed points
+      fixedPoints, // Pass fixed points
     );
     layer.obstacles = layerObstacles;
     layers.push(layer);

@@ -493,7 +493,11 @@ class Renderer3D {
     setLayerVisibilityInScene(this, index, visible);
   }
 
-  setFpsVisible() {}
+  setFpsVisible(visible) {
+    if (this.statsManager) {
+      this.statsManager.setVisible(visible);
+    }
+  }
 
   /**
    * 设置障碍物可见性
