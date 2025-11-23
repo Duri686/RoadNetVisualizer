@@ -29,7 +29,7 @@ export class SceneManager {
     this.scene.background = new THREE.Color(Renderer3DConfig.colors.background);
     this.scene.fog = new THREE.FogExp2(
       Renderer3DConfig.colors.background,
-      Renderer3DConfig.fog.density
+      Renderer3DConfig.fog.density,
     );
 
     // 创建相机
@@ -37,8 +37,11 @@ export class SceneManager {
     this.camera.position.set(100, 100, 100);
     this.camera.lookAt(0, 0, 0);
 
-    // 创建渲染器
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
+    // 创建渲染器（启用 preserveDrawingBuffer 以支持 PNG 导出截图）
+    this.renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      preserveDrawingBuffer: true,
+    });
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.shadowMap.enabled = true;
@@ -52,7 +55,12 @@ export class SceneManager {
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.05;
 
-    return { scene: this.scene, camera: this.camera, renderer: this.renderer, controls: this.controls };
+    return {
+      scene: this.scene,
+      camera: this.camera,
+      renderer: this.renderer,
+      controls: this.controls,
+    };
   }
 
   /**
@@ -60,10 +68,10 @@ export class SceneManager {
    */
   resize() {
     if (!this.camera || !this.renderer || !this.container) return;
-    
+
     const width = this.container.clientWidth;
     const height = this.container.clientHeight;
-    
+
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height);
@@ -104,12 +112,12 @@ export class SceneManager {
       }
     });
 
-    toRemove.forEach(child => {
+    toRemove.forEach((child) => {
       this.scene.remove(child);
       if (child.geometry) child.geometry.dispose();
       if (child.material) {
         if (Array.isArray(child.material)) {
-          child.material.forEach(m => m.dispose());
+          child.material.forEach((m) => m.dispose());
         } else {
           child.material.dispose();
         }

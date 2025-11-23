@@ -80,13 +80,6 @@ class ExportManager {
         </svg>
         <span>Export 3D Model (GLB)</span>
       </button>
-      <button class="download-option" data-format="svg">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="16 18 22 12 16 6"/>
-          <polyline points="8 6 2 12 8 18"/>
-        </svg>
-        <span>Export SVG</span>
-      </button>
     `;
 
     // 先添加到 DOM 以获取菜单高度
@@ -142,9 +135,6 @@ class ExportManager {
           break;
         case 'glb':
           this.exportGLB();
-          break;
-        case 'svg':
-          this.exportSVG(roadNetData);
           break;
         default:
           console.warn('Unknown format:', format);

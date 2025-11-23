@@ -74,6 +74,13 @@ class Renderer3D {
 
     // 配置（用于兼容）
     this.config = { layerHeight: Renderer3DConfig.layerHeight };
+
+    // 视角轴辅助
+    this.axisScene = null;
+    this.axisCamera = null;
+    this.axisRoot = null;
+    this.axisSize = 96;
+    this.axisMargin = 16;
   }
 
   /**
@@ -118,6 +125,9 @@ class Renderer3D {
       // 初始化性能监控
       this.statsManager = new StatsManager(container);
       this.stats = this.statsManager.init();
+
+      // 初始化视角轴辅助
+      this._initAxisGizmo();
 
       // 绑定事件
       this.bindEvents();
@@ -177,6 +187,151 @@ class Renderer3D {
     console.log('✅ 3D道路网络渲染完成');
   }
 
+  // 初始化右下角视角轴辅助
+  _initAxisGizmo() {
+    try {
+      this.axisScene = new THREE.Scene();
+      this.axisCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 10);
+      this.axisCamera.position.set(0, 0, 3);
+      this.axisCamera.lookAt(0, 0, 0);
+
+      this.axisRoot = new THREE.Object3D();
+      this.axisScene.add(this.axisRoot);
+
+      const axisLength = 1.4;
+      const axisRadius = 0.06;
+
+      const xMaterial = new THREE.MeshBasicMaterial({ color: 0xff4b6a });
+      const yMaterial = new THREE.MeshBasicMaterial({ color: 0x6bff6a });
+      const zMaterial = new THREE.MeshBasicMaterial({ color: 0x4a8bff });
+      const originMaterial = new THREE.MeshBasicMaterial({ color: 0x808080 });
+
+      const sphereGeo = new THREE.SphereGeometry(axisRadius, 16, 16);
+
+      // 原点
+      const origin = new THREE.Mesh(sphereGeo, originMaterial);
+      this.axisRoot.add(origin);
+
+      const createAxis = (dir, material, labelColor) => {
+        const group = new THREE.Group();
+        const cylGeo = new THREE.CylinderGeometry(
+          axisRadius * 0.6,
+          axisRadius * 0.6,
+          axisLength,
+          8,
+        );
+        const cyl = new THREE.Mesh(cylGeo, material);
+        cyl.position.y = axisLength / 2;
+        group.add(cyl);
+
+        const sphere = new THREE.Mesh(sphereGeo, material);
+        sphere.position.y = axisLength;
+        group.add(sphere);
+
+        // 轴标签：放在轴末端稍远一点
+        const label = this._createAxisLabel(dir.toUpperCase(), labelColor);
+        label.position.y = axisLength + axisLength * 0.25;
+        group.add(label);
+
+        if (dir === 'x') {
+          group.rotation.z = -Math.PI / 2;
+        } else if (dir === 'z') {
+          group.rotation.x = Math.PI / 2;
+        }
+
+        this.axisRoot.add(group);
+      };
+
+      // 颜色约定：X-红、Y-绿、Z-蓝
+      createAxis('x', xMaterial, '#ff4b6a');
+      createAxis('y', yMaterial, '#6bff6a');
+      createAxis('z', zMaterial, '#4a8bff');
+    } catch (e) {
+      // TODO: 确认此逻辑
+      console.warn('视角轴辅助初始化失败', e);
+      this.axisScene = null;
+      this.axisCamera = null;
+      this.axisRoot = null;
+    }
+  }
+
+  // 创建轴标签 Sprite，用于在视角轴末端标记 X/Y/Z
+  _createAxisLabel(letter, colorHex) {
+    try {
+      if (typeof document === 'undefined') {
+        return new THREE.Object3D();
+      }
+
+      const size = 128;
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return new THREE.Object3D();
+
+      ctx.clearRect(0, 0, size, size);
+      ctx.fillStyle = 'rgba(0,0,0,0)';
+      ctx.fillRect(0, 0, size, size);
+
+      ctx.font =
+        'bold 72px system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = colorHex || '#ffffff';
+      ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+      ctx.lineWidth = 6;
+      ctx.strokeText(letter, size / 2, size / 2);
+      ctx.fillText(letter, size / 2, size / 2);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.anisotropy = 2;
+      const material = new THREE.SpriteMaterial({
+        map: texture,
+        transparent: true,
+        depthTest: false,
+      });
+      const sprite = new THREE.Sprite(material);
+      const s = 0.7;
+      sprite.scale.set(s, s, s);
+      return sprite;
+    } catch (e) {
+      // TODO: 确认此逻辑
+      return new THREE.Object3D();
+    }
+  }
+
+  // 渲染右下角视角轴
+  _renderAxisGizmo() {
+    if (
+      !this.axisScene ||
+      !this.axisCamera ||
+      !this.axisRoot ||
+      !this.renderer ||
+      !this.camera
+    )
+      return;
+
+    // 同步相机朝向：旋转坐标轴根节点，使其反映主相机视角
+    this.axisRoot.quaternion.copy(this.camera.quaternion).invert();
+
+    const size = new THREE.Vector2();
+    this.renderer.getSize(size);
+    const axisSize = this.axisSize || 96;
+    const margin = this.axisMargin || 16;
+
+    const x = size.x - axisSize - margin;
+    const y = margin;
+
+    // 清除深度后在同一帧内叠加渲染小场景
+    this.renderer.clearDepth();
+    this.renderer.setScissorTest(true);
+    this.renderer.setViewport(x, y, axisSize, axisSize);
+    this.renderer.setScissor(x, y, axisSize, axisSize);
+    this.renderer.render(this.axisScene, this.axisCamera);
+    this.renderer.setScissorTest(false);
+    this.renderer.setViewport(0, 0, size.x, size.y);
+  }
+
   /**
    * 动画循环
    */
@@ -191,6 +346,9 @@ class Renderer3D {
     this.animationController.update(performance.now());
 
     this.postProcessing.render();
+
+    // 渲染右下角视角轴
+    this._renderAxisGizmo();
 
     this.statsManager.end();
   }
