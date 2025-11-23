@@ -164,6 +164,11 @@ class WorkerManager {
           }
           break;
 
+        case 'WORKER_READY':
+          // Worker 初始化完成 / 模块加载成功的通知，仅用于调试
+          console.log('🧩 Worker reported ready:', e.data && e.data.message);
+          break;
+
         default:
           console.warn('Unknown message type from worker:', type);
       }

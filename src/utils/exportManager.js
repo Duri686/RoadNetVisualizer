@@ -9,6 +9,7 @@ import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 class ExportManager {
   constructor() {
     this.downloadBtn = null;
+    this._initialized = false;
     // 延迟初始化，等待 DOM 加载
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => this.init());
@@ -21,6 +22,7 @@ class ExportManager {
    * 初始化
    */
   init() {
+    if (this._initialized) return;
     this.downloadBtn = document.getElementById('download-btn');
     this.setupEventListeners();
   }
@@ -29,7 +31,8 @@ class ExportManager {
    * 设置事件监听
    */
   setupEventListeners() {
-    if (this.downloadBtn) {
+    if (this.downloadBtn && !this._initialized) {
+      this._initialized = true;
       this.downloadBtn.addEventListener('click', () => {
         this.showDownloadOptions();
       });
@@ -88,11 +91,11 @@ class ExportManager {
 
     // 先添加到 DOM 以获取菜单高度
     document.body.appendChild(menu);
-    
+
     // 定位菜单到按钮上方
     const btnRect = this.downloadBtn.getBoundingClientRect();
     const menuHeight = menu.offsetHeight;
-    
+
     menu.style.position = 'absolute';
     menu.style.top = `${btnRect.top - menuHeight - 8}px`;
     menu.style.left = `${btnRect.left}px`;

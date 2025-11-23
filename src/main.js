@@ -14,6 +14,9 @@ import exportManager from './utils/exportManager.js';
 import UIManager from './managers/UIManager.js';
 import AppEventManager from './managers/AppEventManager.js';
 import GenerationManager from './managers/GenerationManager.js';
+import './ui/components/OperationPanelElement.js';
+import './ui/components/VisualizationPanelElement.js';
+import './ui/components/InterpretationPanelElement.js';
 
 // #TODO: 添加错误边界处理
 // #TODO: 添加性能监控

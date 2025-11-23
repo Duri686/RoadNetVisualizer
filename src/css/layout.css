@@ -39,6 +39,14 @@
   overflow: hidden;
 }
 
+/* 可视化面板根组件：作为 flex 容器撑满中栏高度 */
+.visualization-panel > rn-visualization-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 /* 右栏：解读面板 (Interpretation Panel) */
 .interpretation-panel {
   flex: 0 0 320px;
@@ -108,7 +116,9 @@
   }
 
   /* 去除底部留白，画布可贴近底部 */
-  .container { padding-bottom: 0; }
+  .container {
+    padding-bottom: 0;
+  }
 
   /* 显示移动端Tab */
   #mobile-tabs {
@@ -135,7 +145,7 @@
     cursor: pointer;
   }
 
-  #mobile-tabs .tab-btn[aria-selected="true"] {
+  #mobile-tabs .tab-btn[aria-selected='true'] {
     background: var(--primary-color);
     color: var(--text-white);
     border-color: var(--primary-color);

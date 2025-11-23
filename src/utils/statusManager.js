@@ -5,14 +5,20 @@
 
 class StatusManager {
   constructor() {
-    this.statusElement = document.getElementById('status-message');
+    this.statusElement = null;
     this.statusValueElement = null;
     this.statusHintElement = null;
-    
-    if (this.statusElement) {
-      this.statusValueElement = this.statusElement.querySelector('.status-value');
-      this.statusHintElement = this.statusElement.querySelector('.status-hint');
-    }
+    this.init();
+  }
+
+  init() {
+    this.statusElement = document.getElementById('status-message');
+    this.statusValueElement = this.statusElement
+      ? this.statusElement.querySelector('.status-value')
+      : null;
+    this.statusHintElement = this.statusElement
+      ? this.statusElement.querySelector('.status-hint')
+      : null;
   }
 
   /**

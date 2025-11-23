@@ -6,6 +6,12 @@
 class ShareManager {
   constructor() {
     this.shareBtn = document.getElementById('share-btn');
+    this._initialized = false;
+    this.setupEventListeners();
+  }
+
+  init() {
+    this.shareBtn = document.getElementById('share-btn');
     this.setupEventListeners();
   }
 
@@ -13,7 +19,8 @@ class ShareManager {
    * 设置事件监听
    */
   setupEventListeners() {
-    if (this.shareBtn) {
+    if (this.shareBtn && !this._initialized) {
+      this._initialized = true;
       this.shareBtn.addEventListener('click', () => {
         this.handleShare();
       });
@@ -27,10 +34,10 @@ class ShareManager {
     try {
       const params = this.getCurrentParams();
       const shareUrl = this.generateShareUrl(params);
-      
+
       // 复制到剪贴板
       this.copyToClipboard(shareUrl);
-      
+
       // 显示分享链接
       this.showShareDialog(shareUrl);
     } catch (error) {
@@ -52,7 +59,7 @@ class ShareManager {
 
     // 获取选中的模式
     const modeOptions = document.querySelectorAll('.mode-option:checked');
-    const modes = Array.from(modeOptions).map(opt => opt.dataset.value);
+    const modes = Array.from(modeOptions).map((opt) => opt.dataset.value);
 
     return {
       width: widthInput?.value || '500',
@@ -61,7 +68,7 @@ class ShareManager {
       obstacles: obstacleInput?.value || '200',
       modes: modes.join(','),
       spatialIndex: useSpatialIndex?.checked ? '1' : '0',
-      cellSize: cellSizeInput?.value || 'auto'
+      cellSize: cellSizeInput?.value || 'auto',
     };
   }
 
@@ -133,7 +140,9 @@ class ShareManager {
           <div class="share-params">
             <strong>当前配置：</strong>
             <ul>
-              <li>尺寸: ${this.getCurrentParams().width} × ${this.getCurrentParams().height}</li>
+              <li>尺寸: ${this.getCurrentParams().width} × ${
+      this.getCurrentParams().height
+    }</li>
               <li>层数: ${this.getCurrentParams().layers}</li>
               <li>障碍物: ${this.getCurrentParams().obstacles}</li>
               <li>模式: ${this.getCurrentParams().modes || '质心网络'}</li>
@@ -179,7 +188,7 @@ class ShareManager {
    */
   loadFromUrl() {
     const params = new URLSearchParams(window.location.search);
-    
+
     if (params.toString() === '') return false;
 
     try {
@@ -191,20 +200,25 @@ class ShareManager {
       const useSpatialIndex = document.getElementById('use-spatial-index');
       const cellSizeInput = document.getElementById('cell-size-input');
 
-      if (params.has('width') && widthInput) widthInput.value = params.get('width');
-      if (params.has('height') && heightInput) heightInput.value = params.get('height');
-      if (params.has('layers') && layerInput) layerInput.value = params.get('layers');
-      if (params.has('obstacles') && obstacleInput) obstacleInput.value = params.get('obstacles');
+      if (params.has('width') && widthInput)
+        widthInput.value = params.get('width');
+      if (params.has('height') && heightInput)
+        heightInput.value = params.get('height');
+      if (params.has('layers') && layerInput)
+        layerInput.value = params.get('layers');
+      if (params.has('obstacles') && obstacleInput)
+        obstacleInput.value = params.get('obstacles');
       if (params.has('spatialIndex') && useSpatialIndex) {
         useSpatialIndex.checked = params.get('spatialIndex') === '1';
       }
-      if (params.has('cellSize') && cellSizeInput) cellSizeInput.value = params.get('cellSize');
+      if (params.has('cellSize') && cellSizeInput)
+        cellSizeInput.value = params.get('cellSize');
 
       // 设置模式
       if (params.has('modes')) {
         const modes = params.get('modes').split(',');
         const modeOptions = document.querySelectorAll('.mode-option');
-        modeOptions.forEach(opt => {
+        modeOptions.forEach((opt) => {
           opt.checked = modes.includes(opt.dataset.value);
         });
       }
