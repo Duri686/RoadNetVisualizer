@@ -9,6 +9,7 @@ import {
 } from '../../../utils/obstacleGeneration.js';
 import { buildLayer } from '../layer/layerBuilder.js';
 import { generateStairsElevatorsFromConnectors } from './verticalConnector.js';
+import { NavConfig } from '../../../config/NavConfig.js';
 
 /**
  * 预计算连接器位置（楼梯/电梯）
@@ -50,11 +51,25 @@ function buildConnectorAvoidZones(connectors) {
     return zones;
   }
 
-  const shaftRadius = 17; // 竖井中心避让半径
-  const accessRadius = 25; // access 入口周围避让半径
-  const corridorLength = 60; // 通道总长度
-  const corridorStep = 20; // 采样步长：20 -> 40 -> 60
-  const corridorRadius = 25; // 通道半宽
+  const corridorCfg = (NavConfig && NavConfig.corridor) || {};
+  const corridorEnabled = corridorCfg.enabled !== false;
+
+  if (!corridorEnabled) {
+    return zones;
+  }
+
+  const shaftRadius =
+    typeof corridorCfg.shaftRadius === 'number' ? corridorCfg.shaftRadius : 17; // 竖井中心避让半径
+  const accessRadius =
+    typeof corridorCfg.accessRadius === 'number'
+      ? corridorCfg.accessRadius
+      : 25; // access 入口周围避让半径
+  const corridorLength =
+    typeof corridorCfg.length === 'number' ? corridorCfg.length : 60; // 通道总长度
+  const corridorStep =
+    typeof corridorCfg.step === 'number' ? corridorCfg.step : 20; // 采样步长
+  const corridorRadius =
+    typeof corridorCfg.halfWidth === 'number' ? corridorCfg.halfWidth : 25; // 通道半宽
 
   for (let i = 0; i < connectors.length; i++) {
     const c = connectors[i];
@@ -82,6 +97,46 @@ function buildConnectorAvoidZones(connectors) {
   }
 
   return zones;
+}
+
+// 诊断：检查给定楼层障碍物是否与通道避让区域发生交叉，用于定位通道被障碍覆盖的问题
+function logCorridorCollisions(layerIdx, obstacles, connectors) {
+  const diag = NavConfig && NavConfig.diagnostics;
+  if (!diag || !diag.checkCorridorCollisions) return;
+  if (!Array.isArray(obstacles) || obstacles.length === 0) return;
+  if (!Array.isArray(connectors) || connectors.length === 0) return;
+
+  const zones = buildConnectorAvoidZones(connectors);
+  if (!zones.length) return;
+
+  // 与 generateObstacles 中 avoidZones 相同的 AABB 相交判定，保证诊断与生成逻辑一致
+  for (let zi = 0; zi < zones.length; zi++) {
+    const zone = zones[zi];
+    const zr = zone.radius || 10;
+    const zL = zone.x - zr;
+    const zR = zone.x + zr;
+    const zT = zone.y - zr;
+    const zB = zone.y + zr;
+
+    for (let oi = 0; oi < obstacles.length; oi++) {
+      const obs = obstacles[oi];
+      const aL = obs.x;
+      const aR = obs.x + obs.w;
+      const aT = obs.y;
+      const aB = obs.y + obs.h;
+
+      if (!(aR < zL || zR < aL || aB < zT || zB < aT)) {
+        console.warn(
+          `[Corridor] Layer ${layerIdx}: obstacle ${
+            obs.id ?? oi
+          } intersects corridor zone (x=${zone.x.toFixed(
+            1,
+          )}, y=${zone.y.toFixed(1)}, r=${zr})`,
+        );
+        break;
+      }
+    }
+  }
 }
 
 /**
@@ -134,6 +189,9 @@ export function buildLayers(
   const layers = [];
   let baseZones = null;
 
+  const corridorCfg = (NavConfig && NavConfig.corridor) || {};
+  const useCorridorAvoid = corridorCfg.enabled !== false;
+
   // 1. 预计算连接器位置
   const connectors = preCalculateConnectors(width, height, layerCount, options);
 
@@ -141,11 +199,11 @@ export function buildLayers(
   for (let i = 0; i < layerCount; i++) {
     let layerObstacles;
 
-    // 如果是第一层且提供了初始障碍物，直接使用
-    if (i === 0 && initialObstacles) {
+    // 当启用通道避障时，所有楼层统一使用带 avoidZones 的生成逻辑；
+    // 仅在关闭通道避障且提供 initialObstacles 时，才复用 L0 原始障碍物。
+    if (!useCorridorAvoid && i === 0 && initialObstacles) {
       layerObstacles = initialObstacles;
     } else {
-      // 其他层（或未提供初始障碍物）则重新生成
       layerObstacles = generateLayerObstacles(
         width,
         height,
@@ -155,6 +213,9 @@ export function buildLayers(
         options,
       );
     }
+
+    // 诊断：检查当前楼层通道是否被障碍物覆盖
+    logCorridorCollisions(i, layerObstacles, connectors);
 
     // 准备固定点（Access Nodes）
     const fixedPoints = connectors.map((c, idx) => ({

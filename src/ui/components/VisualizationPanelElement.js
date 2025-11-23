@@ -80,7 +80,7 @@ class VisualizationPanelElement extends HTMLElement {
           <div id="pixi-canvas"></div>
           <div class="canvas-hint">
             <p id="canvas-hint-text">
-              💡 鼠标滚轮缩放，拖拽平移，点击节点进行路径规划
+              💡 单击选择起点/终点自动导航；导航中双击结束导航；鼠标滚轮缩放，拖拽平移
             </p>
           </div>
         </div>

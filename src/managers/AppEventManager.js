@@ -4,6 +4,7 @@
  */
 import { findPathAStar } from '../utils/pathfinding.js';
 import { smoothPathVisibility } from '../utils/pathSmoothing.js';
+import { NavConfig } from '../config/NavConfig.js';
 
 export default class AppEventManager {
   constructor(app) {
@@ -154,19 +155,22 @@ export default class AppEventManager {
         const currLayer = path[i].layer || 0;
 
         if (prevLayer !== currLayer) {
-          // 楼层转换点：保留转换前后的节点，以及转换后的下一个节点
+          // 楼层转换点：保留转换前后的节点
           mandatoryIndices.add(i - 1); // 前一个节点（入口）
           mandatoryIndices.add(i); // 当前节点（出口）
 
-          // ✨ 关键修复：保护出口后的第一个节点，确保路径真正"走出"楼梯
-          if (i + 1 < path.length) {
+          const smoothCfg = (NavConfig && NavConfig.smoothing) || {};
+          const protectBuffer = smoothCfg.protectTransitionBuffer !== false;
+
+          // ✨ 关键修复：可配置地保护出口后的第一个节点，确保路径真正"走出"楼梯
+          if (protectBuffer && i + 1 < path.length) {
             mandatoryIndices.add(i + 1); // 出口后的第一个节点
             console.log(
               `[Path Smoothing] Marked mandatory waypoints: [${i - 1}] ${
                 path[i - 1].id
-              } (L${prevLayer}) -> [${i}] ${path[i].id} (L${currLayer}) -> [${
+              } (L${prevLayer}) -> [${i}] ${path[i].id} (L${currLayer}) -> [$
                 i + 1
-              }] ${path[i + 1].id} (buffer)`,
+              ] ${path[i + 1].id} (buffer)`,
             );
           } else {
             console.log(
@@ -183,16 +187,45 @@ export default class AppEventManager {
       const metadata = this.renderer.roadNetData.metadata || {};
       const layersData = this.renderer.roadNetData.layers || [];
 
+      const smoothCfg = (NavConfig && NavConfig.smoothing) || {};
+      const clearance =
+        typeof smoothCfg.clearance === 'number' ? smoothCfg.clearance : 2.0;
+      const maxLookaheadCfg =
+        typeof smoothCfg.maxLookahead === 'number'
+          ? smoothCfg.maxLookahead
+          : 100;
+      const turnPenaltyWeight =
+        typeof smoothCfg.turnPenaltyWeight === 'number'
+          ? smoothCfg.turnPenaltyWeight
+          : 8;
+      const timeBudgetMs =
+        typeof smoothCfg.timeBudgetMs === 'number' ? smoothCfg.timeBudgetMs : 0;
+
+      const usePerLayerObstacles = smoothCfg.useObstaclesByLayer !== false;
+
       // 按楼层组织障碍物，供平滑时按层选择
-      const obstaclesByLayer = new Map();
+      const obstaclesByLayer = usePerLayerObstacles ? new Map() : null;
       layersData.forEach((layerData, idx) => {
         if (!layerData) return;
         const layerIndex =
           typeof layerData.layerIndex === 'number' ? layerData.layerIndex : idx;
-        const layerObs = Array.isArray(layerData.obstacles)
-          ? layerData.obstacles
-          : [];
-        obstaclesByLayer.set(layerIndex, layerObs);
+        const hasLayerObs = Array.isArray(layerData.obstacles);
+        const layerObs = hasLayerObs ? layerData.obstacles : [];
+
+        if (obstaclesByLayer) {
+          obstaclesByLayer.set(layerIndex, layerObs);
+        }
+
+        if (
+          NavConfig &&
+          NavConfig.diagnostics &&
+          NavConfig.diagnostics.warnMissingLayerObstacles &&
+          (!hasLayerObs || layerObs.length === 0)
+        ) {
+          console.warn(
+            `[NavConfig] Layer ${layerIndex} has no per-layer obstacles; smoothing may fall back to global obstacles`,
+          );
+        }
       });
 
       try {
@@ -200,10 +233,11 @@ export default class AppEventManager {
           width: metadata.width || 0,
           height: metadata.height || 0,
           useSpatialIndex: true,
-          maxLookahead: 100,
-          clearance: 2.0,
+          maxLookahead: maxLookaheadCfg,
+          clearance,
+          timeBudgetMs,
           // 拐点惩罚权重：数值越大越偏好更少的折点
-          turnPenaltyWeight: 8,
+          turnPenaltyWeight,
           mandatoryWaypoints: mandatoryIndices, // 传递必须保留的节点索引
           obstaclesByLayer,
         });

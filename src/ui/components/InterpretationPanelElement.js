@@ -149,7 +149,7 @@ class InterpretationPanelElement extends HTMLElement {
               </div>
             </div>
             <div id="path-info" class="path-detail">
-              <p>💡 点击画布上的节点选择起点和终点，系统将自动计算最短路径</p>
+              <p>💡 单击画布上的节点选择起点和终点，系统将自动计算最短路径并启动 3D 导航模拟</p>
             </div>
           </div>
 
@@ -205,19 +205,19 @@ class InterpretationPanelElement extends HTMLElement {
               <div class="insight-item">
                 <span class="insight-icon">•</span>
                 <span class="insight-text">
-                  点击：第一次选择<strong>起点</strong>，第二次选择<strong>终点</strong>
+                  单击：第一次选择<strong>起点</strong>，第二次选择<strong>终点</strong>，自动开始 3D 导航
                 </span>
               </div>
               <div class="insight-item">
                 <span class="insight-icon">•</span>
                 <span class="insight-text">
-                  自动寻路：使用 A* 算法计算最短路径
+                  自动导航：使用 A* 算法计算最短路径并驱动 3D 模拟
                 </span>
               </div>
               <div class="insight-item">
                 <span class="insight-icon">•</span>
                 <span class="insight-text">
-                  鼠标滚轮：缩放画布；拖拽：平移视图
+                  双击：在导航过程中结束当前导航并回到选点模式；鼠标滚轮缩放，拖拽平移视图
                 </span>
               </div>
             </div>
