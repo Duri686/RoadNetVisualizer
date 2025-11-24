@@ -36,7 +36,8 @@
 .input-section,
 .canvas-container,
 .control-panel .panel-header {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease;
   backdrop-filter: var(--backdrop-blur);
   -webkit-backdrop-filter: var(--backdrop-blur);
 }
@@ -337,11 +338,11 @@ html {
   filter: drop-shadow(0 0 5px var(--primary-color));
 }
 
-.legend-eye[aria-pressed="true"]::after {
-  content: "";
+.legend-eye[aria-pressed='true']::after {
+  content: '';
   position: absolute;
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   background: var(--primary-color);
   border-radius: 50%;
 }

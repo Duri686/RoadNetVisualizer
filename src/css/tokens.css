@@ -43,8 +43,8 @@
   --viz-start-point: #07996f; /* 绿色 - 起点 (参考图1) */
   --viz-end-point: #ef4444; /* 红色 - 终点 */
   --viz-path: #f59e0b; /* 黄色 - 路径 */
-  --viz-network-edge: #0ea5e9; /* 天蓝 - 网络边 */
-  --viz-obstacle: #a855f7; /* 紫色 - 障碍物 (参考图3) */
+  --viz-network-edge: #1948b3; /* 天蓝 - 网络边 */
+  --viz-obstacle: #902c30; /* 紫色 - 障碍物 (参考图3) */
   --viz-voronoi: #22d3ee; /* 青色 - Voronoi */
   --viz-canvas-bg: #020617; /* 深空黑 - 画布背景 */
 

@@ -36,12 +36,12 @@ class InterpretationPanelElement extends HTMLElement {
          bg-[var(--bg-input)] text-[var(--text-secondary)]
          inline-flex items-center justify-center transition-all
          hover:text-[var(--text-primary)] hover:border-[var(--text-muted)]
-         aria-[pressed=true]:border-[var(--primary-color)]
+         aria-[pressed=true]:border-[var(--border-input)]
          aria-[pressed=true]:bg-[var(--bg-input)]
          aria-[pressed=true]:text-[var(--primary-color)]
-         aria-[pressed=true]:shadow-[0_0_0_2px_var(--primary-color)/20]" aria-pressed="true" aria-checked="true" role="switch" title="显示/隐藏">
-                  <span class="hidden aria-[pressed=true]:inline text-[10px]">👁</span>
-                  <span class="hidden aria-[pressed=false]:inline text-[10px]">✕</span>
+         aria-[pressed=true]:shadow-[0_0_0_2px_var(--primary-color)/20]
+         aria-[pressed=true]:[&_.indicator]:opacity-100" aria-pressed="true" aria-checked="true" role="switch" title="显示/隐藏">
+                  <span class="indicator w-2 h-2 rounded-full bg-[var(--primary-color)] opacity-0 transition-opacity"></span>
                 </button>
                 <span class="legend-icon obstacle-icon inline-block w-3 h-3 rounded-[2px] bg-[var(--viz-obstacle)] border border-[var(--viz-obstacle)] shadow-[0_0_8px_var(--viz-obstacle)]" aria-hidden="true"></span>
                 <span class="legend-label flex-1 text-[13px] text-[var(--text-secondary)] font-medium">障碍物</span>
@@ -51,12 +51,12 @@ class InterpretationPanelElement extends HTMLElement {
          bg-[var(--bg-input)] text-[var(--text-secondary)]
          inline-flex items-center justify-center transition-all
          hover:text-[var(--text-primary)] hover:border-[var(--text-muted)]
-         aria-[pressed=true]:border-[var(--primary-color)]
+         aria-[pressed=true]:border-[var(--border-input)]
          aria-[pressed=true]:bg-[var(--bg-input)]
          aria-[pressed=true]:text-[var(--primary-color)]
-         aria-[pressed=true]:shadow-[0_0_0_2px_var(--primary-color)/20]" aria-pressed="true" aria-checked="true" role="switch" title="显示/隐藏">
-                  <span class="hidden aria-[pressed=true]:inline text-[10px]">👁</span>
-                  <span class="hidden aria-[pressed=false]:inline text-[10px]">✕</span>
+         aria-[pressed=true]:shadow-[0_0_0_2px_var(--primary-color)/20]
+         aria-[pressed=true]:[&_.indicator]:opacity-100" aria-pressed="true" aria-checked="true" role="switch" title="显示/隐藏">
+                  <span class="indicator w-2 h-2 rounded-full bg-[var(--primary-color)] opacity-0 transition-opacity"></span>
                 </button>
                 <span class="legend-icon node-icon inline-block w-2.5 h-2.5 rounded-full bg-[var(--viz-network-edge)] shadow-[0_0_6px_var(--viz-network-edge)]" aria-hidden="true"></span>
                 <span class="legend-label flex-1 text-[13px] text-[var(--text-secondary)] font-medium">网络节点</span>
@@ -66,12 +66,12 @@ class InterpretationPanelElement extends HTMLElement {
          bg-[var(--bg-input)] text-[var(--text-secondary)]
          inline-flex items-center justify-center transition-all
          hover:text-[var(--text-primary)] hover:border-[var(--text-muted)]
-         aria-[pressed=true]:border-[var(--primary-color)]
+         aria-[pressed=true]:border-[var(--border-input)]
          aria-[pressed=true]:bg-[var(--bg-input)]
          aria-[pressed=true]:text-[var(--primary-color)]
-         aria-[pressed=true]:shadow-[0_0_0_2px_var(--primary-color)/20]" aria-pressed="true" aria-checked="true" role="switch" title="显示/隐藏">
-                  <span class="hidden aria-[pressed=true]:inline text-[10px]">👁</span>
-                  <span class="hidden aria-[pressed=false]:inline text-[10px]">✕</span>
+         aria-[pressed=true]:shadow-[0_0_0_2px_var(--primary-color)/20]
+         aria-[pressed=true]:[&_.indicator]:opacity-100" aria-pressed="true" aria-checked="true" role="switch" title="显示/隐藏">
+                  <span class="indicator w-2 h-2 rounded-full bg-[var(--primary-color)] opacity-0 transition-opacity"></span>
                 </button>
                 <span class="legend-icon edge-icon inline-block w-4 h-0.5 rounded-[2px] bg-[var(--viz-network-edge)] shadow-[0_0_4px_var(--viz-network-edge)]" aria-hidden="true"></span>
                 <span class="legend-label flex-1 text-[13px] text-[var(--text-secondary)] font-medium">网络边</span>
@@ -81,12 +81,12 @@ class InterpretationPanelElement extends HTMLElement {
          bg-[var(--bg-input)] text-[var(--text-secondary)]
          inline-flex items-center justify-center transition-all
          hover:text-[var(--text-primary)] hover:border-[var(--text-muted)]
-         aria-[pressed=true]:border-[var(--primary-color)]
+         aria-[pressed=true]:border-[var(--border-input)]
          aria-[pressed=true]:bg-[var(--bg-input)]
          aria-[pressed=true]:text-[var(--primary-color)]
-         aria-[pressed=true]:shadow-[0_0_0_2px_var(--primary-color)/20]" aria-pressed="true" aria-checked="true" role="switch" title="显示/隐藏">
-                  <span class="hidden aria-[pressed=true]:inline text-[10px]">👁</span>
-                  <span class="hidden aria-[pressed=false]:inline text-[10px]">✕</span>
+         aria-[pressed=true]:shadow-[0_0_0_2px_var(--primary-color)/20]
+         aria-[pressed=true]:[&_.indicator]:opacity-100" aria-pressed="true" aria-checked="true" role="switch" title="显示/隐藏">
+                  <span class="indicator w-2 h-2 rounded-full bg-[var(--primary-color)] opacity-0 transition-opacity"></span>
                 </button>
                 <span class="legend-icon base-icon inline-block w-4 h-0.5 opacity-40" style="background-image:repeating-linear-gradient(to right, var(--text-muted), var(--text-muted) 2px, transparent 2px, transparent 4px)" aria-hidden="true"></span>
                 <span class="legend-label flex-1 text-[13px] text-[var(--text-secondary)] font-medium">基础三角化</span>
@@ -96,12 +96,12 @@ class InterpretationPanelElement extends HTMLElement {
          bg-[var(--bg-input)] text-[var(--text-secondary)]
          inline-flex items-center justify-center transition-all
          hover:text-[var(--text-primary)] hover:border-[var(--text-muted)]
-         aria-[pressed=true]:border-[var(--primary-color)]
+         aria-[pressed=true]:border-[var(--border-input)]
          aria-[pressed=true]:bg-[var(--bg-input)]
          aria-[pressed=true]:text-[var(--primary-color)]
-         aria-[pressed=true]:shadow-[0_0_0_2px_var(--primary-color)/20]" aria-pressed="true" aria-checked="true" role="switch" title="显示/隐藏">
-                  <span class="hidden aria-[pressed=true]:inline text-[10px]">👁</span>
-                  <span class="hidden aria-[pressed=false]:inline text-[10px]">✕</span>
+         aria-[pressed=true]:shadow-[0_0_0_2px_var(--primary-color)/20]
+         aria-[pressed=true]:[&_.indicator]:opacity-100" aria-pressed="true" aria-checked="true" role="switch" title="显示/隐藏">
+                  <span class="indicator w-2 h-2 rounded-full bg-[var(--primary-color)] opacity-0 transition-opacity"></span>
                 </button>
                 <span class="legend-icon voronoi-icon inline-block w-4 h-0.5 rounded-[2px] bg-[var(--viz-voronoi)] shadow-[0_0_4px_var(--viz-voronoi)]" aria-hidden="true"></span>
                 <span class="legend-label flex-1 text-[13px] text-[var(--text-secondary)] font-medium">Voronoi 骨架</span>
@@ -126,7 +126,7 @@ class InterpretationPanelElement extends HTMLElement {
             </div>
           </div>
 
-          <div class="interpretation-card glass-panel rounded-[var(--radius-xl)] p-[var(--space-xl)] px-[var(--space-lg)]" id="path-card">
+          <div class="interpretation-card glass-panel rounded-[var(--radius-xl)] p-[var(--space-xl)] px-[var(--space-lg)] group" id="path-card">
             <div class="card-header-row flex items-center justify-between gap-[var(--space-md)] pb-[var(--space-md)] border-b border-[var(--border-light)] mb-[var(--space-md)]">
               <h3 class="text-[15px] font-bold text-[var(--accent-color)] uppercase tracking-wider flex items-center gap-2 m-0">
                 <span class="w-1 h-4 bg-[var(--accent-color)] rounded-full"></span>
@@ -149,15 +149,15 @@ class InterpretationPanelElement extends HTMLElement {
                 </button>
                 <button
                   id="path-collapse-btn"
-                  class="btn-icon w-7 h-7 inline-flex items-center justify-center text-[var(--text-muted)] rounded-[var(--radius-md)] hover:bg-[var(--bg-input-hover)] transition"
+                  class="btn-icon w-7 h-7 inline-flex items-center justify-center text-[var(--text-muted)] rounded-[var(--radius-md)] hover:bg-[var(--bg-input-hover)] transition group"
                   title="折叠/展开"
                   aria-expanded="true"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                  <svg class="transition-transform group-aria-[expanded=false]:-rotate-90" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
                 </button>
               </div>
             </div>
-            <div id="path-stats" class="stats-grid grid grid-cols-2 gap-[var(--space-md)]">
+            <div id="path-stats" class="stats-grid grid grid-cols-2 gap-[var(--space-md)] group-[.collapsed]:hidden">
               <div class="stat-item col-span-2 bg-[var(--bg-input)] rounded-[var(--radius-md)] p-3 border border-[var(--border-input)]">
                 <span class="stat-label block text-[11px] text-[var(--text-muted)] uppercase tracking-wider mb-1">当前状态</span>
                 <span class="stat-value block text-[16px] text-[var(--primary-color)] font-bold truncate" id="path-status">等待选择...</span>
@@ -179,7 +179,7 @@ class InterpretationPanelElement extends HTMLElement {
                 <span class="stat-value block text-[20px] text-[var(--text-primary)] font-mono font-medium tracking-tight" id="path-smooth-ms">--</span>
               </div>
             </div>
-            <div id="path-info" class="path-detail mt-[var(--space-md)] p-[var(--space-md)] bg-[rgba(59,130,246,0.05)] rounded-[var(--radius-md)] border border-[rgba(59,130,246,0.1)] text-[12px] text-[var(--text-secondary)] leading-[1.6] flex gap-2">
+            <div id="path-info" class="path-detail mt-[var(--space-md)] p-[var(--space-md)] bg-[rgba(59,130,246,0.05)] rounded-[var(--radius-md)] border border-[rgba(59,130,246,0.1)] text-[12px] text-[var(--text-secondary)] leading-[1.6] flex gap-2 group-[.collapsed]:hidden">
               <span class="text-[var(--info-color)]">💡</span>
               <p class="m-0">左键点击节点设置起点/终点，系统将自动计算最短路径。</p>
             </div>

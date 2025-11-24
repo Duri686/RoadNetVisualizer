@@ -12,7 +12,6 @@
         bottom: 32px;
         left: 50%;
         transform: translateX(-50%);
-        display: inline-flex;
         align-items: center;
         gap: 10px;
         padding: 8px 14px;
@@ -81,33 +80,33 @@
         id="mobile-tabs"
         aria-label="主模块切换"
         role="tablist"
-        class="lg:hidden sticky top-2 z-50 mb-2 flex gap-2 p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-light)] shadow-[var(--shadow-sm)] backdrop-blur"
+        class="lg:hidden sticky top-2 z-50 mb-2 flex gap-2 p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-light)] shadow-[var(--shadow-sm)] backdrop-blur peer-checked/vis:[&_.tab-vis]:!bg-[var(--primary-color)] peer-checked/vis:[&_.tab-vis]:!text-[var(--text-white)] peer-checked/vis:[&_.tab-vis]:!border-[var(--primary-color)] peer-checked/op:[&_.tab-op]:!bg-[var(--primary-color)] peer-checked/op:[&_.tab-op]:!text-[var(--text-white)] peer-checked/op:[&_.tab-op]:!border-[var(--primary-color)] peer-checked/int:[&_.tab-int]:!bg-[var(--primary-color)] peer-checked/int:[&_.tab-int]:!text-[var(--text-white)] peer-checked/int:[&_.tab-int]:!border-[var(--primary-color)]"
       >
         <label
           for="tab-visualization"
           role="tab"
-          class="flex-1 text-center px-3 py-2 text-sm rounded-md border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-secondary)] hover:bg-[var(--bg-input-hover)] hover:text-[var(--text-primary)] cursor-pointer peer-checked/vis:bg-[var(--primary-color)] peer-checked/vis:text-[var(--text-white)] peer-checked/vis:border-[var(--primary-color)]"
+          class="tab-vis flex-1 text-center px-3 py-2 text-sm rounded-md border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-secondary)] hover:bg-[var(--bg-input-hover)] hover:text-[var(--text-primary)] cursor-pointer"
         >
           地图
         </label>
         <label
           for="tab-operation"
           role="tab"
-          class="flex-1 text-center px-3 py-2 text-sm rounded-md border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-secondary)] hover:bg-[var(--bg-input-hover)] hover:text-[var(--text-primary)] cursor-pointer peer-checked/op:bg-[var(--primary-color)] peer-checked/op:text-[var(--text-white)] peer-checked/op:border-[var(--primary-color)]"
+          class="tab-op flex-1 text-center px-3 py-2 text-sm rounded-md border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-secondary)] hover:bg-[var(--bg-input-hover)] hover:text-[var(--text-primary)] cursor-pointer"
         >
           操作
         </label>
         <label
           for="tab-interpretation"
           role="tab"
-          class="flex-1 text-center px-3 py-2 text-sm rounded-md border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-secondary)] hover:bg-[var(--bg-input-hover)] hover:text-[var(--text-primary)] cursor-pointer peer-checked/int:bg-[var(--primary-color)] peer-checked/int:text-[var(--text-white)] peer-checked/int:border-[var(--primary-color)]"
+          class="tab-int flex-1 text-center px-3 py-2 text-sm rounded-md border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-secondary)] hover:bg-[var(--bg-input-hover)] hover:text-[var(--text-primary)] cursor-pointer"
         >
           解读
         </label>
       </nav>
       <!-- 左栏：操作面板 (Operation Panel) -->
       <section
-        class="operation-panel hidden lg:flex peer-checked/op:flex peer-checked/op:flex-1 flex-col min-w-[280px] max-w-[340px] min-h-0 overflow-y-auto lg:h-full"
+        class="operation-panel hidden pr-2 pt-[2px] lg:flex peer-checked/op:flex peer-checked/op:flex-1 flex-col min-w-[280px] max-w-[340px] min-h-0 overflow-y-auto lg:h-full"
       >
         <!-- Control Panel -->
         <rn-operation-panel></rn-operation-panel>
@@ -124,7 +123,7 @@
 
       <!-- 右栏：解读面板 (Interpretation Panel) -->
       <section
-        class="interpretation-panel hidden lg:flex peer-checked/int:flex peer-checked/int:flex-1 flex-col min-w-[280px] max-w-[340px] min-h-0 overflow-y-auto lg:h-full"
+        class="interpretation-panel hidden pr-2 pt-[2px] lg:flex peer-checked/int:flex peer-checked/int:flex-1 flex-col min-w-[280px] max-w-[340px] min-h-0 overflow-y-auto lg:h-full"
       >
         <rn-interpretation-panel></rn-interpretation-panel>
       </section>

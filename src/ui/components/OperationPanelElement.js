@@ -105,11 +105,17 @@ class OperationPanelElement extends HTMLElement {
 
             <div class="flex flex-col gap-[var(--space-sm)] mt-[var(--space-md)] pt-[var(--space-md)] border-t border-[var(--border-light)]">
               <label class="input-group-label flex items-center gap-[var(--space-sm)] cursor-pointer hover:text-[var(--text-primary)] transition-colors">
-                <input type="checkbox" id="static-cache" class="w-4 h-4 accent-[var(--primary-color)] cursor-pointer rounded bg-[var(--bg-input)] border-[var(--border-input)]" />
+                <input type="checkbox" id="static-cache" class="peer sr-only" />
+                <span class="w-4 h-4 rounded-[3px] border border-[var(--border-input)] bg-[var(--bg-input)] grid place-items-center transition-all  peer-checked:border-[var(--border-input)] peer-checked:[&_.indicator]:opacity-100">
+                  <span class="indicator w-2 h-2 rounded-[2px] bg-[var(--primary-color)] opacity-0 transition-opacity"></span>
+                </span>
                 <span class="text-[13px] text-[var(--text-secondary)]">启用静态层缓存</span>
               </label>
               <label class="input-group-label flex items-center gap-[var(--space-sm)] cursor-pointer hover:text-[var(--text-primary)] transition-colors">
-                <input type="checkbox" id="culling-enabled" checked class="w-4 h-4 accent-[var(--primary-color)] cursor-pointer rounded bg-[var(--bg-input)] border-[var(--border-input)]" />
+                <input type="checkbox" id="culling-enabled" checked class="peer sr-only" />
+                <span class="w-4 h-4 rounded-[3px] border border-[var(--border-input)] bg-[var(--bg-input)] grid place-items-center transition-all  peer-checked:border-[var(--border-input)] peer-checked:[&_.indicator]:opacity-100">
+                  <span class="indicator w-2 h-2 rounded-[2px] bg-[var(--primary-color)] opacity-0 transition-opacity"></span>
+                </span>
                 <span class="text-[13px] text-[var(--text-secondary)]">启用视窗裁剪</span>
               </label>
             </div>
@@ -123,28 +129,28 @@ class OperationPanelElement extends HTMLElement {
             <div class="mode-group flex flex-col gap-[var(--space-sm)] mb-[var(--space-md)]" id="mode-group">
               <label class="mode-item relative">
                 <input type="checkbox" name="mode-option" class="mode-option peer sr-only" data-value="centroid" checked />
-                <div class="flex items-center justify-between px-4 py-3 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-[var(--radius-md)] cursor-pointer transition-all peer-checked:bg-[rgba(59,130,246,0.1)] peer-checked:border-[var(--primary-color)] peer-checked:shadow-[0_0_12px_rgba(59,130,246,0.2)] hover:bg-[var(--bg-input-hover)]">
+                <div class="flex items-center justify-between px-4 py-3 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-[var(--radius-md)] cursor-pointer transition-all peer-checked:bg-[rgba(59,130,246,0.1)] peer-checked:border-[var(--primary-color)] peer-checked:shadow-[0_0_12px_rgba(59,130,246,0.2)] peer-checked:[&_.indicator]:opacity-100 hover:bg-[var(--bg-input-hover)]">
                   <span class="text-[14px] font-medium text-[var(--text-primary)]">质心网络</span>
                   <div class="w-4 h-4 rounded-full border border-[var(--text-muted)] peer-checked:border-[var(--primary-color)] peer-checked:bg-[var(--primary-color)] flex items-center justify-center">
-                    <svg class="w-2.5 h-2.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity" viewBox="0 0 12 12" fill="none"><path d="M10 3L4.5 8.5L2 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span class="indicator w-2 h-2 rounded-full bg-[var(--primary-color)] opacity-0 transition-opacity"></span>
                   </div>
                 </div>
               </label>
               <label class="mode-item relative">
                 <input type="checkbox" name="mode-option" class="mode-option peer sr-only" data-value="portal" />
-                <div class="flex items-center justify-between px-4 py-3 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-[var(--radius-md)] cursor-pointer transition-all peer-checked:bg-[rgba(59,130,246,0.1)] peer-checked:border-[var(--primary-color)] peer-checked:shadow-[0_0_12px_rgba(59,130,246,0.2)] hover:bg-[var(--bg-input-hover)]">
+                <div class="flex items-center justify-between px-4 py-3 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-[var(--radius-md)] cursor-pointer transition-all peer-checked:bg-[rgba(59,130,246,0.1)] peer-checked:border-[var(--primary-color)] peer-checked:shadow-[0_0_12px_rgba(59,130,246,0.2)] peer-checked:[&_.indicator]:opacity-100 hover:bg-[var(--bg-input-hover)]">
                   <span class="text-[14px] font-medium text-[var(--text-primary)]">Portal 中点</span>
                   <div class="w-4 h-4 rounded-full border border-[var(--text-muted)] peer-checked:border-[var(--primary-color)] peer-checked:bg-[var(--primary-color)] flex items-center justify-center">
-                    <svg class="w-2.5 h-2.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity" viewBox="0 0 12 12" fill="none"><path d="M10 3L4.5 8.5L2 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span class="indicator w-2 h-2 rounded-full bg-[var(--primary-color)] opacity-0 transition-opacity"></span>
                   </div>
                 </div>
               </label>
               <label class="mode-item relative">
                 <input type="checkbox" name="mode-option" class="mode-option peer sr-only" data-value="voronoi" />
-                <div class="flex items-center justify-between px-4 py-3 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-[var(--radius-md)] cursor-pointer transition-all peer-checked:bg-[rgba(59,130,246,0.1)] peer-checked:border-[var(--primary-color)] peer-checked:shadow-[0_0_12px_rgba(59,130,246,0.2)] hover:bg-[var(--bg-input-hover)]">
+                <div class="flex items-center justify-between px-4 py-3 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-[var(--radius-md)] cursor-pointer transition-all peer-checked:bg-[rgba(59,130,246,0.1)] peer-checked:border-[var(--primary-color)] peer-checked:shadow-[0_0_12px_rgba(59,130,246,0.2)] peer-checked:[&_.indicator]:opacity-100 hover:bg-[var(--bg-input-hover)]">
                   <span class="text-[14px] font-medium text-[var(--text-primary)]">Voronoi 骨架</span>
                   <div class="w-4 h-4 rounded-full border border-[var(--text-muted)] peer-checked:border-[var(--primary-color)] peer-checked:bg-[var(--primary-color)] flex items-center justify-center">
-                    <svg class="w-2.5 h-2.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity" viewBox="0 0 12 12" fill="none"><path d="M10 3L4.5 8.5L2 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span class="indicator w-2 h-2 rounded-full bg-[var(--primary-color)] opacity-0 transition-opacity"></span>
                   </div>
                 </div>
               </label>
