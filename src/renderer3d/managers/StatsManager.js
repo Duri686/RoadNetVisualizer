@@ -1,51 +1,55 @@
 /**
  * 性能监控管理器
- * 负责FPS和性能统计
+ * 负责FPS和性能统计（显示真实的渲染性能）
  */
 
-import Stats from 'stats.js';
+import { CustomStatsDisplay } from './CustomStatsDisplay.js';
 
 export class StatsManager {
   constructor(container) {
     this.container = container;
-    this.stats = null;
+    this.customDisplay = null;
   }
 
   /**
    * 初始化性能监控
    */
   init() {
-    this.stats = new Stats();
-    this.stats.showPanel(0); // 0: FPS, 1: MS, 2: MB
-    this.stats.dom.style.position = 'absolute';
-    this.stats.dom.style.top = 'auto';
-    this.stats.dom.style.bottom = '8px';
-    this.stats.dom.style.left = '8px';
-    this.stats.dom.style.zIndex = '100';
-    this.container.appendChild(this.stats.dom);
-    return this.stats;
+    this.customDisplay = new CustomStatsDisplay(this.container);
+    this.customDisplay.init();
+    return this.customDisplay;
   }
 
   /**
-   * 开始统计
+   * 开始统计（保留接口兼容性，实际不需要）
    */
   begin() {
-    if (this.stats) this.stats.begin();
+    // 自定义显示不需要 begin/end 调用
   }
 
   /**
-   * 结束统计
+   * 结束统计（保留接口兼容性，实际不需要）
    */
   end() {
-    if (this.stats) this.stats.end();
+    // 自定义显示不需要 begin/end 调用
+  }
+
+  /**
+   * 更新显示
+   * @param {Object} profilerStats - 来自 PerformanceProfiler 的统计数据
+   */
+  update(profilerStats) {
+    if (this.customDisplay) {
+      this.customDisplay.update(profilerStats);
+    }
   }
 
   /**
    * 显示/隐藏
    */
   setVisible(visible) {
-    if (this.stats) {
-      this.stats.dom.style.display = visible ? 'block' : 'none';
+    if (this.customDisplay) {
+      this.customDisplay.setVisible(visible);
     }
   }
 
@@ -53,9 +57,9 @@ export class StatsManager {
    * 销毁
    */
   dispose() {
-    if (this.stats && this.stats.dom && this.container.contains(this.stats.dom)) {
-      this.container.removeChild(this.stats.dom);
+    if (this.customDisplay) {
+      this.customDisplay.dispose();
     }
-    this.stats = null;
+    this.customDisplay = null;
   }
 }

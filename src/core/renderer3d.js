@@ -34,6 +34,8 @@ import {
   showLayerInScene,
   setLayerVisibilityInScene,
 } from '../renderer3d/managers/Renderer3DInteractionController.js';
+import { PerformanceProfiler } from '../renderer3d/utils/PerformanceProfiler.js';
+import { SimplePerformanceMonitor } from '../renderer3d/utils/SimplePerformanceMonitor.js';
 
 class Renderer3D {
   constructor() {
@@ -60,6 +62,10 @@ class Renderer3D {
     // 动画
     this._animationId = null;
     this._animate = this._animate.bind(this);
+
+    // 性能分析
+    this.profiler = new PerformanceProfiler();
+    this.simpleMonitor = new SimplePerformanceMonitor();
 
     // 兼容接口
     this.interaction = {
@@ -136,6 +142,17 @@ class Renderer3D {
       this._animate();
 
       console.log('✅ 模块化 Three.js 渲染器初始化成功');
+      console.log('[PerformanceMonitor] 💡 性能分析提示:');
+      console.log(
+        '[PerformanceMonitor]    - 性能分析器已启动，每3秒输出一次报告',
+      );
+      console.log(
+        '[PerformanceMonitor]    - 使用 window.roadNetApp.renderer.enableProfiling(false) 禁用',
+      );
+      console.log(
+        '[PerformanceMonitor]    - 使用 window.roadNetApp.renderer.getProfilerStats() 获取实时数据',
+      );
+
       return true;
     } catch (error) {
       console.error('❌ 渲染器初始化失败:', error);
@@ -338,19 +355,55 @@ class Renderer3D {
   _animate() {
     this._animationId = requestAnimationFrame(this._animate);
 
+    // 开始性能追踪
+    if (!this._animateStarted) {
+      console.log(
+        '[PerformanceMonitor] 🎬 _animate 首次调用, profiler:',
+        this.profiler,
+      );
+      this._animateStarted = true;
+    }
+    this.profiler.startFrame();
     this.statsManager.begin();
 
+    // 更新性能监控
+    this.profiler.mark('performance-monitor');
+    this.sceneManager.updatePerformance();
+    this.profiler.markEnd('performance-monitor');
+
+    // 控制器更新
+    this.profiler.mark('controls-update');
     if (this.controls) this.controls.update();
+    this.profiler.markEnd('controls-update');
 
-    // 更新所有动画 - 传入performance.now()用于脉冲环，传入秒数用于节点脉动
+    // 动画更新
+    this.profiler.mark('animation-update');
     this.animationController.update(performance.now());
+    this.profiler.markEnd('animation-update');
 
+    // 渲染
+    this.profiler.mark('render');
     this.postProcessing.render();
+    this.profiler.markEnd('render');
 
     // 渲染右下角视角轴
+    this.profiler.mark('axis-gizmo');
     this._renderAxisGizmo();
+    this.profiler.markEnd('axis-gizmo');
 
     this.statsManager.end();
+
+    // 结束性能追踪
+    this.profiler.endFrame(this.renderer);
+
+    // 获取真实性能数据
+    const profilerStats = this.profiler.getCurrentStats();
+
+    // 更新自定义 Stats 显示（显示真实 FPS）
+    this.statsManager.update(profilerStats);
+
+    // 简单监控（使用 profiler 的真实数据）
+    this.simpleMonitor.update(profilerStats);
   }
 
   /**
@@ -542,6 +595,98 @@ class Renderer3D {
     if (this.roadNetRenderer) {
       this.roadNetRenderer.toggleVoronoi(visible);
     }
+  }
+
+  /**
+   * 获取性能信息
+   */
+  getPerformanceInfo() {
+    return this.sceneManager.getPerformanceInfo();
+  }
+
+  /**
+   * 启用/禁用性能分析
+   */
+  enableProfiling(enabled = true) {
+    this.profiler.setEnabled(enabled);
+  }
+
+  /**
+   * 获取性能统计
+   */
+  getProfilerStats() {
+    return this.profiler.getCurrentStats();
+  }
+
+  /**
+   * 配置性能分析器
+   * @param {Object} options - 配置选项
+   * @param {number} options.fpsThreshold - FPS 阈值（低于此值才输出报告）
+   * @param {boolean} options.alwaysLog - 是否总是输出报告
+   * @param {number} options.logInterval - 报告输出间隔（毫秒）
+   */
+  configureProfiler(options = {}) {
+    if (options.fpsThreshold !== undefined) {
+      this.profiler.setFpsThreshold(options.fpsThreshold);
+    }
+    if (options.alwaysLog !== undefined) {
+      this.profiler.setAlwaysLog(options.alwaysLog);
+    }
+    if (options.logInterval !== undefined) {
+      this.profiler.setLogInterval(options.logInterval);
+    }
+  }
+
+  /**
+   * 切换性能模式
+   * @param {string} mode - 'high-performance' | 'balanced' | 'high-quality'
+   */
+  setPerformanceMode(mode) {
+    const modes = {
+      'high-performance': {
+        shadows: false,
+        bloom: false,
+        pixelRatio: 1,
+      },
+      balanced: {
+        shadows: true,
+        bloom: true,
+        bloomStrength: 0.3,
+        pixelRatio: 1.5,
+      },
+      'high-quality': {
+        shadows: true,
+        bloom: true,
+        bloomStrength: 0.5,
+        pixelRatio: 2,
+      },
+    };
+
+    const config = modes[mode];
+    if (!config) {
+      console.error(`[Performance] 未知模式: ${mode}`);
+      return;
+    }
+
+    console.log(`[Performance] 切换到 ${mode} 模式`);
+
+    // 阴影
+    if (this.renderer) {
+      this.renderer.shadowMap.enabled = config.shadows;
+      this.renderer.setPixelRatio(
+        Math.min(config.pixelRatio, window.devicePixelRatio),
+      );
+    }
+
+    // Bloom
+    if (this.postProcessing && this.postProcessing.bloomPass) {
+      this.postProcessing.bloomPass.enabled = config.bloom;
+      if (config.bloom && config.bloomStrength) {
+        this.postProcessing.updateBloom(config.bloomStrength);
+      }
+    }
+
+    console.log('[Performance] 模式切换完成');
   }
 
   destroy() {

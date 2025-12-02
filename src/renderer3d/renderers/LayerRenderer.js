@@ -15,6 +15,9 @@ export function renderLayer(
   layerGroup.userData = { layerIndex: index };
   const yOffset = index * Renderer3DConfig.layerHeight;
 
+  // 渲染地板
+  renderFloor(layerGroup, metadata, yOffset, centerX, centerY);
+
   if (layer.nodes && layer.nodes.length > 0) {
     renderNodes(
       nodesMesh,
@@ -204,17 +207,89 @@ export function renderBaseTriangulation(
   layerGroup.add(lines);
 }
 
+// 缓存地板纹理，避免重复生成
+let cachedFloorTexture = null;
+
+/**
+ * 创建地板纹理（只创建一次）
+ */
+function createFloorTexture() {
+  if (cachedFloorTexture) {
+    return cachedFloorTexture;
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 256; // 减小纹理尺寸提高性能
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+
+  // 绘制蓝黑色地板纹理
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fillRect(0, 0, 256, 256);
+
+  // 简化纹理线条，减少绘制调用
+  ctx.strokeStyle = '#0f0f1a';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 256; i += 32) {
+    ctx.beginPath();
+    ctx.moveTo(i, 0);
+    ctx.lineTo(i, 256);
+    ctx.moveTo(0, i);
+    ctx.lineTo(256, i);
+    ctx.stroke();
+  }
+
+  cachedFloorTexture = new THREE.CanvasTexture(canvas);
+  cachedFloorTexture.wrapS = THREE.RepeatWrapping;
+  cachedFloorTexture.wrapT = THREE.RepeatWrapping;
+
+  return cachedFloorTexture;
+}
+
+/**
+ * 渲染室内地板（优化版本）
+ */
+export function renderFloor(layerGroup, metadata, yOffset, centerX, centerY) {
+  const floorWidth = metadata.width || 100;
+  const floorHeight = metadata.height || 100;
+
+  // 创建地板几何体
+  const floorGeometry = new THREE.PlaneGeometry(floorWidth, floorHeight);
+
+  // 创建地板材质 - 使用缓存的纹理
+  const floorTexture = createFloorTexture();
+  floorTexture.repeat.set(floorWidth / 20, floorHeight / 20);
+
+  const floorMaterial = new THREE.MeshStandardMaterial({
+    color: 0x1a1a2e,
+    roughness: 0.8,
+    metalness: 0.2,
+    map: floorTexture,
+    transparent: false,
+    side: THREE.DoubleSide,
+  });
+
+  const floorMesh = new THREE.Mesh(floorGeometry, floorMaterial);
+  floorMesh.rotation.x = -Math.PI / 2;
+  floorMesh.position.set(0, yOffset - 1, 0);
+  floorMesh.receiveShadow = true;
+  floorMesh.name = 'floor';
+
+  layerGroup.add(floorMesh);
+}
+
 export function renderGrid(layerGroup, metadata, yOffset) {
-  const config = Renderer3DConfig;
-  const gridSize = Math.max(metadata.width, metadata.height);
-  const gridHelper = new THREE.GridHelper(
-    gridSize,
-    config.grid.divisions,
-    config.colors.grid.primary,
-    config.colors.grid.secondary,
-  );
-  gridHelper.position.set(0, yOffset - 0.5, 0);
-  gridHelper.material.opacity = config.grid.opacity;
-  gridHelper.material.transparent = true;
-  layerGroup.add(gridHelper);
+  // 禁用网格渲染 - 我们已经有地板了，不需要额外的网格线条
+  // const config = Renderer3DConfig;
+  // const gridSize = Math.max(metadata.width, metadata.height);
+  // const gridHelper = new THREE.GridHelper(
+  //   gridSize,
+  //   config.grid.divisions,
+  //   config.colors.grid.primary,
+  //   config.colors.grid.secondary,
+  // );
+  // gridHelper.position.set(0, yOffset - 0.5, 0);
+  // gridHelper.material.opacity = config.grid.opacity * 0.5;
+  // gridHelper.material.transparent = true;
+  // layerGroup.add(gridHelper);
 }

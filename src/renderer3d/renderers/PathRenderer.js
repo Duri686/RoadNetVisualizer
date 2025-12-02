@@ -23,18 +23,21 @@ export class PathRenderer {
 
     const curvePath = new THREE.CurvePath();
 
-    // Helper to get vector from node
-    const getVec = (node) => {
-      const y = Renderer3DConfig.layerHeight * (node.layer || 0);
-      return new THREE.Vector3(node.x - centerX, y, node.y - centerY);
-    };
-
     // 使用折线（LineCurve3）严格沿离散节点连线
+    // 优化：复用 Vector3 对象
     for (let i = 0; i < path.length - 1; i++) {
       const node = path[i];
       const nextNode = path[i + 1];
-      const start = getVec(node);
-      const end = getVec(nextNode);
+
+      const y1 = Renderer3DConfig.layerHeight * (node.layer || 0);
+      const y2 = Renderer3DConfig.layerHeight * (nextNode.layer || 0);
+
+      const start = new THREE.Vector3(node.x - centerX, y1, node.y - centerY);
+      const end = new THREE.Vector3(
+        nextNode.x - centerX,
+        y2,
+        nextNode.y - centerY,
+      );
       const line = new THREE.LineCurve3(start, end);
       curvePath.add(line);
     }

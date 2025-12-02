@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "d3-delaunay": "^6.0.4",
-    "stats.js": "^0.17.0",
     "three": "^0.181.2"
   },
   "devDependencies": {
