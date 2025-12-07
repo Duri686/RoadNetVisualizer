@@ -15,7 +15,7 @@ export function renderLayer(
   layerGroup.userData = { layerIndex: index };
   const yOffset = index * Renderer3DConfig.layerHeight;
 
-  // 渲染地板
+  // Render Floor
   renderFloor(layerGroup, metadata, yOffset, centerX, centerY);
 
   if (layer.nodes && layer.nodes.length > 0) {
@@ -42,6 +42,7 @@ export function renderLayer(
     );
   }
 
+  // Base Triangulation - kept as is but potentially more subtle
   if (layer.metadata && layer.metadata.overlayBase) {
     renderBaseTriangulation(
       layer.metadata.overlayBase,
@@ -54,8 +55,6 @@ export function renderLayer(
 
   scene.add(layerGroup);
   layerGroups.push(layerGroup);
-
-  renderGrid(layerGroup, metadata, yOffset);
 }
 
 export function renderNodes(
@@ -68,17 +67,17 @@ export function renderNodes(
   layerIndex,
 ) {
   const config = Renderer3DConfig;
+
+  // Use a smaller, simpler geometry for performance, maybe a simple circle sprite?
+  // Or stick to sphere but low poly.
   const nodeGeometry = new THREE.SphereGeometry(
-    config.node.size * 0.4,
-    config.node.segments,
-    config.node.segments,
+    config.node.size * 0.3,
+    6, // Low poly
+    6,
   );
-  const nodeMaterial = new THREE.MeshStandardMaterial({
+
+  const nodeMaterial = new THREE.MeshBasicMaterial({
     color: config.colors.node,
-    emissive: config.colors.nodeEmissive,
-    emissiveIntensity: config.materials.node.emissiveIntensity,
-    metalness: config.materials.node.metalness,
-    roughness: config.materials.node.roughness,
   });
 
   const instancedNodes = new THREE.InstancedMesh(
@@ -87,19 +86,18 @@ export function renderNodes(
     nodes.length,
   );
   instancedNodes.name = 'nodes';
-  instancedNodes.castShadow = true;
-  instancedNodes.receiveShadow = true;
 
-  instancedNodes.userData.isPulsing = true;
-  instancedNodes.userData.pulseSpeed = config.node.pulseSpeed;
-  instancedNodes.userData.pulseAmount = config.node.pulseAmount;
+  // Disable shadows for nodes to save perf, they are small anyway
+  instancedNodes.castShadow = false;
+  instancedNodes.receiveShadow = false;
+
+  instancedNodes.userData.isPulsing = false; // Disable pulsing for perf
   instancedNodes.userData.originalMatrices = [];
 
   const dummy = new THREE.Object3D();
 
   nodes.forEach((node, i) => {
     dummy.position.set(node.x - centerX, yOffset, node.y - centerY);
-    dummy.scale.set(1, 1, 1);
     dummy.updateMatrix();
     instancedNodes.setMatrixAt(i, dummy.matrix);
     instancedNodes.userData.originalMatrices.push(dummy.matrix.clone());
@@ -114,6 +112,9 @@ export function renderNodes(
   });
 
   layerGroup.add(instancedNodes);
+
+  // Add a subtle glow sprite for nodes? Too many sprites = bad perf.
+  // We'll rely on the color being bright against the dark floor.
 }
 
 export function renderEdges(
@@ -135,9 +136,13 @@ export function renderEdges(
 
   const positions = [];
 
+  // Optimization: use a map for node lookup
+  const nodeMap = new Map();
+  nodes.forEach(n => nodeMap.set(n.id, n));
+
   edges.forEach((edge) => {
-    const fromNode = nodes.find((n) => n.id === edge.from);
-    const toNode = nodes.find((n) => n.id === edge.to);
+    const fromNode = nodeMap.get(edge.from);
+    const toNode = nodeMap.get(edge.to);
     if (fromNode && toNode) {
       positions.push(fromNode.x - centerX, yOffset, fromNode.y - centerY);
       positions.push(toNode.x - centerX, yOffset, toNode.y - centerY);
@@ -149,11 +154,14 @@ export function renderEdges(
     'position',
     new THREE.Float32BufferAttribute(positions, 3),
   );
+
   const edgeMaterial = new THREE.LineBasicMaterial({
     color,
     transparent: true,
-    opacity: config.edge.opacity,
+    opacity: 0.15, // Very subtle
+    depthWrite: false, // Don't block other things
   });
+
   const lines = new THREE.LineSegments(edgeGeometry, edgeMaterial);
   lines.name = name;
   layerGroup.add(lines);
@@ -166,6 +174,7 @@ export function renderBaseTriangulation(
   centerX,
   centerY,
 ) {
+  // Existing implementation is fine, just ensure it's subtle
   const positions = [];
 
   if (overlayBase.edgesPacked instanceof Float32Array) {
@@ -181,9 +190,7 @@ export function renderBaseTriangulation(
     });
   }
 
-  if (positions.length === 0) {
-    return;
-  }
+  if (positions.length === 0) return;
 
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute(
@@ -191,52 +198,54 @@ export function renderBaseTriangulation(
     new THREE.Float32BufferAttribute(positions, 3),
   );
 
-  const material = new THREE.LineDashedMaterial({
-    color: 0x9ca3af,
+  const material = new THREE.LineBasicMaterial({
+    color: 0x4b5563, // Darker gray
     transparent: true,
-    opacity: 0.25,
-    dashSize: 1,
-    gapSize: 0.5,
-    scale: 1,
+    opacity: 0.1,
   });
 
   const lines = new THREE.LineSegments(geometry, material);
-  lines.computeLineDistances();
   lines.name = 'baseTriangulation';
-  lines.visible = true;
   layerGroup.add(lines);
 }
 
-// 缓存地板纹理，避免重复生成
+// Cache floor texture
 let cachedFloorTexture = null;
 
-/**
- * 创建地板纹理（只创建一次）
- */
 function createFloorTexture() {
-  if (cachedFloorTexture) {
-    return cachedFloorTexture;
-  }
+  if (cachedFloorTexture) return cachedFloorTexture;
 
   const canvas = document.createElement('canvas');
-  canvas.width = 256; // 减小纹理尺寸提高性能
-  canvas.height = 256;
+  canvas.width = 512;
+  canvas.height = 512;
   const ctx = canvas.getContext('2d');
 
-  // 绘制蓝黑色地板纹理
-  ctx.fillStyle = '#1a1a2e';
-  ctx.fillRect(0, 0, 256, 256);
+  // Dark background
+  ctx.fillStyle = '#0f172a'; // Slate 900
+  ctx.fillRect(0, 0, 512, 512);
 
-  // 简化纹理线条，减少绘制调用
-  ctx.strokeStyle = '#0f0f1a';
+  // Grid pattern
+  ctx.strokeStyle = '#1e293b'; // Slate 800
   ctx.lineWidth = 1;
-  for (let i = 0; i < 256; i += 32) {
+  const gridSize = 64;
+
+  for (let i = 0; i <= 512; i += gridSize) {
     ctx.beginPath();
     ctx.moveTo(i, 0);
-    ctx.lineTo(i, 256);
+    ctx.lineTo(i, 512);
     ctx.moveTo(0, i);
-    ctx.lineTo(256, i);
+    ctx.lineTo(512, i);
     ctx.stroke();
+  }
+
+  // Subtle dots at intersections
+  ctx.fillStyle = '#334155';
+  for (let x = 0; x <= 512; x += gridSize) {
+      for (let y = 0; y <= 512; y += gridSize) {
+          ctx.beginPath();
+          ctx.arc(x, y, 2, 0, Math.PI * 2);
+          ctx.fill();
+      }
   }
 
   cachedFloorTexture = new THREE.CanvasTexture(canvas);
@@ -246,32 +255,27 @@ function createFloorTexture() {
   return cachedFloorTexture;
 }
 
-/**
- * 渲染室内地板（优化版本）
- */
 export function renderFloor(layerGroup, metadata, yOffset, centerX, centerY) {
   const floorWidth = metadata.width || 100;
   const floorHeight = metadata.height || 100;
 
-  // 创建地板几何体
   const floorGeometry = new THREE.PlaneGeometry(floorWidth, floorHeight);
-
-  // 创建地板材质 - 使用缓存的纹理
   const floorTexture = createFloorTexture();
-  floorTexture.repeat.set(floorWidth / 20, floorHeight / 20);
+
+  // Repeat texture based on size
+  floorTexture.repeat.set(floorWidth / 64, floorHeight / 64);
 
   const floorMaterial = new THREE.MeshStandardMaterial({
-    color: 0x1a1a2e,
-    roughness: 0.8,
-    metalness: 0.2,
+    color: 0xffffff, // Use texture color
+    roughness: 0.5,
+    metalness: 0.1,
     map: floorTexture,
-    transparent: false,
     side: THREE.DoubleSide,
   });
 
   const floorMesh = new THREE.Mesh(floorGeometry, floorMaterial);
   floorMesh.rotation.x = -Math.PI / 2;
-  floorMesh.position.set(0, yOffset - 1, 0);
+  floorMesh.position.set(0, yOffset - 1, 0); // slightly below 0
   floorMesh.receiveShadow = true;
   floorMesh.name = 'floor';
 
@@ -279,17 +283,5 @@ export function renderFloor(layerGroup, metadata, yOffset, centerX, centerY) {
 }
 
 export function renderGrid(layerGroup, metadata, yOffset) {
-  // 禁用网格渲染 - 我们已经有地板了，不需要额外的网格线条
-  // const config = Renderer3DConfig;
-  // const gridSize = Math.max(metadata.width, metadata.height);
-  // const gridHelper = new THREE.GridHelper(
-  //   gridSize,
-  //   config.grid.divisions,
-  //   config.colors.grid.primary,
-  //   config.colors.grid.secondary,
-  // );
-  // gridHelper.position.set(0, yOffset - 0.5, 0);
-  // gridHelper.material.opacity = config.grid.opacity * 0.5;
-  // gridHelper.material.transparent = true;
-  // layerGroup.add(gridHelper);
+    // Grid is now baked into floor texture
 }

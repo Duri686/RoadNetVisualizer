@@ -1,160 +1,157 @@
 /**
- * 3D渲染器配置
- * 集中管理所有配置项
+ * 3D Renderer Configuration
+ * Centralized management for all visual settings.
+ * Tuned for a "Tech/Cyber" aesthetic.
  */
 
 export const Renderer3DConfig = {
-  // 层配置 - Multi-floor building
-  layerHeight: 100, // Height between floors (was 20, now 100 for clear separation)
+  // Layer configuration
+  layerHeight: 100, // Height between floors
 
   // Floor entrance (stairs/elevators) configuration
   floorEntrance: {
     stairs: {
-      color: 0xffff00, // Yellow
-      radius: 1.5, // Increased from 0.6
+      color: 0xf59e0b, // Amber
+      radius: 1.5,
       segments: 8,
-      opacity: 0.9, // Increased from 0.7
+      opacity: 0.9,
     },
     elevator: {
-      color: 0x00ffff, // Cyan
-      radius: 2.0, // Increased from 1.0
+      color: 0x06b6d4, // Cyan
+      radius: 2.0,
       segments: 12,
-      opacity: 0.95, // Increased from 0.8
-      platformSize: 5, // Increased from 3
+      opacity: 0.95,
+      platformSize: 5,
     },
   },
 
-  // 节点配置
+  // Node configuration
   node: {
     size: 2,
-    segments: 8, // 降低球体段数提高性能
+    segments: 8,
     pulseSpeed: 2.0,
     pulseAmount: 0.15,
   },
 
-  // 边配置
+  // Edge configuration
   edge: {
     width: 0.5,
-    opacity: 0.3,
+    opacity: 0.2, // More subtle
   },
 
-  // 颜色配置
+  // Color configuration
   colors: {
-    background: 0x020617, // 深空黑背景
-    floor: 0x2a2a2a, // 黑灰色地板
-    node: 0x3b82f6, // 电蓝节点
-    nodeEmissive: 0x2563eb, // 深蓝发光
-    edge: 0x38bdf8, // 亮青色边
-    obstacle: 0xef4444, // 亮红障碍物 - 保持原色
-    obstacleEmissive: 0xdc2626, // 红色发光
-    pathActive: 0xf59e0b, // 琥珀色路径
-    pathBurned: 0x475569, // 烧过的路径变灰
-    startNode: 0x10b981, // 绿色起点
+    background: 0x000000, // Pure black for better contrast
+    floor: 0x0f172a, // Dark slate
+    node: 0x3b82f6, // Blue
+    nodeEmissive: 0x2563eb,
+    edge: 0x1e293b, // Dark edge
+    obstacle: 0x1d4ed8, // Deep Blue
+    obstacleEmissive: 0x1e3a8a, // Darker glow
+    obstacleTop: 0x60a5fa,
+    pathActive: 0x22d3ee, // Bright Cyan
+    pathBurned: 0x0f172a, // Dark
+    startNode: 0x10b981, // Green
     startNodeEmissive: 0x059669,
-    endNode: 0xef4444, // 红色终点
+    endNode: 0xef4444, // Red
     endNodeEmissive: 0xb91c1c,
     grid: {
-      primary: 0x404040, // 室内网格色
-      secondary: 0x2a2a2a, // 次要网格色
+      primary: 0x1e293b,
+      secondary: 0x0f172a,
     },
   },
 
-  // 材质配置
+  // Material configuration
   materials: {
     node: {
-      metalness: 0.3,
-      roughness: 0.4,
-      emissiveIntensity: 0.5,
+      metalness: 0.8,
+      roughness: 0.2,
+      emissiveIntensity: 0.8,
     },
     obstacle: {
-      metalness: 0.6,
-      roughness: 0.3,
-      emissiveIntensity: 0.3,
+      metalness: 0.8,
+      roughness: 0.1, // Shiny
+      emissiveIntensity: 0.2,
+      transmission: 0.0, // Opaque for performance, use fake transparency via opacity
+      opacity: 0.8
     },
     marker: {
-      metalness: 0.2,
-      roughness: 0.3,
-      emissiveIntensity: 0.8,
+      metalness: 0.5,
+      roughness: 0.5,
+      emissiveIntensity: 1.0,
     },
   },
 
-  // 光照配置 - 室内商场效果
+  // Lighting configuration - Cyber/Tech look
   lighting: {
     ambient: {
-      color: 0x505050, // 室内环境光
-      intensity: 0.6, // 增加环境光强度
+      color: 0x404040,
+      intensity: 0.5,
     },
     hemisphere: {
-      skyColor: 0x87ceeb, // 天空蓝（模拟天花板灯光）
-      groundColor: 0x2a2a2a, // 地面灰色
-      intensity: 0.8,
+      skyColor: 0x1e3a8a, // Dark Blue Sky
+      groundColor: 0x000000, // Black Ground
+      intensity: 0.6,
     },
     directional: {
-      color: 0xffffff, // 主光源（模拟天花板射灯）
-      intensity: 1.0,
-      position: { x: 30, y: 80, z: 30 },
+      color: 0xa5f3fc, // Cyan-ish light
+      intensity: 0.8,
+      position: { x: 50, y: 100, z: 50 },
     },
     pointLights: [
-      // 模拟商场内的多个光源
       {
-        color: 0xffffff,
-        intensity: 0.6,
-        distance: 120,
-        position: { x: -40, y: 25, z: -40 },
+        color: 0x3b82f6, // Blue point light
+        intensity: 0.5,
+        distance: 200,
+        position: { x: -50, y: 50, z: -50 },
       },
       {
-        color: 0xffffff,
-        intensity: 0.6,
-        distance: 120,
-        position: { x: 40, y: 25, z: 40 },
-      },
-      {
-        color: 0xfff8dc,
-        intensity: 0.4,
-        distance: 100,
-        position: { x: 0, y: 30, z: 0 },
+        color: 0xec4899, // Pink point light for contrast
+        intensity: 0.5,
+        distance: 200,
+        position: { x: 50, y: 50, z: 50 },
       },
     ],
   },
 
-  // 阴影配置 - 性能优化
+  // Shadow configuration
   shadow: {
-    mapSize: 1024, // 降低阴影贴图尺寸提高性能
+    mapSize: 1024,
     camera: {
       near: 0.5,
-      far: 300, // 减小阴影距离
-      left: -80,
-      right: 80,
-      top: 80,
-      bottom: -80,
+      far: 300,
+      left: -100,
+      right: 100,
+      top: 100,
+      bottom: -100,
     },
     bias: -0.0001,
   },
 
-  // 后期处理配置
+  // Post-processing configuration
   postProcessing: {
     bloom: {
-      strength: 1.5,
-      radius: 0.4,
-      threshold: 0.85,
+      strength: 1.2, // Stronger bloom for neon look
+      radius: 0.5,
+      threshold: 0.7, // Bloom starts earlier
     },
   },
 
-  // 雾配置
+  // Fog configuration
   fog: {
-    density: 0.0015,
+    density: 0.002, // Slightly denser
+    color: 0x020617, // Match background
   },
 
-  // 网格配置
+  // Grid configuration
   grid: {
     divisions: 20,
-    opacity: 0.15,
+    opacity: 0.1,
   },
 
-  // 动画配置
+  // Animation configuration
   animation: {
-    pathSpeed: 400, // ms per node (deprecated, use walkingSpeed instead)
-    walkingSpeed: 10, // 单位/秒 - 模拟人行走速度
+    walkingSpeed: 10,
     ripple: {
       count: 3,
       duration: 1500,

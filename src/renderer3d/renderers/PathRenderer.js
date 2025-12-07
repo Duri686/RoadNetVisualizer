@@ -1,6 +1,6 @@
 /**
- * 路径渲染器
- * 负责渲染和动画化路径
+ * Path Renderer
+ * Renders the navigation path with a dynamic shader effect and a ground glow.
  */
 
 import * as THREE from 'three';
@@ -11,20 +11,20 @@ export class PathRenderer {
     this.scene = scene;
     this.pathGroup = new THREE.Group();
     this.pathShader = null;
+    this.groundShader = null;
     scene.add(this.pathGroup);
   }
 
   /**
-   * 绘制路径
+   * Draw the path
    */
   drawPath(path, layerHeight, centerX, centerY) {
     this.clear();
     if (!path || path.length === 0) return;
 
+    const points = [];
     const curvePath = new THREE.CurvePath();
 
-    // 使用折线（LineCurve3）严格沿离散节点连线
-    // 优化：复用 Vector3 对象
     for (let i = 0; i < path.length - 1; i++) {
       const node = path[i];
       const nextNode = path[i + 1];
@@ -32,39 +32,63 @@ export class PathRenderer {
       const y1 = Renderer3DConfig.layerHeight * (node.layer || 0);
       const y2 = Renderer3DConfig.layerHeight * (nextNode.layer || 0);
 
-      const start = new THREE.Vector3(node.x - centerX, y1, node.y - centerY);
-      const end = new THREE.Vector3(
-        nextNode.x - centerX,
-        y2,
-        nextNode.y - centerY,
-      );
+      const start = new THREE.Vector3(node.x - centerX, y1 + 0.5, node.y - centerY);
+      const end = new THREE.Vector3(nextNode.x - centerX, y2 + 0.5, nextNode.y - centerY);
+
       const line = new THREE.LineCurve3(start, end);
       curvePath.add(line);
+
+      if (i === 0) points.push(start);
+      points.push(end);
     }
 
-    // Create geometry from CurvePath
-    // 仍然使用 TubeGeometry，但中心线严格遵循 2D 折线路径
+    // 1. Main Path Tube
     const tubeGeo = new THREE.TubeGeometry(
       curvePath,
-      path.length * 8,
-      0.35,
+      path.length * 10, // Higher resolution
+      0.4, // Radius
       8,
-      false,
+      false
     );
 
-    // 创建着色器材质
     const shaderMat = this.createPathShader();
     const tube = new THREE.Mesh(tubeGeo, shaderMat);
     tube.name = 'pathTube';
+    tube.renderOrder = 2000; // Render on top of floor
     this.pathGroup.add(tube);
-
     this.pathShader = shaderMat;
+
+    // 2. Ground Projection (Shadow/Glow)
+    // We create a flat ribbon on the floor.
+    // For simplicity, we can reuse the tube geometry but scale it flat?
+    // No, TubeGeometry is 3D. Let's make a flat ribbon using the points.
+    // Or just a flattened tube slightly larger.
+
+    const groundGeo = new THREE.TubeGeometry(
+        curvePath,
+        path.length * 10,
+        0.8, // Wider
+        8,
+        false
+    );
+
+    const groundMat = this.createGroundShader();
+    const groundMesh = new THREE.Mesh(groundGeo, groundMat);
+    groundMesh.scale.set(1, 0.05, 1); // Flatten it
+    groundMesh.position.y = -0.4; // Slightly below the main path
+
+    // We need to adjust position if path changes height (e.g. ramps).
+    // Since we flatten it, the Y is relative to the path center.
+    // A flattened tube will look like a ribbon.
+
+    groundMesh.name = 'pathGround';
+    groundMesh.renderOrder = 1999;
+    this.pathGroup.add(groundMesh);
+    this.groundShader = groundMat;
+
     return tube;
   }
 
-  /**
-   * 创建路径着色器
-   */
   createPathShader() {
     const config = Renderer3DConfig.colors;
 
@@ -75,6 +99,7 @@ export class PathRenderer {
         colorActive: { value: new THREE.Color(config.pathActive) },
         colorBurned: { value: new THREE.Color(config.pathBurned) },
       },
+      transparent: true,
       vertexShader: `
         varying vec2 vUv;
         void main() {
@@ -90,32 +115,75 @@ export class PathRenderer {
         varying vec2 vUv;
         
         void main() {
-          float pos = vUv.x;
-          float edge = progress;
-          float transition = 0.05;
+          float u = vUv.x; // Along the path
+
+          // Moving arrow pattern
+          float arrowFreq = 10.0;
+          float arrowSpeed = time * 2.0;
+          float arrow = mod(u * arrowFreq - arrowSpeed, 1.0);
+          arrow = smoothstep(0.0, 0.5, arrow) * smoothstep(1.0, 0.5, arrow);
+
+          // Flowing pulse
+          float pulse = sin(u * 20.0 - time * 5.0) * 0.5 + 0.5;
+
+          // Combine colors
+          vec3 baseColor = colorActive;
+
+          // Add pulse brightness
+          baseColor += vec3(pulse * 0.3);
           
-          if (edge >= 0.98) {
-            gl_FragColor = vec4(colorBurned, 0.6);
-          } else if (pos < edge - transition) {
-            gl_FragColor = vec4(colorBurned, 0.6);
-          } else if (pos < edge + transition) {
-            float t = (pos - (edge - transition)) / (transition * 2.0);
-            t = clamp(t, 0.0, 1.0);
-            vec3 color = mix(colorBurned, colorActive, t);
-            float alpha = mix(0.6, 1.0, t);
-            gl_FragColor = vec4(color, alpha);
-          } else {
-            gl_FragColor = vec4(colorActive, 1.0);
-          }
+          // Add arrow brightness
+          baseColor += vec3(arrow * 0.5);
+
+          // Progress masking logic (similar to original but enhanced)
+          // For now, let's keep the whole path visible but animated as requested "dynamic path"
+          // If we want to hide future path:
+          // if (u > progress) discard; or fade out.
+
+          // Let's make a nice glowy edge
+          float v = abs(vUv.y - 0.5) * 2.0;
+          float edgeGlow = 1.0 - smoothstep(0.0, 1.0, v);
+
+          gl_FragColor = vec4(baseColor, edgeGlow * 0.9 + 0.1);
         }
       `,
       side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false, // Don't write depth for glowy effect
     });
   }
 
-  /**
-   * 更新路径着色器
-   */
+  createGroundShader() {
+      const config = Renderer3DConfig.colors;
+      return new THREE.ShaderMaterial({
+          uniforms: {
+              colorActive: { value: new THREE.Color(config.pathActive) }
+          },
+          transparent: true,
+          vertexShader: `
+            varying vec2 vUv;
+            void main() {
+              vUv = uv;
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+          `,
+          fragmentShader: `
+            uniform vec3 colorActive;
+            varying vec2 vUv;
+            void main() {
+               // Soft glow from center
+               float v = abs(vUv.y - 0.5) * 2.0;
+               float alpha = (1.0 - v) * 0.4;
+               alpha = pow(alpha, 2.0); // Soften
+
+               gl_FragColor = vec4(colorActive, alpha);
+            }
+          `,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+      });
+  }
+
   updateShader(progress, time) {
     if (this.pathShader) {
       this.pathShader.uniforms.progress.value = progress;
@@ -123,11 +191,9 @@ export class PathRenderer {
     }
   }
 
-  /**
-   * 清除路径
-   */
   clear() {
     this.pathGroup.clear();
     this.pathShader = null;
+    this.groundShader = null;
   }
 }
