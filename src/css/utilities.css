@@ -1,9 +1,11 @@
 /* 动效与响应式 */
 @keyframes pulse {
+
   0%,
   100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }
@@ -25,6 +27,7 @@
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -50,25 +53,53 @@
 }
 
 /* 玻璃拟态工具类 */
+/* 玻璃拟态工具类 - Cyberpunk Enhanced */
 .glass-panel {
   background: var(--bg-glass);
   backdrop-filter: var(--backdrop-blur);
   -webkit-backdrop-filter: var(--backdrop-blur);
   border: 1px solid var(--border-glass);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-glass);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.5), transparent);
+  opacity: 0.5;
 }
 
 .glass-input {
   background: var(--bg-input);
   border: 1px solid var(--border-input);
   backdrop-filter: blur(4px);
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  color: var(--text-primary);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
 }
 
 .glass-input:focus {
   background: var(--bg-input-hover);
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.2), inset 0 0 10px rgba(0, 0, 0, 0.2);
+  outline: none;
+}
+
+/* 霓虹文字 - New Utility */
+.text-neon {
+  color: var(--primary-color);
+  text-shadow: 0 0 5px rgba(0, 240, 255, 0.5), 0 0 10px rgba(0, 240, 255, 0.3);
+}
+
+.text-neon-purple {
+  color: var(--accent-color);
+  text-shadow: 0 0 5px rgba(188, 19, 254, 0.5), 0 0 10px rgba(188, 19, 254, 0.3);
 }
 
 /* 焦点可见性优化 */
@@ -123,6 +154,7 @@ html {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -260,21 +292,25 @@ html {
   font-size: 12px;
   line-height: 1.8;
 }
+
 .operation-panel::-webkit-scrollbar,
 .interpretation-panel::-webkit-scrollbar {
   width: 6px;
 }
+
 .operation-panel::-webkit-scrollbar-track,
 .interpretation-panel::-webkit-scrollbar-track {
   background: transparent;
   border-radius: 4px;
 }
+
 .operation-panel::-webkit-scrollbar-thumb,
 .interpretation-panel::-webkit-scrollbar-thumb {
   background: var(--border-input);
   border-radius: 4px;
   transition: background 0.2s ease;
 }
+
 .operation-panel::-webkit-scrollbar-thumb:hover,
 .interpretation-panel::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);

@@ -1,64 +1,95 @@
-/* 设计令牌（变量）- 深色赛博风格 */
+/* 设计令牌（变量）- Clean Tech Blue (Light Mode) */
 :root {
-  /* 主色系 - 电蓝 (更加鲜亮) */
-  --primary-color: #3b82f6;
-  --primary-hover: #2563eb;
-  --primary-active: #1d4ed8;
+  /* 主色系 - Apple Blue */
+  --primary-color: #2563EB;
+  --primary-hover: #1d4ed8;
+  --primary-active: #1e40af;
 
-  /* 强调色 - 霓虹青 (高饱和度) */
-  --accent-color: #06b6d4;
-  --accent-hover: #0891b2;
+  /* 强调色 - Indigo */
+  --accent-color: #4f46e5;
+  --accent-hover: #4338ca;
 
-  /* 背景色 - 深空极夜 */
-  --bg-page: #0b1121; /* 更深的蓝黑 */
-  --bg-card: rgba(15, 23, 42, 0.75); /* 增加不透明度，提升对比 */
-  --bg-input: rgba(2, 6, 23, 0.4); /* 更深的输入框背景 */
-  --bg-input-hover: rgba(2, 6, 23, 0.6);
-  --bg-glass: rgba(15, 23, 42, 0.6);
+  /* 背景色 - Clean Light */
+  --bg-page: linear-gradient(135deg, #f6f6f8 0%, #eef2ff 100%);
+  --bg-card: rgba(255, 255, 255, 0.75);
+  --bg-input: rgba(255, 255, 255, 0.5);
+  --bg-input-hover: rgba(255, 255, 255, 0.8);
+  --bg-glass: rgba(255, 255, 255, 0.7);
 
-  /* 文字色 */
-  --text-primary: #f1f5f9; /* 更亮的白 */
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  /* 文字色 - High Contrast */
+  --text-primary: #1e293b;
+  /* Slate 800 */
+  --text-secondary: #64748b;
+  /* Slate 500 */
+  --text-muted: #94a3b8;
+  /* Slate 400 */
   --text-white: #ffffff;
+  --text-glow: transparent;
+  /* No text glow in Clean mode */
 
-  /* 边框色 */
-  --border-light: rgba(255, 255, 255, 0.08);
-  --border-input: rgba(255, 255, 255, 0.12);
-  --border-focus: #3b82f6;
-  --border-glass: rgba(255, 255, 255, 0.1);
+  /* 边框色 - Subtle */
+  --border-light: rgba(255, 255, 255, 0.6);
+  --border-input: rgba(226, 232, 240, 0.8);
+  --border-focus: #2563EB;
+  --border-glass: rgba(255, 255, 255, 0.4);
 
-  /* 状态色 */
+  /* 状态色 - Soft */
   --success-color: #10b981;
+  /* Emerald */
   --error-color: #ef4444;
+  /* Red */
   --warning-color: #f59e0b;
+  /* Amber */
   --info-color: #3b82f6;
+  /* Blue */
 
   /* 统计图标色 */
-  --stat-node-color: #22d3ee;
-  --stat-edge-color: #3b82f6;
-  --stat-layer-color: #f472b6;
+  --stat-node-color: #3b82f6;
+  --stat-edge-color: #8b5cf6;
+  --stat-layer-color: #ef4444;
 
-  /* 可视化元素色（对应设计稿图例） */
-  --viz-start-point: #07996f; /* 绿色 - 起点 (参考图1) */
-  --viz-end-point: #ef4444; /* 红色 - 终点 */
-  --viz-path: #f59e0b; /* 黄色 - 路径 */
-  --viz-network-edge: #1948b3; /* 天蓝 - 网络边 */
-  --viz-obstacle: #902c30; /* 紫色 - 障碍物 (参考图3) */
-  --viz-voronoi: #22d3ee; /* 青色 - Voronoi */
-  --viz-canvas-bg: #020617; /* 深空黑 - 画布背景 */
+  /* 可视化元素色 - Adjusted for Light Bg (Verification needed on canvas) */
+  /* 可视化元素色 - Clean Tech Palette (Stitch) */
+  --viz-start-point: #10b981;
+  /* Keep Green for Start */
+  --viz-end-point: #ef4444;
+  /* Keep Red for End */
+  --viz-path: #f59e0b;
+  /* Amber path */
 
-  /* 阴影 */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6);
-  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
+  /* Network Elements */
+  --viz-network-edge: #2563EB;
+  /* Inter Blue (Main Roads) */
+  --viz-network-edge-secondary: #94a3b8;
+  /* Slate 400 (Secondary) */
+  --viz-node: #007AFF;
+  /* Apple Blue (Nodes) */
+  --viz-node-glow: rgba(0, 122, 255, 0.3);
 
-  /* 圆角 */
+  /* 3D Objects */
+  --viz-obstacle: rgba(71, 85, 105, 0.6);
+  /* Slate 500 Glass (Frosted) */
+  --viz-obstacle-border: rgba(148, 163, 184, 0.5);
+  /* Slate 400 Border */
+
+  /* Background Elements */
+  --viz-voronoi: rgba(226, 232, 240, 0.8);
+  /* Slate 200 (Subtle Iso-lines) */
+  --viz-canvas-bg: transparent;
+  /* Rely on CSS radial gradient or body bg */
+
+  /* 阴影 - Soft Drop Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-glow: 0 0 0 transparent;
+  --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+
+  /* 圆角 - Soft (iOS Style) */
   --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-xl: 12px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
   --radius-full: 9999px;
 
   /* 间距 */
@@ -70,5 +101,5 @@
   --space-2xl: 24px;
 
   /* 模糊 */
-  --backdrop-blur: blur(16px);
+  --backdrop-blur: blur(20px);
 }
