@@ -48,35 +48,34 @@
   --stat-edge-color: #8b5cf6;
   --stat-layer-color: #ef4444;
 
-  /* 可视化元素色 - Adjusted for Light Bg (Verification needed on canvas) */
-  /* 可视化元素色 - Clean Tech Palette (Stitch) */
+  /* 可视化元素色 - 与 3D 渲染器同步 */
+  /* 起终点/路径 */
   --viz-start-point: #10b981;
-  /* Keep Green for Start */
+  /* Emerald 500 绿色起点 */
   --viz-end-point: #ef4444;
-  /* Keep Red for End */
-  --viz-path: #f59e0b;
-  /* Amber path */
+  /* Red 500 红色终点 */
+  --viz-path: #22d3ee;
+  /* Cyan 400 能量路径 */
 
-  /* Network Elements */
-  --viz-network-edge: #2563EB;
-  /* Inter Blue (Main Roads) */
-  --viz-network-edge-secondary: #94a3b8;
-  /* Slate 400 (Secondary) */
-  --viz-node: #007AFF;
-  /* Apple Blue (Nodes) */
-  --viz-node-glow: rgba(0, 122, 255, 0.3);
+  /* 网络元素 - Cyan 主题 */
+  --viz-network-edge: #0ea5e9;
+  /* Cyan 500 网络边 */
+  --viz-network-edge-secondary: #64748b;
+  /* Slate 500 三角化 */
+  --viz-node: #06b6d4;
+  /* Cyan 500 网络节点 */
+  --viz-node-glow: rgba(6, 182, 212, 0.4);
 
-  /* 3D Objects */
-  --viz-obstacle: rgba(71, 85, 105, 0.6);
-  /* Slate 500 Glass (Frosted) */
-  --viz-obstacle-border: rgba(148, 163, 184, 0.5);
-  /* Slate 400 Border */
+  /* 3D 障碍物 - Violet 主题 */
+  --viz-obstacle: #8b5cf6;
+  /* Violet 500 障碍物 */
+  --viz-obstacle-border: #a78bfa;
+  /* Violet 400 发光边 */
 
-  /* Background Elements */
-  --viz-voronoi: rgba(226, 232, 240, 0.8);
-  /* Slate 200 (Subtle Iso-lines) */
+  /* Voronoi 骨架 - Violet */
+  --viz-voronoi: #8b5cf6;
+  /* Violet 500 */
   --viz-canvas-bg: transparent;
-  /* Rely on CSS radial gradient or body bg */
 
   /* 阴影 - Soft Drop Shadows */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);

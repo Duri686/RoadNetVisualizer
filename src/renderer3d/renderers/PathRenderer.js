@@ -63,7 +63,7 @@ export class PathRenderer {
   }
 
   /**
-   * 创建路径着色器
+   * 创建路径着色器 - 能量光束效果
    */
   createPathShader() {
     const config = Renderer3DConfig.colors;
@@ -92,23 +92,32 @@ export class PathRenderer {
         void main() {
           float pos = vUv.x;
           float edge = progress;
-          float transition = 0.05;
+          float transition = 0.08;
+          
+          // 能量脉冲效果
+          float pulse = sin(pos * 20.0 - time * 3.0) * 0.15 + 0.85;
           
           if (edge >= 0.98) {
-            gl_FragColor = vec4(colorBurned, 0.6);
+            // 完成状态 - 柔和的青色
+            gl_FragColor = vec4(colorBurned * pulse, 0.8);
           } else if (pos < edge - transition) {
-            gl_FragColor = vec4(colorBurned, 0.6);
+            // 已走过的路径 - 发光青色
+            gl_FragColor = vec4(colorBurned * pulse, 0.85);
           } else if (pos < edge + transition) {
+            // 过渡区域 - 高亮
             float t = (pos - (edge - transition)) / (transition * 2.0);
             t = clamp(t, 0.0, 1.0);
             vec3 color = mix(colorBurned, colorActive, t);
-            float alpha = mix(0.6, 1.0, t);
-            gl_FragColor = vec4(color, alpha);
+            float glow = 1.0 + t * 0.5; // 增强发光
+            gl_FragColor = vec4(color * glow * pulse, 1.0);
           } else {
-            gl_FragColor = vec4(colorActive, 1.0);
+            // 未走过的路径 - 明亮能量色
+            float energyGlow = 1.0 + sin(time * 2.0) * 0.1;
+            gl_FragColor = vec4(colorActive * energyGlow * pulse, 1.0);
           }
         }
       `,
+      transparent: true,
       side: THREE.DoubleSide,
     });
   }

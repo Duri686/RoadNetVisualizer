@@ -110,16 +110,22 @@ class InterpretationPanelElement extends HTMLElement {
               <div class="legend-sep h-px bg-[var(--border-light)] my-2 mx-2"></div>
               
               <div class="legend-item-new-wrap grid grid-cols-3 gap-2 px-2">
-                <div class="legend-item-new flex flex-col items-center gap-1" aria-hidden="true">
-                  <span class="legend-icon start-icon inline-block w-2.5 h-2.5 rounded-full bg-[var(--viz-start-point)] shadow-[0_0_8px_var(--viz-start-point)]"></span>
+                <div class="legend-item-new flex flex-col items-center gap-1.5" aria-hidden="true">
+                  <span class="legend-icon start-icon flex items-center justify-center w-4 h-4">
+                    <span class="inline-block w-2.5 h-2.5 rounded-full bg-[var(--viz-start-point)] shadow-[0_0_8px_var(--viz-start-point)]"></span>
+                  </span>
                   <span class="legend-label text-[11px] text-[var(--text-muted)]">起点</span>
                 </div>
-                <div class="legend-item-new flex flex-col items-center gap-1" aria-hidden="true">
-                  <span class="legend-icon end-icon inline-block w-2.5 h-2.5 rounded-full bg-[var(--viz-end-point)] shadow-[0_0_8px_var(--viz-end-point)]"></span>
+                <div class="legend-item-new flex flex-col items-center gap-1.5" aria-hidden="true">
+                  <span class="legend-icon end-icon flex items-center justify-center w-4 h-4">
+                    <span class="inline-block w-2.5 h-2.5 rounded-full bg-[var(--viz-end-point)] shadow-[0_0_8px_var(--viz-end-point)]"></span>
+                  </span>
                   <span class="legend-label text-[11px] text-[var(--text-muted)]">终点</span>
                 </div>
-                <div class="legend-item-new flex flex-col items-center gap-1" aria-hidden="true">
-                  <span class="legend-icon path-icon inline-block w-4 h-0.5 rounded-[2px] bg-[var(--viz-path)] shadow-[0_0_6px_var(--viz-path)]"></span>
+                <div class="legend-item-new flex flex-col items-center gap-1.5" aria-hidden="true">
+                  <span class="legend-icon path-icon flex items-center justify-center w-4 h-4">
+                    <span class="inline-block w-4 h-0.5 rounded-[2px] bg-[var(--viz-path)] shadow-[0_0_6px_var(--viz-path)]"></span>
+                  </span>
                   <span class="legend-label text-[11px] text-[var(--text-muted)]">路径</span>
                 </div>
               </div>

@@ -131,7 +131,9 @@ export function renderEdges(
     layerMetadata.abstraction &&
     String(layerMetadata.abstraction).toLowerCase().includes('voronoi');
   const name = isVoronoi ? 'voronoi' : 'edges';
-  const color = isVoronoi ? 0x06b6d4 : config.colors.edge;
+  // 使用配置中的 Voronoi/标准边颜色
+  const color = isVoronoi ? config.colors.voronoiEdge : config.colors.edge;
+  const opacity = isVoronoi ? 0.6 : config.edge.opacity;
 
   const positions = [];
 
@@ -152,7 +154,8 @@ export function renderEdges(
   const edgeMaterial = new THREE.LineBasicMaterial({
     color,
     transparent: true,
-    opacity: config.edge.opacity,
+    opacity,
+    linewidth: 1, // 注意: WebGL 限制，大多数浏览器不支持 > 1
   });
   const lines = new THREE.LineSegments(edgeGeometry, edgeMaterial);
   lines.name = name;
@@ -166,6 +169,7 @@ export function renderBaseTriangulation(
   centerX,
   centerY,
 ) {
+  const config = Renderer3DConfig;
   const positions = [];
 
   if (overlayBase.edgesPacked instanceof Float32Array) {
@@ -191,12 +195,13 @@ export function renderBaseTriangulation(
     new THREE.Float32BufferAttribute(positions, 3),
   );
 
+  // 使用配置中的三角化颜色，增强可见度
   const material = new THREE.LineDashedMaterial({
-    color: 0x9ca3af,
+    color: config.colors.triangulation || 0x64748b,
     transparent: true,
-    opacity: 0.25,
-    dashSize: 1,
-    gapSize: 0.5,
+    opacity: 0.35, // 增强可见度
+    dashSize: 2, // 更长的破折号
+    gapSize: 1,
     scale: 1,
   });
 
@@ -211,7 +216,7 @@ export function renderBaseTriangulation(
 let cachedFloorTexture = null;
 
 /**
- * 创建地板纹理（只创建一次）
+ * 创建地板纹理（未来科技风格）
  */
 function createFloorTexture() {
   if (cachedFloorTexture) {
@@ -219,24 +224,46 @@ function createFloorTexture() {
   }
 
   const canvas = document.createElement('canvas');
-  canvas.width = 256; // 减小纹理尺寸提高性能
-  canvas.height = 256;
+  canvas.width = 512;
+  canvas.height = 512;
   const ctx = canvas.getContext('2d');
 
-  // 绘制蓝黑色地板纹理
-  ctx.fillStyle = '#1a1a2e';
-  ctx.fillRect(0, 0, 256, 256);
+  // 基础深色背景
+  ctx.fillStyle = '#0c0f1a';
+  ctx.fillRect(0, 0, 512, 512);
 
-  // 简化纹理线条，减少绘制调用
-  ctx.strokeStyle = '#0f0f1a';
+  // 主网格线（发光效果）
+  ctx.strokeStyle = '#1e293b';
   ctx.lineWidth = 1;
-  for (let i = 0; i < 256; i += 32) {
+  for (let i = 0; i <= 512; i += 64) {
     ctx.beginPath();
     ctx.moveTo(i, 0);
-    ctx.lineTo(i, 256);
+    ctx.lineTo(i, 512);
     ctx.moveTo(0, i);
-    ctx.lineTo(256, i);
+    ctx.lineTo(512, i);
     ctx.stroke();
+  }
+
+  // 细分网格线（更淡）
+  ctx.strokeStyle = '#151b2d';
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 512; i += 16) {
+    ctx.beginPath();
+    ctx.moveTo(i, 0);
+    ctx.lineTo(i, 512);
+    ctx.moveTo(0, i);
+    ctx.lineTo(512, i);
+    ctx.stroke();
+  }
+
+  // 交叉点发光点
+  ctx.fillStyle = '#2563eb';
+  for (let x = 0; x <= 512; x += 64) {
+    for (let y = 0; y <= 512; y += 64) {
+      ctx.beginPath();
+      ctx.arc(x, y, 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
   cachedFloorTexture = new THREE.CanvasTexture(canvas);
@@ -247,7 +274,7 @@ function createFloorTexture() {
 }
 
 /**
- * 渲染室内地板（优化版本）
+ * 渲染室内地板（科技风格）
  */
 export function renderFloor(layerGroup, metadata, yOffset, centerX, centerY) {
   const floorWidth = metadata.width || 100;
@@ -256,14 +283,14 @@ export function renderFloor(layerGroup, metadata, yOffset, centerX, centerY) {
   // 创建地板几何体
   const floorGeometry = new THREE.PlaneGeometry(floorWidth, floorHeight);
 
-  // 创建地板材质 - 使用缓存的纹理
+  // 创建地板材质 - 科技感网格
   const floorTexture = createFloorTexture();
-  floorTexture.repeat.set(floorWidth / 20, floorHeight / 20);
+  floorTexture.repeat.set(floorWidth / 50, floorHeight / 50);
 
   const floorMaterial = new THREE.MeshStandardMaterial({
-    color: 0x1a1a2e,
-    roughness: 0.8,
-    metalness: 0.2,
+    color: 0x0c0f1a,
+    roughness: 0.7,
+    metalness: 0.3,
     map: floorTexture,
     transparent: false,
     side: THREE.DoubleSide,

@@ -29,20 +29,50 @@ export class PathAnimationManager {
     this.originalCameraPosition = this.camera.position.clone();
     this.originalControlsTarget = this.controls.target.clone();
 
-    // 创建动画箭头（三角形）
-    const geometry = new THREE.ConeGeometry(1, 2, 3); // 半径1，高度2，3个面（三角形）
-    const material = new THREE.MeshStandardMaterial({
-      color: 0x00ff88, // 绿色箭头
-      emissive: 0x00ff88, // 发光颜色
-      emissiveIntensity: 0.3, // 轻微发光
-      metalness: 0.2,
-      roughness: 0.4,
-    });
-    this.agent = new THREE.Mesh(geometry, material);
+    // 创建动画标记组 - 聚焦标记设计（对比色）
+    this.agent = new THREE.Group();
     this.agent.name = 'movingAgent';
 
-    // 旋转箭头使其指向前方（Z轴负方向）
-    this.agent.rotation.x = Math.PI / 2; // 让尖端朝向Z轴负方向
+    // 核心球体 - Amber 高对比能量核心
+    const coreGeo = new THREE.SphereGeometry(1.0, 16, 16);
+    const coreMat = new THREE.MeshStandardMaterial({
+      color: 0xfbbf24, // Amber 400
+      emissive: 0xf59e0b, // Amber 500
+      emissiveIntensity: 1.5, // 更强发光
+      metalness: 0.8,
+      roughness: 0.15,
+      transparent: true,
+      opacity: 1.0,
+    });
+    const core = new THREE.Mesh(coreGeo, coreMat);
+    this.agent.add(core);
+
+    // 外层光晕环 - 白色脉冲环（增强聚焦）
+    const ringGeo = new THREE.RingGeometry(1.5, 2.0, 6); // 六边形环
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0xfef3c7, // Amber 100 浅色
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.7,
+    });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = -Math.PI / 2; // 水平放置
+    ring.name = 'pulseRing';
+    this.agent.add(ring);
+
+    // 顶部箭头指示器 - 白色倒三角
+    const arrowGeo = new THREE.ConeGeometry(0.5, 1.5, 3);
+    const arrowMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      emissive: 0xfbbf24,
+      emissiveIntensity: 1.0,
+      metalness: 0.6,
+      roughness: 0.2,
+    });
+    const arrow = new THREE.Mesh(arrowGeo, arrowMat);
+    arrow.rotation.x = Math.PI; // 倒置朝下
+    arrow.position.y = 2.0; // 在核心上方
+    this.agent.add(arrow);
 
     this.scene.add(this.agent);
 
@@ -89,12 +119,20 @@ export class PathAnimationManager {
       // 沿着折线曲线移动 agent（与渲染路径完全对齐）
       const point = curve.getPointAt(globalProgress);
 
-      // 设置箭头位置，抬高使其浮在路径上方
+      // 设置标记位置，抬高使其浮在路径上方
       this.agent.position.set(
         point.x,
-        point.y + 2, // 在路径上方2个单位
+        point.y + 2.5, // 在路径上方
         point.z,
       );
+
+      // 脉冲环动画 - 呼吸效果
+      const pulseRing = this.agent.getObjectByName('pulseRing');
+      if (pulseRing) {
+        const pulseScale = 1 + Math.sin(elapsed * 0.005) * 0.2;
+        pulseRing.scale.set(pulseScale, pulseScale, 1);
+        pulseRing.material.opacity = 0.4 + Math.sin(elapsed * 0.008) * 0.2;
+      }
 
       // 更新相机跟随
       this.updateCameraFollow(globalProgress);

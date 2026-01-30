@@ -7,20 +7,20 @@ export const Renderer3DConfig = {
   // 层配置 - Multi-floor building
   layerHeight: 100, // Height between floors (was 20, now 100 for clear separation)
 
-  // Floor entrance (stairs/elevators) configuration
+  // 楼层连接点配置 - 科技风格
   floorEntrance: {
     stairs: {
-      color: 0xffff00, // Yellow
-      radius: 1.5, // Increased from 0.6
-      segments: 8,
-      opacity: 0.9, // Increased from 0.7
+      color: 0x22d3ee, // Cyan 400 楼梯
+      radius: 1.8,
+      segments: 6, // 六边形
+      opacity: 0.85,
     },
     elevator: {
-      color: 0x00ffff, // Cyan
-      radius: 2.0, // Increased from 1.0
-      segments: 12,
-      opacity: 0.95, // Increased from 0.8
-      platformSize: 5, // Increased from 3
+      color: 0xa78bfa, // Violet 400 电梯
+      radius: 2.2,
+      segments: 8,
+      opacity: 0.9,
+      platformSize: 6,
     },
   },
 
@@ -32,23 +32,25 @@ export const Renderer3DConfig = {
     pulseAmount: 0.15,
   },
 
-  // 边配置
+  // 边配置 - 网络连接
   edge: {
     width: 0.5,
-    opacity: 0.3,
+    opacity: 0.5, // 增强可见度
   },
 
-  // 颜色配置
+  // 颜色配置 - 室内导航网格风格
   colors: {
-    background: 0x020617, // 深空黑背景
-    floor: 0x2a2a2a, // 黑灰色地板
-    node: 0x3b82f6, // 电蓝节点
-    nodeEmissive: 0x2563eb, // 深蓝发光
-    edge: 0x38bdf8, // 亮青色边
-    obstacle: 0xef4444, // 亮红障碍物 - 保持原色
-    obstacleEmissive: 0xdc2626, // 红色发光
-    pathActive: 0xf59e0b, // 琥珀色路径
-    pathBurned: 0x475569, // 烧过的路径变灰
+    background: 0x0f172a, // 深蓝灰背景（Slate 900）
+    floor: 0x1e293b, // Slate 800 地板
+    node: 0x06b6d4, // Cyan 500 网络节点
+    nodeEmissive: 0x22d3ee, // Cyan 400 发光
+    edge: 0x0ea5e9, // Cyan 500 主网络边
+    voronoiEdge: 0x8b5cf6, // Violet 500 Voronoi骨架
+    triangulation: 0x64748b, // Slate 500 基础三角化
+    obstacle: 0x6366f1, // Indigo 500 障碍物
+    obstacleEmissive: 0x4f46e5, // Indigo 600 发光
+    pathActive: 0x22d3ee, // Cyan 400 能量色
+    pathBurned: 0x0ea5e9, // Cyan 500 保持可见
     startNode: 0x10b981, // 绿色起点
     startNodeEmissive: 0x059669,
     endNode: 0xef4444, // 红色终点
@@ -62,9 +64,9 @@ export const Renderer3DConfig = {
   // 材质配置
   materials: {
     node: {
-      metalness: 0.3,
-      roughness: 0.4,
-      emissiveIntensity: 0.5,
+      metalness: 0.6, // 增加金属感
+      roughness: 0.3,
+      emissiveIntensity: 0.7, // 增强发光
     },
     obstacle: {
       metalness: 0.6,
@@ -78,16 +80,16 @@ export const Renderer3DConfig = {
     },
   },
 
-  // 光照配置 - 室内商场效果
+  // 光照配置 - 现代科技风格
   lighting: {
     ambient: {
-      color: 0x505050, // 室内环境光
-      intensity: 0.6, // 增加环境光强度
+      color: 0x1e293b, // 与背景协调的环境光
+      intensity: 0.7, // 增加环境光强度
     },
     hemisphere: {
-      skyColor: 0x87ceeb, // 天空蓝（模拟天花板灯光）
-      groundColor: 0x2a2a2a, // 地面灰色
-      intensity: 0.8,
+      skyColor: 0x3b82f6, // 品牌蓝天光
+      groundColor: 0x1e1e2e, // 深蓝地光
+      intensity: 0.9, // 增强半球光
     },
     directional: {
       color: 0xffffff, // 主光源（模拟天花板射灯）
@@ -140,9 +142,9 @@ export const Renderer3DConfig = {
     },
   },
 
-  // 雾配置
+  // 雾配置 - 增加雾浓度，柔化远景
   fog: {
-    density: 0.0015,
+    density: 0.002,
   },
 
   // 网格配置

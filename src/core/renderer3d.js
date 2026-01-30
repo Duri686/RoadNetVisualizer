@@ -208,6 +208,9 @@ class Renderer3D {
   _initAxisGizmo() {
     try {
       this.axisScene = new THREE.Scene();
+      // 设置场景背景色 - 深蓝玻璃效果
+      this.axisScene.background = new THREE.Color(0x0f172a);
+
       this.axisCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 10);
       this.axisCamera.position.set(0, 0, 3);
       this.axisCamera.lookAt(0, 0, 0);
@@ -334,7 +337,7 @@ class Renderer3D {
     const size = new THREE.Vector2();
     this.renderer.getSize(size);
     const axisSize = this.axisSize || 96;
-    const margin = this.axisMargin || 16;
+    const margin = this.axisMargin || 20;
 
     const x = size.x - axisSize - margin;
     const y = margin;

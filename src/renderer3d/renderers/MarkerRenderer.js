@@ -30,129 +30,155 @@ export class MarkerRenderer {
   }
 
   /**
-   * 渲染起点标记（蓝色脉冲波纹）
+   * 渲染起点标记（全息定位针风格）
    */
   renderStartMarker(node, layerHeight, centerX, centerY) {
-    const y = Renderer3DConfig.layerHeight * (node.layer || 0); // Multi-floor height
+    const y = Renderer3DConfig.layerHeight * (node.layer || 0);
     const posX = node.x - centerX;
     const posZ = node.y - centerY;
 
     const config = Renderer3DConfig;
 
-    // 主球体
-    const geometry = new THREE.SphereGeometry(config.node.size * 0.8, 32, 32);
-    const material = new THREE.MeshStandardMaterial({
+    // 主体 - 倒置锥体（定位针形状）
+    const coneGeo = new THREE.ConeGeometry(config.node.size * 0.6, config.node.size * 2, 6);
+    const coneMat = new THREE.MeshStandardMaterial({
       color: config.colors.startNode,
       emissive: config.colors.startNodeEmissive,
-      emissiveIntensity: config.materials.marker.emissiveIntensity,
-      metalness: config.materials.marker.metalness,
-      roughness: config.materials.marker.roughness
+      emissiveIntensity: 0.6,
+      metalness: 0.8,
+      roughness: 0.2,
+      transparent: true,
+      opacity: 0.9,
     });
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.castShadow = true;
-    mesh.position.set(posX, y + 1, posZ);
-    this.markersGroup.add(mesh);
+    const cone = new THREE.Mesh(coneGeo, coneMat);
+    cone.rotation.x = Math.PI; // 倒置
+    cone.position.set(posX, y + config.node.size * 1.5, posZ);
+    cone.castShadow = true;
+    this.markersGroup.add(cone);
 
-    // 创建脉冲波纹环
-    const rippleConfig = config.animation.ripple;
-    for (let i = 0; i < rippleConfig.count; i++) {
-      const ringGeo = new THREE.RingGeometry(config.node.size * 1.2, config.node.size * 1.5, 32);
-      const ringMat = new THREE.MeshBasicMaterial({
-        color: config.colors.startNode,
-        side: THREE.DoubleSide,
-        transparent: true,
-        opacity: 0.8
-      });
-      const ring = new THREE.Mesh(ringGeo, ringMat);
-      ring.rotation.x = -Math.PI / 2;
-      ring.position.set(posX, y + 0.2, posZ);
+    // 底部 - 六边形发光环
+    const hexRingGeo = new THREE.RingGeometry(config.node.size * 1.5, config.node.size * 2, 6);
+    const hexRingMat = new THREE.MeshBasicMaterial({
+      color: config.colors.startNode,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.5,
+    });
+    const hexRing = new THREE.Mesh(hexRingGeo, hexRingMat);
+    hexRing.rotation.x = -Math.PI / 2;
+    hexRing.position.set(posX, y + 0.3, posZ);
+    this.markersGroup.add(hexRing);
 
-      ring.userData = {
-        startTime: performance.now() + i * rippleConfig.delay,
-        duration: rippleConfig.duration,
-        initialScale: 1,
-        maxScale: rippleConfig.maxScale,
-        baseOpacity: 0.8
-      };
+    // 单个脉冲环（简化动画）
+    const pulseGeo = new THREE.RingGeometry(config.node.size * 0.8, config.node.size * 1.2, 6);
+    const pulseMat = new THREE.MeshBasicMaterial({
+      color: config.colors.startNode,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.7,
+    });
+    const pulse = new THREE.Mesh(pulseGeo, pulseMat);
+    pulse.rotation.x = -Math.PI / 2;
+    pulse.position.set(posX, y + 0.2, posZ);
 
-      this.animationController.addPulseRing(ring);
-      this.markersGroup.add(ring);
-    }
+    pulse.userData = {
+      startTime: performance.now(),
+      duration: config.animation.ripple.duration,
+      initialScale: 1,
+      maxScale: config.animation.ripple.maxScale,
+      baseOpacity: 0.7,
+    };
 
-    // 光柱
-    this.createBeam(posX, y, posZ, config.colors.startNode, config.colors.startNodeEmissive);
+    this.animationController.addPulseRing(pulse);
+    this.markersGroup.add(pulse);
+
+    // 光柱（更细更高更亮）
+    this.createBeam(posX, y, posZ, config.colors.startNode, config.colors.startNodeEmissive, 0.15, 25);
   }
 
   /**
-   * 渲染终点标记（红色带脉冲波纹）
+   * 渲染终点标记（全息定位针风格 - 红色）
    */
   renderEndMarker(node, layerHeight, centerX, centerY) {
-    const y = Renderer3DConfig.layerHeight * (node.layer || 0); // Multi-floor height
+    const y = Renderer3DConfig.layerHeight * (node.layer || 0);
     const posX = node.x - centerX;
     const posZ = node.y - centerY;
 
     const config = Renderer3DConfig;
 
-    // 主球体
-    const geometry = new THREE.SphereGeometry(config.node.size * 0.8, 32, 32);
-    const material = new THREE.MeshStandardMaterial({
+    // 主体 - 倒置锥体（定位针形状）
+    const coneGeo = new THREE.ConeGeometry(config.node.size * 0.6, config.node.size * 2, 6);
+    const coneMat = new THREE.MeshStandardMaterial({
       color: config.colors.endNode,
       emissive: config.colors.endNodeEmissive,
-      emissiveIntensity: config.materials.marker.emissiveIntensity,
-      metalness: config.materials.marker.metalness,
-      roughness: config.materials.marker.roughness
+      emissiveIntensity: 0.6,
+      metalness: 0.8,
+      roughness: 0.2,
+      transparent: true,
+      opacity: 0.9,
     });
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.castShadow = true;
-    mesh.position.set(posX, y + 1, posZ);
-    this.markersGroup.add(mesh);
+    const cone = new THREE.Mesh(coneGeo, coneMat);
+    cone.rotation.x = Math.PI; // 倒置
+    cone.position.set(posX, y + config.node.size * 1.5, posZ);
+    cone.castShadow = true;
+    this.markersGroup.add(cone);
 
-    // 创建脉冲波纹环（与起点相同）
-    const rippleConfig = config.animation.ripple;
-    for (let i = 0; i < rippleConfig.count; i++) {
-      const ringGeo = new THREE.RingGeometry(config.node.size * 1.2, config.node.size * 1.5, 32);
-      const ringMat = new THREE.MeshBasicMaterial({
-        color: config.colors.endNode,
-        side: THREE.DoubleSide,
-        transparent: true,
-        opacity: 0.8
-      });
-      const ring = new THREE.Mesh(ringGeo, ringMat);
-      ring.rotation.x = -Math.PI / 2;
-      ring.position.set(posX, y + 0.2, posZ);
+    // 底部 - 六边形发光环
+    const hexRingGeo = new THREE.RingGeometry(config.node.size * 1.5, config.node.size * 2, 6);
+    const hexRingMat = new THREE.MeshBasicMaterial({
+      color: config.colors.endNode,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.5,
+    });
+    const hexRing = new THREE.Mesh(hexRingGeo, hexRingMat);
+    hexRing.rotation.x = -Math.PI / 2;
+    hexRing.position.set(posX, y + 0.3, posZ);
+    this.markersGroup.add(hexRing);
 
-      ring.userData = {
-        startTime: performance.now() + i * rippleConfig.delay,
-        duration: rippleConfig.duration,
-        initialScale: 1,
-        maxScale: rippleConfig.maxScale,
-        baseOpacity: 0.8
-      };
+    // 单个脉冲环
+    const pulseGeo = new THREE.RingGeometry(config.node.size * 0.8, config.node.size * 1.2, 6);
+    const pulseMat = new THREE.MeshBasicMaterial({
+      color: config.colors.endNode,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.7,
+    });
+    const pulse = new THREE.Mesh(pulseGeo, pulseMat);
+    pulse.rotation.x = -Math.PI / 2;
+    pulse.position.set(posX, y + 0.2, posZ);
 
-      this.animationController.addPulseRing(ring);
-      this.markersGroup.add(ring);
-    }
+    pulse.userData = {
+      startTime: performance.now(),
+      duration: config.animation.ripple.duration,
+      initialScale: 1,
+      maxScale: config.animation.ripple.maxScale,
+      baseOpacity: 0.7,
+    };
 
-    // 光柱
-    this.createBeam(posX, y, posZ, config.colors.endNode, config.colors.endNodeEmissive);
+    this.animationController.addPulseRing(pulse);
+    this.markersGroup.add(pulse);
+
+    // 光柱（更细更高更亮）
+    this.createBeam(posX, y, posZ, config.colors.endNode, config.colors.endNodeEmissive, 0.15, 25);
   }
 
   /**
-   * 创建光柱
+   * 创建光柱（可自定义尺寸）
    */
-  createBeam(x, y, z, color, emissive) {
-    const beamGeo = new THREE.CylinderGeometry(0.3, 0.3, 15, 16);
+  createBeam(x, y, z, color, emissive, radius = 0.3, height = 15) {
+    const beamGeo = new THREE.CylinderGeometry(radius, radius, height, 8);
     const beamMat = new THREE.MeshStandardMaterial({
       color,
       emissive,
-      emissiveIntensity: 0.6,
+      emissiveIntensity: 0.8,
       transparent: true,
-      opacity: 0.7,
-      metalness: 0.8,
-      roughness: 0.2
+      opacity: 0.6,
+      metalness: 0.9,
+      roughness: 0.1,
     });
     const beam = new THREE.Mesh(beamGeo, beamMat);
-    beam.position.set(x, y + 7.5, z);
+    beam.position.set(x, y + height / 2, z);
     this.markersGroup.add(beam);
   }
 

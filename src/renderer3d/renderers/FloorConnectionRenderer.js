@@ -62,9 +62,11 @@ export function renderFloorConnections(
       const accessTubeMat = new THREE.MeshStandardMaterial({
         color: conf.color,
         emissive: conf.color,
-        emissiveIntensity: 0.5,
+        emissiveIntensity: 0.8,
         transparent: true,
-        opacity: 0.8,
+        opacity: conf.opacity,
+        metalness: 0.7,
+        roughness: 0.2,
       });
       const accessTube = new THREE.Mesh(accessTubeGeo, accessTubeMat);
       accessTube.name = `connection_${conn.type}_accessPath_L${conn.lowerLayer}-L${conn.upperLayer}`;

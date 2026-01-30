@@ -146,54 +146,54 @@ function createRoundedBoxGeometry(width, height, depth, radius) {
  */
 function createObstacleMaterials(config) {
   return {
-    // 主要障碍物材质 - 保持红色，使用更好的透明度设置
+    // 主要障碍物材质 - 数据晶体风格
     primary: new THREE.MeshStandardMaterial({
-      color: config.colors.obstacle,
-      roughness: 0.6,
-      metalness: 0.3,
-      emissive: config.colors.obstacleEmissive,
-      emissiveIntensity: 0.1,
+      color: 0x8b5cf6, // Violet 500 主色
+      roughness: 0.25,
+      metalness: 0.7, // 高金属感
+      emissive: 0xa78bfa, // Violet 400 边缘发光
+      emissiveIntensity: 0.35, // 增强发光
       transparent: true,
-      opacity: 0.8, // 透明度，平衡可见性
-      depthWrite: true, // 启用深度写入
-      side: THREE.FrontSide, // 只渲染正面
+      opacity: 0.55, // 更透明的晶体效果
+      depthWrite: true,
+      side: THREE.FrontSide,
     }),
 
-    // 商店/房间材质 - 稍微不同的红色调
+    // 商店/房间材质 - 深紫调
     shop: new THREE.MeshStandardMaterial({
-      color: 0xdc2626,
-      roughness: 0.7,
-      metalness: 0.2,
-      emissive: 0x991b1b,
-      emissiveIntensity: 0.05,
+      color: 0x7c3aed, // Violet 600
+      roughness: 0.3,
+      metalness: 0.65,
+      emissive: 0x8b5cf6, // Violet 500
+      emissiveIntensity: 0.3,
       transparent: true,
-      opacity: 0.8, // 透明度
+      opacity: 0.6,
       depthWrite: true,
       side: THREE.FrontSide,
     }),
 
-    // 柱子材质 - 更有金属感
+    // 柱子材质 - 更有金属感的紫色
     pillar: new THREE.MeshStandardMaterial({
-      color: 0xef4444,
-      roughness: 0.4,
-      metalness: 0.5,
-      emissive: 0xdc2626,
-      emissiveIntensity: 0.15,
+      color: 0x7c3aed, // Violet 600
+      roughness: 0.3,
+      metalness: 0.6,
+      emissive: 0x6d28d9, // Violet 700
+      emissiveIntensity: 0.25,
       transparent: true,
-      opacity: 0.8, // 透明度
+      opacity: 0.8,
       depthWrite: true,
       side: THREE.FrontSide,
     }),
 
-    // 特殊区域材质
+    // 特殊区域材质 - 浅蓝紫玻璃
     special: new THREE.MeshStandardMaterial({
-      color: 0xf87171,
-      roughness: 0.5,
-      metalness: 0.4,
-      emissive: 0xef4444,
-      emissiveIntensity: 0.08,
+      color: 0x818cf8, // Indigo 400
+      roughness: 0.35,
+      metalness: 0.55,
+      emissive: 0x6366f1, // Indigo 500
+      emissiveIntensity: 0.18,
       transparent: true,
-      opacity: 0.8, // 透明度
+      opacity: 0.65, // 更透明
       depthWrite: true,
       side: THREE.FrontSide,
     }),

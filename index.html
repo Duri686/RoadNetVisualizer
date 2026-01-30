@@ -1,134 +1,179 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>RoadNet Visualizer - 多层道路网络可视化</title>
-    <link rel="stylesheet" href="/src/css/tailwind.css" />
-    <link rel="stylesheet" href="/src/css/index.css" />
-    <style>
-      .github-link {
-        position: fixed;
-        bottom: 32px;
-        left: 50%;
-        transform: translateX(-50%);
-        align-items: center;
-        gap: 10px;
-        padding: 8px 14px;
-        border-radius: 50px;
-        background: rgba(255, 255, 255, 0.08);
-        backdrop-filter: blur(8px);
-        color: #cbd5e1;
-        text-decoration: none;
-        transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
-        z-index: 1000;
-        font-weight: 600;
-      }
-      .github-link:hover {
-        background: rgba(255, 255, 255, 0.14);
-        color: #ffffff;
-      }
-      .github-link svg {
-        width: 20px;
-        height: 20px;
-        fill: currentColor;
-        display: block;
-      }
-    </style>
-  </head>
-  <body
-    class="bg-[var(--bg-page)] text-[var(--text-primary)] selection:bg-[var(--primary-color)] selection:text-[var(--text-white)]"
-  >
-    <a
-      href="https://github.com/Duri686/RoadNetVisualizer"
-      class="github-link hidden md:inline-flex"
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label="View project on GitHub"
-    >
-      <svg viewBox="0 0 16 16" aria-hidden="true">
-        <path
-          d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.54 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"
-        ></path>
-      </svg>
-      <span>GitHub repository</span>
-    </a>
-    <div
-      class="rn-container flex flex-col lg:grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)_320px] gap-4 lg:gap-6 p-3 lg:p-6 h-[100dvh] lg:h-screen overflow-hidden items-stretch"
-    >
-      <input
-        class="peer/vis sr-only"
-        type="radio"
-        name="mobile-view"
-        id="tab-visualization"
-        checked
-      />
-      <input
-        class="peer/op sr-only"
-        type="radio"
-        name="mobile-view"
-        id="tab-operation"
-      />
-      <input
-        class="peer/int sr-only"
-        type="radio"
-        name="mobile-view"
-        id="tab-interpretation"
-      />
-      <!-- 移动端：横向Tab导航（仅在小屏显示） -->
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RoadNet Visualizer - 多层道路网络可视化</title>
+  <link rel="stylesheet" href="/src/css/tailwind.css" />
+  <link rel="stylesheet" href="/src/css/index.css" />
+  <style>
+    .github-link {
+      position: fixed;
+      bottom: 40px;
+      /* container p-6 (24px) + FPS offset (16px) */
+      left: 50%;
+      transform: translateX(-50%);
+      align-items: center;
+      gap: 10px;
+      padding: 10px 18px;
+      border-radius: 14px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+      color: var(--text-secondary, #94a3b8);
+      text-decoration: none;
+      transition: all 0.25s ease;
+      z-index: 1000;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .github-link:hover {
+      background: rgba(15, 23, 42, 0.95);
+      border-color: rgba(37, 99, 235, 0.4);
+      color: var(--text-primary, #f1f5f9);
+      box-shadow: 0 4px 20px rgba(37, 99, 235, 0.2);
+      transform: translateX(-50%) translateY(-2px);
+    }
+
+    .github-link svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+      display: block;
+    }
+
+    /* 桌面端侧边栏 Tab 样式 */
+    .sidebar-tab {
+      background: transparent;
+      color: var(--text-secondary, #94a3b8);
+      cursor: pointer;
+    }
+
+    .sidebar-tab:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-primary, #f1f5f9);
+    }
+
+    .sidebar-tab.active {
+      background: var(--primary-color, #2563eb);
+      color: var(--text-white, #fff);
+      border-color: var(--primary-color, #2563eb);
+    }
+  </style>
+</head>
+
+<body
+  class="bg-[var(--bg-page)] text-[var(--text-primary)] selection:bg-[var(--primary-color)] selection:text-[var(--text-white)]">
+  <div
+    class="rn-container flex flex-col lg:grid grid-cols-1 lg:grid-cols-[340px_minmax(0,1fr)] gap-4 lg:gap-6 p-3 lg:p-6 h-[100dvh] lg:h-screen overflow-hidden items-stretch">
+    <!-- 移动端 Tab 状态 -->
+    <input class="peer/vis sr-only" type="radio" name="mobile-view" id="tab-visualization" checked />
+    <input class="peer/op sr-only" type="radio" name="mobile-view" id="tab-operation" />
+    <input class="peer/int sr-only" type="radio" name="mobile-view" id="tab-interpretation" />
+
+    <!-- 移动端：横向Tab导航（仅在小屏显示） -->
+    <nav id="mobile-tabs" aria-label="主模块切换" role="tablist"
+      class="lg:hidden sticky top-2 z-50 mb-2 flex items-center gap-2 p-2 rounded-xl glass-panel border border-[var(--border-light)] shadow-[var(--shadow-md)] peer-checked/vis:[&_.tab-vis]:!bg-[var(--primary-color)] peer-checked/vis:[&_.tab-vis]:!text-[var(--text-white)] peer-checked/vis:[&_.tab-vis]:!border-[var(--primary-color)] peer-checked/vis:[&_.tab-vis]:!shadow-[0_0_12px_rgba(37,99,235,0.4)] peer-checked/op:[&_.tab-op]:!bg-[var(--primary-color)] peer-checked/op:[&_.tab-op]:!text-[var(--text-white)] peer-checked/op:[&_.tab-op]:!border-[var(--primary-color)] peer-checked/op:[&_.tab-op]:!shadow-[0_0_12px_rgba(37,99,235,0.4)] peer-checked/int:[&_.tab-int]:!bg-[var(--primary-color)] peer-checked/int:[&_.tab-int]:!text-[var(--text-white)] peer-checked/int:[&_.tab-int]:!border-[var(--primary-color)] peer-checked/int:[&_.tab-int]:!shadow-[0_0_12px_rgba(37,99,235,0.4)]">
+      <a href="https://github.com/Duri686/RoadNetVisualizer" target="_blank" rel="noopener noreferrer"
+        class="flex items-center justify-center w-8 h-8 rounded-lg text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.1)] transition-all"
+        aria-label="View on GitHub">
+        <svg class="w-5 h-5" viewBox="0 0 16 16" fill="currentColor">
+          <path
+            d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.54 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
+        </svg>
+      </a>
+      <span class="w-px h-6 bg-[var(--border-light)]"></span>
+      <label for="tab-visualization" role="tab"
+        class="tab-vis flex-1 text-center px-3 py-2.5 text-sm font-medium rounded-lg border border-transparent bg-transparent text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.1)] hover:text-[var(--text-primary)] cursor-pointer transition-all">
+        地图
+      </label>
+      <label for="tab-operation" role="tab"
+        class="tab-op flex-1 text-center px-3 py-2.5 text-sm font-medium rounded-lg border border-transparent bg-transparent text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.1)] hover:text-[var(--text-primary)] cursor-pointer transition-all">
+        操作
+      </label>
+      <label for="tab-interpretation" role="tab"
+        class="tab-int flex-1 text-center px-3 py-2.5 text-sm font-medium rounded-lg border border-transparent bg-transparent text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.1)] hover:text-[var(--text-primary)] cursor-pointer transition-all">
+        解读
+      </label>
+    </nav>
+
+    <!-- 左侧合并面板（桌面端） -->
+    <aside id="desktop-sidebar" class="hidden lg:flex flex-col min-h-0 overflow-hidden">
+      <!-- 桌面端 Tab 导航（一体化设计） -->
       <nav
-        id="mobile-tabs"
-        aria-label="主模块切换"
-        role="tablist"
-        class="lg:hidden sticky top-2 z-50 mb-2 flex gap-2 p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-light)] shadow-[var(--shadow-sm)] backdrop-blur peer-checked/vis:[&_.tab-vis]:!bg-[var(--primary-color)] peer-checked/vis:[&_.tab-vis]:!text-[var(--text-white)] peer-checked/vis:[&_.tab-vis]:!border-[var(--primary-color)] peer-checked/op:[&_.tab-op]:!bg-[var(--primary-color)] peer-checked/op:[&_.tab-op]:!text-[var(--text-white)] peer-checked/op:[&_.tab-op]:!border-[var(--primary-color)] peer-checked/int:[&_.tab-int]:!bg-[var(--primary-color)] peer-checked/int:[&_.tab-int]:!text-[var(--text-white)] peer-checked/int:[&_.tab-int]:!border-[var(--primary-color)]"
-      >
-        <label
-          for="tab-visualization"
-          role="tab"
-          class="tab-vis flex-1 text-center px-3 py-2 text-sm rounded-md border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-secondary)] hover:bg-[var(--bg-input-hover)] hover:text-[var(--text-primary)] cursor-pointer"
-        >
-          地图
-        </label>
-        <label
-          for="tab-operation"
-          role="tab"
-          class="tab-op flex-1 text-center px-3 py-2 text-sm rounded-md border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-secondary)] hover:bg-[var(--bg-input-hover)] hover:text-[var(--text-primary)] cursor-pointer"
-        >
+        class="flex items-center gap-2 p-2 mb-4 rounded-xl glass-panel border border-[var(--border-light)] shadow-[var(--shadow-sm)]">
+        <a href="https://github.com/Duri686/RoadNetVisualizer" target="_blank" rel="noopener noreferrer"
+          class="flex items-center justify-center w-8 h-8 rounded-lg text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.1)] transition-all"
+          aria-label="View on GitHub">
+          <svg class="w-4.5 h-4.5" viewBox="0 0 16 16" fill="currentColor">
+            <path
+              d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.54 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
+          </svg>
+        </a>
+        <span class="w-px h-6 bg-[var(--border-light)]"></span>
+        <button type="button" data-panel="operation"
+          class="sidebar-tab active flex-1 text-center px-3 py-2 text-sm font-medium rounded-lg border border-transparent transition-all">
           操作
-        </label>
-        <label
-          for="tab-interpretation"
-          role="tab"
-          class="tab-int flex-1 text-center px-3 py-2 text-sm rounded-md border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-secondary)] hover:bg-[var(--bg-input-hover)] hover:text-[var(--text-primary)] cursor-pointer"
-        >
+        </button>
+        <button type="button" data-panel="interpretation"
+          class="sidebar-tab flex-1 text-center px-3 py-2 text-sm font-medium rounded-lg border border-transparent transition-all">
           解读
-        </label>
+        </button>
       </nav>
-      <!-- 左栏：操作面板 (Operation Panel) -->
-      <section
-        class="operation-panel hidden pr-2 pt-[2px] lg:flex peer-checked/op:flex peer-checked/op:flex-1 flex-col min-w-[280px] max-w-[340px] min-h-0 overflow-y-auto lg:h-full"
-      >
-        <!-- Control Panel -->
-        <rn-operation-panel></rn-operation-panel>
-      </section>
+      <!-- 面板内容区 -->
+      <div class="flex-1 overflow-y-auto pr-2 pt-1">
+        <div id="panel-operation" class="sidebar-panel">
+          <rn-operation-panel></rn-operation-panel>
+        </div>
+        <div id="panel-interpretation" class="sidebar-panel hidden">
+          <rn-interpretation-panel></rn-interpretation-panel>
+        </div>
+      </div>
+    </aside>
 
-      <!-- 中栏：可视化面板 (Visualization Panel) -->
-      <section
-        class="visualization-panel hidden lg:flex peer-checked/vis:flex peer-checked/vis:flex-1 flex-col min-w-0 min-h-0 overflow-hidden lg:h-full"
-      >
-        <rn-visualization-panel
-          class="flex flex-col flex-1 min-h-0"
-        ></rn-visualization-panel>
-      </section>
+    <script>
+      // 桌面端 Tab 切换逻辑
+      document.addEventListener('DOMContentLoaded', () => {
+        const tabs = document.querySelectorAll('#desktop-sidebar .sidebar-tab');
+        const panels = document.querySelectorAll('#desktop-sidebar .sidebar-panel');
 
-      <!-- 右栏：解读面板 (Interpretation Panel) -->
-      <section
-        class="interpretation-panel hidden pr-2 pt-[2px] lg:flex peer-checked/int:flex peer-checked/int:flex-1 flex-col min-w-[280px] max-w-[340px] min-h-0 overflow-y-auto lg:h-full"
-      >
-        <rn-interpretation-panel></rn-interpretation-panel>
-      </section>
-    </div>
+        tabs.forEach(tab => {
+          tab.addEventListener('click', () => {
+            const target = tab.dataset.panel;
+            // 切换 Tab 样式
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            // 切换面板显示
+            panels.forEach(p => p.classList.add('hidden'));
+            document.getElementById('panel-' + target)?.classList.remove('hidden');
+          });
+        });
+      });
+    </script>
 
-    <script type="module" src="/src/main.js"></script>
-  </body>
+    <!-- 移动端：操作面板 -->
+    <section
+      class="operation-panel lg:hidden hidden peer-checked/op:flex peer-checked/op:flex-1 flex-col w-full min-h-0 overflow-y-auto pt-1">
+      <rn-operation-panel></rn-operation-panel>
+    </section>
+
+    <!-- 可视化面板 -->
+    <section
+      class="visualization-panel hidden lg:flex peer-checked/vis:flex peer-checked/vis:flex-1 flex-col min-w-0 min-h-0 overflow-hidden lg:h-full">
+      <rn-visualization-panel class="flex flex-col flex-1 min-h-0"></rn-visualization-panel>
+    </section>
+
+    <!-- 移动端：解读面板 -->
+    <section
+      class="interpretation-panel lg:hidden hidden peer-checked/int:flex peer-checked/int:flex-1 flex-col w-full min-h-0 overflow-y-auto pt-1">
+      <rn-interpretation-panel></rn-interpretation-panel>
+    </section>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+
 </html>

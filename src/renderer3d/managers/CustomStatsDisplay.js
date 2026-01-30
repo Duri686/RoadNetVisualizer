@@ -16,22 +16,25 @@ export class CustomStatsDisplay {
    * 初始化显示面板
    */
   init() {
-    // 创建面板容器
+    // 创建面板容器 - Glass Panel 风格
     this.panel = document.createElement('div');
     this.panel.style.cssText = `
       position: absolute;
-      bottom: 8px;
-      left: 8px;
-      padding: 8px 12px;
-      background: rgba(0, 0, 0, 0.8);
-      color: #0ff;
-      font-family: 'Courier New', monospace;
-      font-size: 14px;
-      font-weight: bold;
-      border-radius: 4px;
+      bottom: 16px;
+      left: 16px;
+      padding: 10px 14px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      color: #22d3ee;
+      font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 12px;
       z-index: 100;
       user-select: none;
-      line-height: 1.4;
+      line-height: 1.5;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
     `;
 
     // FPS 文本
