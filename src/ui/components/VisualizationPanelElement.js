@@ -16,7 +16,7 @@ class VisualizationPanelElement extends HTMLElement {
           <div id="pixi-canvas" class="w-full h-full flex justify-center items-center rounded-[var(--radius-xl)] overflow-hidden relative bg-transparent flex-1 touch-none overscroll-contain fullscreen:flex-grow fullscreen:h-0 fullscreen:rounded-none"></div>
           <div class="canvas-hint absolute top-3 left-1/2 -translate-x-1/2 z-10 bg-black/50 backdrop-blur-[20px] px-4 py-1.5 rounded-full border border-white/10 pointer-events-none">
             <p id="canvas-hint-text" class="max-w-full m-0 text-[11px] text-center text-white/80 whitespace-nowrap">
-              单击选点 · 双击结束导航 · 滚轮缩放 · 拖拽平移
+              单击选点 · 双击结束导航 · 滚轮缩放 · 拖拽旋转
             </p>
           </div>
         </div>
