@@ -38,26 +38,26 @@ export const Renderer3DConfig = {
     opacity: 0.5, // 增强可见度
   },
 
-  // 颜色配置 - 室内导航网格风格
+  // 颜色配置 - iOS 26 Monochrome Blue
   colors: {
-    background: 0x0f172a, // 深蓝灰背景（Slate 900）
-    floor: 0x1e293b, // Slate 800 地板
-    node: 0x06b6d4, // Cyan 500 网络节点
-    nodeEmissive: 0x22d3ee, // Cyan 400 发光
-    edge: 0x0ea5e9, // Cyan 500 主网络边
-    voronoiEdge: 0x8b5cf6, // Violet 500 Voronoi骨架
-    triangulation: 0x64748b, // Slate 500 基础三角化
+    background: 0x0c1929, // 深海蓝背景
+    floor: 0x162033, // 深蓝地板
+    node: 0x38bdf8, // Sky 400 网络节点
+    nodeEmissive: 0x60a5fa, // Blue 400 发光
+    edge: 0x38bdf8, // Sky 400 主网络边
+    voronoiEdge: 0x818cf8, // Indigo 400 Voronoi骨架
+    triangulation: 0x475569, // Slate 600 基础三角化
     obstacle: 0x6366f1, // Indigo 500 障碍物
-    obstacleEmissive: 0x4f46e5, // Indigo 600 发光
-    pathActive: 0x22d3ee, // Cyan 400 能量色
-    pathBurned: 0x0ea5e9, // Cyan 500 保持可见
-    startNode: 0x10b981, // 绿色起点
-    startNodeEmissive: 0x059669,
-    endNode: 0xef4444, // 红色终点
-    endNodeEmissive: 0xb91c1c,
+    obstacleEmissive: 0x818cf8, // Indigo 400 发光
+    pathActive: 0x60a5fa, // Blue 400 能量色
+    pathBurned: 0x38bdf8, // Sky 400 保持可见
+    startNode: 0x34d399, // Emerald 400 起点
+    startNodeEmissive: 0x10b981,
+    endNode: 0xf87171, // Red 400 终点
+    endNodeEmissive: 0xef4444,
     grid: {
-      primary: 0x404040, // 室内网格色
-      secondary: 0x2a2a2a, // 次要网格色
+      primary: 0x1e3a5f, // 蓝色网格
+      secondary: 0x162033, // 深蓝次要网格
     },
   },
 
@@ -87,8 +87,8 @@ export const Renderer3DConfig = {
       intensity: 0.7, // 增加环境光强度
     },
     hemisphere: {
-      skyColor: 0x3b82f6, // 品牌蓝天光
-      groundColor: 0x1e1e2e, // 深蓝地光
+      skyColor: 0x60a5fa, // Blue 400 天光
+      groundColor: 0x0c1929, // 与背景协调的深蓝地光
       intensity: 0.9, // 增强半球光
     },
     directional: {

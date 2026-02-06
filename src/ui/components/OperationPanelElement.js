@@ -199,7 +199,7 @@ class OperationPanelElement extends HTMLElement {
           </details>
 
           <div class="action-buttons flex flex-col mt-auto pt-[var(--space-lg)]">
-            <button id="generate-btn" class="group relative overflow-hidden flex flex-col items-center gap-1 px-6 py-4 bg-[linear-gradient(135deg,#2563EB_0%,#1D4ED8_100%)] border border-[rgba(147,197,253,0.2)] shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)] hover:border-[rgba(147,197,253,0.5)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 rounded-[var(--radius-lg)]">
+            <button id="generate-btn" class="group relative overflow-hidden flex flex-col items-center gap-1 px-6 py-4 bg-[linear-gradient(135deg,#3b82f6_0%,#2563EB_100%)] border border-[rgba(147,197,253,0.25)] shadow-[0_4px_20px_rgba(37,99,235,0.2)] hover:shadow-[0_8px_28px_rgba(37,99,235,0.3)] hover:border-[rgba(147,197,253,0.4)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-[400ms] rounded-[var(--radius-lg)]" style="transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);">
               <div class="absolute inset-0 bg-[linear-gradient(to_right,transparent,rgba(255,255,255,0.2),transparent)] -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
               <span class="btn__text text-[16px] font-bold tracking-wide text-white drop-shadow-md z-10">GENERATE SYSTEM</span>
               <span class="btn__subtitle text-[10px] font-medium uppercase tracking-[2px] text-[rgba(255,255,255,0.7)] z-10">Initialize / Reset</span>
@@ -216,8 +216,8 @@ class OperationPanelElement extends HTMLElement {
             </div>
           </div>
 
-          <div id="status-message" class="status-message mt-[var(--space-lg)] p-[var(--space-md)] bg-[rgba(59,130,246,0.05)] rounded-[var(--radius-lg)] border border-[rgba(59,130,246,0.1)] flex items-start gap-3">
-            <div class="w-2 h-2 rounded-full bg-[var(--info-color)] mt-1.5 shadow-[0_0_8px_var(--info-color)] animate-pulse"></div>
+          <div id="status-message" class="status-message mt-[var(--space-lg)] p-[var(--space-md)] bg-[rgba(255,255,255,0.12)] backdrop-blur-[40px] rounded-[var(--radius-lg)] border border-[rgba(255,255,255,0.3)] flex items-start gap-3">
+            <div class="w-2 h-2 rounded-full bg-[var(--info-color)] mt-1.5 shadow-[0_0_6px_rgba(96,165,250,0.4)] animate-pulse"></div>
             <div>
               <p class="status-text text-[13px] text-[var(--text-primary)] font-medium mb-0.5">
                 System Ready

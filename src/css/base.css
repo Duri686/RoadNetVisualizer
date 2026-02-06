@@ -1,4 +1,4 @@
-/* 全局基础样式 */
+/* 全局基础样式 - iOS 26 Liquid Glass */
 html,
 body {
   margin: 0;
@@ -6,14 +6,15 @@ body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: linear-gradient(to bottom, #F8FAFC, #EFF6FF);
-  /* Stitch: Soft Grey -> Soft Blue */
+  background: linear-gradient(160deg, #e0eaff 0%, #d6e4ff 40%, #ede9fe 100%);
   color: var(--text-primary);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: -apple-system, 'SF Pro Display', 'SF Pro Text', system-ui, 'Inter', sans-serif;
   background-image:
-    radial-gradient(circle at 50% 0%, rgba(0, 240, 255, 0.1), transparent 40%),
-    radial-gradient(circle at 0% 100%, rgba(188, 19, 254, 0.1), transparent 40%),
-    radial-gradient(circle at 100% 100%, rgba(0, 240, 255, 0.1), transparent 40%);
+    radial-gradient(ellipse 60% 50% at 15% 20%, rgba(96, 165, 250, 0.35), transparent),
+    radial-gradient(ellipse 50% 60% at 85% 25%, rgba(167, 139, 250, 0.25), transparent),
+    radial-gradient(ellipse 70% 50% at 50% 80%, rgba(56, 189, 248, 0.2), transparent),
+    radial-gradient(ellipse 40% 40% at 75% 70%, rgba(196, 181, 253, 0.22), transparent),
+    radial-gradient(ellipse 50% 50% at 25% 60%, rgba(99, 102, 241, 0.15), transparent);
   background-attachment: fixed;
 }
 
@@ -33,12 +34,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(37, 99, 235, 0.12);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(37, 99, 235, 0.2);
 }
 
 h1,

@@ -11,31 +11,31 @@
     .github-link {
       position: fixed;
       bottom: 40px;
-      /* container p-6 (24px) + FPS offset (16px) */
       left: 50%;
       transform: translateX(-50%);
       align-items: center;
       gap: 10px;
       padding: 10px 18px;
-      border-radius: 14px;
-      background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(148, 163, 184, 0.2);
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-      color: var(--text-secondary, #94a3b8);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.45);
+      backdrop-filter: blur(40px);
+      -webkit-backdrop-filter: blur(40px);
+      border: 0.5px solid rgba(255, 255, 255, 0.35);
+      box-shadow: 0 4px 16px rgba(37, 99, 235, 0.06);
+      color: var(--text-secondary, #4b6a94);
       text-decoration: none;
-      transition: all 0.25s ease;
+      transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
       z-index: 1000;
       font-weight: 600;
       font-size: 13px;
     }
 
     .github-link:hover {
-      background: rgba(15, 23, 42, 0.95);
-      border-color: rgba(37, 99, 235, 0.4);
-      color: var(--text-primary, #f1f5f9);
-      box-shadow: 0 4px 20px rgba(37, 99, 235, 0.2);
-      transform: translateX(-50%) translateY(-2px);
+      background: rgba(255, 255, 255, 0.6);
+      border-color: rgba(147, 197, 253, 0.4);
+      color: var(--text-primary, #1e3a5f);
+      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.1);
+      transform: translateX(-50%) translateY(-1px);
     }
 
     .github-link svg {
@@ -45,22 +45,24 @@
       display: block;
     }
 
-    /* 桌面端侧边栏 Tab 样式 */
+    /* 桌面端侧边栏 Tab 样式 - iOS 26 Liquid Glass */
     .sidebar-tab {
       background: transparent;
-      color: var(--text-secondary, #94a3b8);
+      color: var(--text-secondary, #4b6a94);
       cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
 
     .sidebar-tab:hover {
-      background: rgba(255, 255, 255, 0.1);
-      color: var(--text-primary, #f1f5f9);
+      background: rgba(96, 165, 250, 0.08);
+      color: var(--text-primary, #1e3a5f);
     }
 
     .sidebar-tab.active {
       background: var(--primary-color, #2563eb);
       color: var(--text-white, #fff);
-      border-color: var(--primary-color, #2563eb);
+      border-color: transparent;
+      box-shadow: 0 2px 12px rgba(37, 99, 235, 0.25);
     }
   </style>
 </head>
@@ -69,53 +71,27 @@
   class="bg-[var(--bg-page)] text-[var(--text-primary)] selection:bg-[var(--primary-color)] selection:text-[var(--text-white)]">
   <div
     class="rn-container flex flex-col lg:grid grid-cols-1 lg:grid-cols-[340px_minmax(0,1fr)] gap-4 lg:gap-6 p-3 lg:p-6 h-[100dvh] lg:h-screen overflow-hidden items-stretch">
-    <!-- 移动端 Tab 状态 -->
-    <input class="peer/vis sr-only" type="radio" name="mobile-view" id="tab-visualization" checked />
-    <input class="peer/op sr-only" type="radio" name="mobile-view" id="tab-operation" />
-    <input class="peer/int sr-only" type="radio" name="mobile-view" id="tab-interpretation" />
-
-    <!-- 移动端：横向Tab导航（仅在小屏显示） -->
-    <nav id="mobile-tabs" aria-label="主模块切换" role="tablist"
-      class="lg:hidden sticky top-2 z-50 mb-2 flex items-center gap-2 p-2 rounded-xl glass-panel border border-[var(--border-light)] shadow-[var(--shadow-md)] peer-checked/vis:[&_.tab-vis]:!bg-[var(--primary-color)] peer-checked/vis:[&_.tab-vis]:!text-[var(--text-white)] peer-checked/vis:[&_.tab-vis]:!border-[var(--primary-color)] peer-checked/vis:[&_.tab-vis]:!shadow-[0_0_12px_rgba(37,99,235,0.4)] peer-checked/op:[&_.tab-op]:!bg-[var(--primary-color)] peer-checked/op:[&_.tab-op]:!text-[var(--text-white)] peer-checked/op:[&_.tab-op]:!border-[var(--primary-color)] peer-checked/op:[&_.tab-op]:!shadow-[0_0_12px_rgba(37,99,235,0.4)] peer-checked/int:[&_.tab-int]:!bg-[var(--primary-color)] peer-checked/int:[&_.tab-int]:!text-[var(--text-white)] peer-checked/int:[&_.tab-int]:!border-[var(--primary-color)] peer-checked/int:[&_.tab-int]:!shadow-[0_0_12px_rgba(37,99,235,0.4)]">
-      <a href="https://github.com/Duri686/RoadNetVisualizer" target="_blank" rel="noopener noreferrer"
-        class="flex items-center justify-center w-8 h-8 rounded-lg text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.1)] transition-all"
-        aria-label="View on GitHub">
-        <svg class="w-5 h-5" viewBox="0 0 16 16" fill="currentColor">
-          <path
-            d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.54 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
-        </svg>
-      </a>
-      <span class="w-px h-6 bg-[var(--border-light)]"></span>
-      <label for="tab-visualization" role="tab"
-        class="tab-vis flex-1 text-center px-3 py-2.5 text-sm font-medium rounded-lg border border-transparent bg-transparent text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.1)] hover:text-[var(--text-primary)] cursor-pointer transition-all">
-        地图
-      </label>
-      <label for="tab-operation" role="tab"
-        class="tab-op flex-1 text-center px-3 py-2.5 text-sm font-medium rounded-lg border border-transparent bg-transparent text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.1)] hover:text-[var(--text-primary)] cursor-pointer transition-all">
-        操作
-      </label>
-      <label for="tab-interpretation" role="tab"
-        class="tab-int flex-1 text-center px-3 py-2.5 text-sm font-medium rounded-lg border border-transparent bg-transparent text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.1)] hover:text-[var(--text-primary)] cursor-pointer transition-all">
-        解读
-      </label>
-    </nav>
-
-    <!-- 左侧合并面板（桌面端） -->
-    <aside id="desktop-sidebar" class="hidden lg:flex flex-col min-h-0 overflow-hidden">
-      <!-- 桌面端 Tab 导航（一体化设计） -->
-      <nav
-        class="flex items-center gap-2 p-2 mb-4 rounded-xl glass-panel border border-[var(--border-light)] shadow-[var(--shadow-sm)]">
+    <!-- 统一侧边栏：包含导航 + 面板（PC 为左侧栏，移动端为全屏切换） -->
+    <div id="sidebar" class="flex flex-col min-h-0">
+      <!-- 统一导航栏（PC/移动端共用） -->
+      <nav id="main-tabs" aria-label="主模块切换" role="tablist"
+        class="sticky top-0 z-50 mb-2 lg:mb-4 flex items-center gap-2 p-2 rounded-xl glass-panel border border-[var(--border-light)] shadow-[var(--shadow-sm)]">
         <a href="https://github.com/Duri686/RoadNetVisualizer" target="_blank" rel="noopener noreferrer"
-          class="flex items-center justify-center w-8 h-8 rounded-lg text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.1)] transition-all"
+          class="flex items-center justify-center w-8 h-8 rounded-lg text-[var(--text-primary)] hover:bg-[rgba(96,165,250,0.08)] transition-all"
           aria-label="View on GitHub">
-          <svg class="w-4.5 h-4.5" viewBox="0 0 16 16" fill="currentColor">
+          <svg class="w-5 h-5 lg:w-4 lg:h-4" viewBox="0 0 16 16" fill="currentColor">
             <path
               d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.54 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
           </svg>
         </a>
         <span class="w-px h-6 bg-[var(--border-light)]"></span>
+        <!-- 地图 Tab：仅移动端可见 -->
+        <button type="button" data-panel="map"
+          class="sidebar-tab active lg:hidden flex-1 text-center px-3 py-2 text-sm font-medium rounded-lg border border-transparent transition-all">
+          地图
+        </button>
         <button type="button" data-panel="operation"
-          class="sidebar-tab active flex-1 text-center px-3 py-2 text-sm font-medium rounded-lg border border-transparent transition-all">
+          class="sidebar-tab flex-1 text-center px-3 py-2 text-sm font-medium rounded-lg border border-transparent transition-all">
           操作
         </button>
         <button type="button" data-panel="interpretation"
@@ -123,8 +99,8 @@
           解读
         </button>
       </nav>
-      <!-- 面板内容区 -->
-      <div class="flex-1 overflow-y-auto pr-2 pt-1">
+      <!-- 面板内容区（单实例，PC/移动端共享） -->
+      <div id="sidebar-panels" class="flex-1 overflow-y-auto pt-1 scrollbar-none hidden lg:block">
         <div id="panel-operation" class="sidebar-panel">
           <rn-operation-panel></rn-operation-panel>
         </div>
@@ -132,45 +108,97 @@
           <rn-interpretation-panel></rn-interpretation-panel>
         </div>
       </div>
-    </aside>
+    </div>
 
-    <script>
-      // 桌面端 Tab 切换逻辑
-      document.addEventListener('DOMContentLoaded', () => {
-        const tabs = document.querySelectorAll('#desktop-sidebar .sidebar-tab');
-        const panels = document.querySelectorAll('#desktop-sidebar .sidebar-panel');
-
-        tabs.forEach(tab => {
-          tab.addEventListener('click', () => {
-            const target = tab.dataset.panel;
-            // 切换 Tab 样式
-            tabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            // 切换面板显示
-            panels.forEach(p => p.classList.add('hidden'));
-            document.getElementById('panel-' + target)?.classList.remove('hidden');
-          });
-        });
-      });
-    </script>
-
-    <!-- 移动端：操作面板 -->
-    <section
-      class="operation-panel lg:hidden hidden peer-checked/op:flex peer-checked/op:flex-1 flex-col w-full min-h-0 overflow-y-auto pt-1">
-      <rn-operation-panel></rn-operation-panel>
-    </section>
-
-    <!-- 可视化面板 -->
-    <section
-      class="visualization-panel hidden lg:flex peer-checked/vis:flex peer-checked/vis:flex-1 flex-col min-w-0 min-h-0 overflow-hidden lg:h-full">
+    <!-- 可视化面板（PC 常驻；移动端地图 Tab 激活时显示） -->
+    <section id="canvas-section"
+      class="flex flex-col min-w-0 min-h-0 overflow-hidden flex-1 lg:h-full">
       <rn-visualization-panel class="flex flex-col flex-1 min-h-0"></rn-visualization-panel>
     </section>
 
-    <!-- 移动端：解读面板 -->
-    <section
-      class="interpretation-panel lg:hidden hidden peer-checked/int:flex peer-checked/int:flex-1 flex-col w-full min-h-0 overflow-y-auto pt-1">
-      <rn-interpretation-panel></rn-interpretation-panel>
-    </section>
+    <script>
+      // 统一 Tab 切换逻辑（PC/移动端共用）
+      document.addEventListener('DOMContentLoaded', () => {
+        const tabs = document.querySelectorAll('#main-tabs .sidebar-tab');
+        const sidebarPanels = document.getElementById('sidebar-panels');
+        const canvasSection = document.getElementById('canvas-section');
+        const panels = document.querySelectorAll('#sidebar-panels .sidebar-panel');
+        const isDesktop = () => window.matchMedia('(min-width: 1024px)').matches;
+
+        function switchTab(panelName) {
+          // 更新 Tab 激活状态
+          tabs.forEach(t => t.classList.remove('active'));
+          const activeBtn = document.querySelector(`#main-tabs [data-panel="${panelName}"]`);
+          if (activeBtn) activeBtn.classList.add('active');
+
+          if (isDesktop()) {
+            // PC：canvas 始终可见，切换侧边栏面板
+            const target = panelName === 'map' ? 'operation' : panelName;
+            sidebarPanels.classList.remove('hidden');
+            sidebarPanels.style.display = '';
+            canvasSection.classList.remove('hidden');
+            canvasSection.style.display = '';
+            panels.forEach(p => p.classList.add('hidden'));
+            document.getElementById('panel-' + target)?.classList.remove('hidden');
+          } else {
+            // 移动端：地图显示 canvas，操作/解读显示侧边栏面板
+            // 先统一清除内联样式，避免 inline style 覆盖 class
+            sidebarPanels.style.display = '';
+            sidebarPanels.style.flexDirection = '';
+            canvasSection.style.display = '';
+
+            if (panelName === 'map') {
+              sidebarPanels.classList.add('hidden');
+              canvasSection.classList.remove('hidden');
+              // canvas 从 hidden 恢复后需要触发 Three.js resize
+              requestAnimationFrame(() => {
+                window.dispatchEvent(new Event('resize'));
+              });
+            } else {
+              canvasSection.classList.add('hidden');
+              sidebarPanels.classList.remove('hidden');
+              sidebarPanels.style.display = 'flex';
+              sidebarPanels.style.flexDirection = 'column';
+              panels.forEach(p => p.classList.add('hidden'));
+              document.getElementById('panel-' + panelName)?.classList.remove('hidden');
+            }
+          }
+        }
+
+        tabs.forEach(tab => {
+          tab.addEventListener('click', () => switchTab(tab.dataset.panel));
+        });
+
+        // 响应式切换：屏幕尺寸变化时自动适配
+        const mq = window.matchMedia('(min-width: 1024px)');
+        mq.addEventListener('change', () => {
+          // 清除所有内联样式
+          sidebarPanels.style.display = '';
+          sidebarPanels.style.flexDirection = '';
+          canvasSection.style.display = '';
+
+          if (isDesktop()) {
+            // 切到 PC：恢复双栏布局
+            sidebarPanels.classList.remove('hidden');
+            canvasSection.classList.remove('hidden');
+            // 激活当前面板 Tab（排除 map）
+            const activeTab = document.querySelector('#main-tabs .sidebar-tab.active');
+            const current = activeTab?.dataset.panel;
+            switchTab(current === 'map' ? 'operation' : (current || 'operation'));
+          } else {
+            // 切到移动端：默认显示地图
+            switchTab('map');
+          }
+        });
+
+        // 初始状态
+        if (isDesktop()) {
+          switchTab('operation');
+        } else {
+          switchTab('map');
+        }
+      });
+    </script>
   </div>
 
   <script type="module" src="/src/main.js"></script>

@@ -1,94 +1,76 @@
-/* 设计令牌（变量）- Clean Tech Blue (Light Mode) */
+/* 设计令牌（变量）- iOS 26 Liquid Glass · Monochrome Blue */
 :root {
-  /* 主色系 - Apple Blue */
+  /* 主色系 - Monochrome Blue 单色方案 */
   --primary-color: #2563EB;
   --primary-hover: #1d4ed8;
   --primary-active: #1e40af;
 
-  /* 强调色 - Indigo */
-  --accent-color: #4f46e5;
-  --accent-hover: #4338ca;
+  /* 强调色 - 与主色同系，保持单色一致性 */
+  --accent-color: #3b82f6;
+  --accent-hover: #2563eb;
 
-  /* 背景色 - Clean Light */
-  --bg-page: linear-gradient(135deg, #f6f6f8 0%, #eef2ff 100%);
-  --bg-card: rgba(255, 255, 255, 0.75);
-  --bg-input: rgba(255, 255, 255, 0.5);
-  --bg-input-hover: rgba(255, 255, 255, 0.8);
-  --bg-glass: rgba(255, 255, 255, 0.7);
+  /* 背景色 - iOS 26 Liquid Glass 真通透 */
+  --bg-page: linear-gradient(160deg, #e0eaff 0%, #d6e4ff 40%, #ede9fe 100%);
+  --bg-card: rgba(255, 255, 255, 0.18);
+  --bg-input: rgba(255, 255, 255, 0.15);
+  --bg-input-hover: rgba(255, 255, 255, 0.28);
+  --bg-glass: rgba(255, 255, 255, 0.15);
 
-  /* 文字色 - High Contrast */
-  --text-primary: #1e293b;
-  /* Slate 800 */
-  --text-secondary: #64748b;
-  /* Slate 500 */
-  --text-muted: #94a3b8;
-  /* Slate 400 */
+  /* 文字色 - Monochrome Blue 色阶 */
+  --text-primary: #1e3a5f;
+  --text-secondary: #4b6a94;
+  --text-muted: #93adc6;
   --text-white: #ffffff;
   --text-glow: transparent;
-  /* No text glow in Clean mode */
 
-  /* 边框色 - Subtle */
-  --border-light: rgba(255, 255, 255, 0.6);
-  --border-input: rgba(226, 232, 240, 0.8);
-  --border-focus: #2563EB;
-  --border-glass: rgba(255, 255, 255, 0.4);
+  /* 边框色 - iOS 26 折射高光边框 */
+  --border-light: rgba(255, 255, 255, 0.5);
+  --border-input: rgba(255, 255, 255, 0.25);
+  --border-focus: #60a5fa;
+  --border-glass: rgba(255, 255, 255, 0.35);
 
-  /* 状态色 - Soft */
-  --success-color: #10b981;
-  /* Emerald */
-  --error-color: #ef4444;
-  /* Red */
-  --warning-color: #f59e0b;
-  /* Amber */
-  --info-color: #3b82f6;
-  /* Blue */
+  /* 状态色 - Monochrome Blue 统一色调 */
+  --success-color: #34d399;
+  --error-color: #f87171;
+  --warning-color: #fbbf24;
+  --info-color: #60a5fa;
 
-  /* 统计图标色 */
-  --stat-node-color: #3b82f6;
-  --stat-edge-color: #8b5cf6;
-  --stat-layer-color: #ef4444;
+  /* 统计图标色 - 蓝色单色梯度 */
+  --stat-node-color: #60a5fa;
+  --stat-edge-color: #818cf8;
+  --stat-layer-color: #f87171;
 
   /* 可视化元素色 - 与 3D 渲染器同步 */
-  /* 起终点/路径 */
-  --viz-start-point: #10b981;
-  /* Emerald 500 绿色起点 */
-  --viz-end-point: #ef4444;
-  /* Red 500 红色终点 */
-  --viz-path: #22d3ee;
-  /* Cyan 400 能量路径 */
+  --viz-start-point: #34d399;
+  --viz-end-point: #f87171;
+  --viz-path: #38bdf8;
 
-  /* 网络元素 - Cyan 主题 */
-  --viz-network-edge: #0ea5e9;
-  /* Cyan 500 网络边 */
+  /* 网络元素 - Blue Mono 主题 */
+  --viz-network-edge: #38bdf8;
   --viz-network-edge-secondary: #64748b;
-  /* Slate 500 三角化 */
-  --viz-node: #06b6d4;
-  /* Cyan 500 网络节点 */
-  --viz-node-glow: rgba(6, 182, 212, 0.4);
+  --viz-node: #38bdf8;
+  --viz-node-glow: rgba(56, 189, 248, 0.35);
 
-  /* 3D 障碍物 - Violet 主题 */
-  --viz-obstacle: #8b5cf6;
-  /* Violet 500 障碍物 */
-  --viz-obstacle-border: #a78bfa;
-  /* Violet 400 发光边 */
+  /* 3D 障碍物 - Blue-Indigo 渐变 */
+  --viz-obstacle: #818cf8;
+  --viz-obstacle-border: #a5b4fc;
 
-  /* Voronoi 骨架 - Violet */
-  --viz-voronoi: #8b5cf6;
-  /* Violet 500 */
+  /* Voronoi 骨架 - Indigo */
+  --viz-voronoi: #818cf8;
   --viz-canvas-bg: transparent;
 
-  /* 阴影 - Soft Drop Shadows */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  /* 阴影 - iOS 26 柔和分层阴影 */
+  --shadow-sm: 0 1px 3px 0 rgba(37, 99, 235, 0.04);
+  --shadow-md: 0 4px 12px -2px rgba(37, 99, 235, 0.08);
+  --shadow-lg: 0 12px 28px -6px rgba(37, 99, 235, 0.12);
   --shadow-glow: 0 0 0 transparent;
-  --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+  --shadow-glass: none;
 
-  /* 圆角 - Soft (iOS Style) */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  /* 圆角 - iOS 26 Liquid Glass 大圆角 */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 22px;
   --radius-full: 9999px;
 
   /* 间距 */
@@ -99,6 +81,11 @@
   --space-xl: 20px;
   --space-2xl: 24px;
 
-  /* 模糊 */
-  --backdrop-blur: blur(20px);
+  /* 模糊 - iOS 26 增强模糊 */
+  --backdrop-blur: blur(40px);
+
+  /* iOS 26 专属令牌 */
+  --liquid-border-width: 0.5px;
+  --liquid-transition: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --liquid-duration: 0.4s;
 }

@@ -208,8 +208,8 @@ class Renderer3D {
   _initAxisGizmo() {
     try {
       this.axisScene = new THREE.Scene();
-      // 设置场景背景色 - 深蓝玻璃效果
-      this.axisScene.background = new THREE.Color(0x0f172a);
+      // 背景透明，与主场景融合
+      this.axisScene.background = null;
 
       this.axisCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 10);
       this.axisCamera.position.set(0, 0, 3);
@@ -221,10 +221,10 @@ class Renderer3D {
       const axisLength = 1.4;
       const axisRadius = 0.06;
 
-      const xMaterial = new THREE.MeshBasicMaterial({ color: 0xff4b6a });
-      const yMaterial = new THREE.MeshBasicMaterial({ color: 0x6bff6a });
-      const zMaterial = new THREE.MeshBasicMaterial({ color: 0x4a8bff });
-      const originMaterial = new THREE.MeshBasicMaterial({ color: 0x808080 });
+      const xMaterial = new THREE.MeshBasicMaterial({ color: 0xf87171 });
+      const yMaterial = new THREE.MeshBasicMaterial({ color: 0x34d399 });
+      const zMaterial = new THREE.MeshBasicMaterial({ color: 0x60a5fa });
+      const originMaterial = new THREE.MeshBasicMaterial({ color: 0x94a3b8 });
 
       const sphereGeo = new THREE.SphereGeometry(axisRadius, 16, 16);
 
@@ -262,10 +262,10 @@ class Renderer3D {
         this.axisRoot.add(group);
       };
 
-      // 颜色约定：X-红、Y-绿、Z-蓝
-      createAxis('x', xMaterial, '#ff4b6a');
-      createAxis('y', yMaterial, '#6bff6a');
-      createAxis('z', zMaterial, '#4a8bff');
+      // 颜色约定：X-红、Y-绿、Z-蓝（柔和色调）
+      createAxis('x', xMaterial, '#f87171');
+      createAxis('y', yMaterial, '#34d399');
+      createAxis('z', zMaterial, '#60a5fa');
     } catch (e) {
       // TODO: 确认此逻辑
       console.warn('视角轴辅助初始化失败', e);
@@ -336,8 +336,8 @@ class Renderer3D {
 
     const size = new THREE.Vector2();
     this.renderer.getSize(size);
-    const axisSize = this.axisSize || 96;
-    const margin = this.axisMargin || 20;
+    const axisSize = this.axisSize || 80;
+    const margin = this.axisMargin || 12;
 
     const x = size.x - axisSize - margin;
     const y = margin;

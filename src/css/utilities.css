@@ -34,36 +34,37 @@
   }
 }
 
-/* 卡片悬停效果增强 */
+/* 卡片悬停效果 - iOS 26 弹性动效 */
 .interpretation-card,
 .input-section,
 .canvas-container,
 .control-panel .panel-header {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease;
+  transition: transform var(--liquid-duration) var(--liquid-transition),
+    box-shadow var(--liquid-duration) var(--liquid-transition),
+    border-color var(--liquid-duration) var(--liquid-transition);
   backdrop-filter: var(--backdrop-blur);
   -webkit-backdrop-filter: var(--backdrop-blur);
 }
 
 .interpretation-card:hover,
 .input-section:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-glass);
-  border-color: var(--border-focus);
+  transform: translateY(-1px);
+  border-color: rgba(147, 197, 253, 0.4);
 }
 
-/* 玻璃拟态工具类 */
-/* 玻璃拟态工具类 - Cyberpunk Enhanced */
+/* 玻璃拟态工具类 - iOS 26 Liquid Glass */
 .glass-panel {
   background: var(--bg-glass);
   backdrop-filter: var(--backdrop-blur);
   -webkit-backdrop-filter: var(--backdrop-blur);
-  border: 1px solid var(--border-glass);
-  box-shadow: var(--shadow-glass);
+  border: var(--liquid-border-width) solid var(--border-glass);
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.35),
+              inset 0 -1px 1px 0 rgba(255, 255, 255, 0.1);
   position: relative;
   overflow: hidden;
 }
 
+/* 顶部折射高光 */
 .glass-panel::before {
   content: '';
   position: absolute;
@@ -71,34 +72,36 @@
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.5), transparent);
-  opacity: 0.5;
+  background: linear-gradient(90deg, transparent 5%, rgba(255, 255, 255, 0.8) 50%, transparent 95%);
+  opacity: 1;
+  z-index: 1;
 }
 
 .glass-input {
   background: var(--bg-input);
-  border: 1px solid var(--border-input);
-  backdrop-filter: blur(4px);
-  transition: all 0.3s ease;
+  border: var(--liquid-border-width) solid var(--border-input);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all var(--liquid-duration) var(--liquid-transition);
   color: var(--text-primary);
 }
 
 .glass-input:focus {
   background: var(--bg-input-hover);
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.1);
   outline: none;
 }
 
-/* 霓虹文字 - New Utility */
+/* 文字强调 - iOS 26 柔和蓝色 */
 .text-neon {
   color: var(--primary-color);
-  text-shadow: 0 0 5px rgba(0, 240, 255, 0.5), 0 0 10px rgba(0, 240, 255, 0.3);
+  text-shadow: none;
 }
 
 .text-neon-purple {
   color: var(--accent-color);
-  text-shadow: 0 0 5px rgba(188, 19, 254, 0.5), 0 0 10px rgba(188, 19, 254, 0.3);
+  text-shadow: none;
 }
 
 /* 焦点可见性优化 */
@@ -106,6 +109,16 @@
   outline: 2px solid var(--primary-color);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
+}
+
+/* 隐藏滚动条（保留滚动功能） */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
 
 /* 平滑滚动 */
