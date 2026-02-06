@@ -216,82 +216,133 @@ export function renderBaseTriangulation(
 let cachedFloorTexture = null;
 
 /**
- * 创建地板纹理（未来科技风格）
+ * 创建地板纹理（室内蓝图风格 - 磨砂瓷砖 + 接缝 + 噪点质感）
  */
 function createFloorTexture() {
   if (cachedFloorTexture) {
     return cachedFloorTexture;
   }
 
+  const size = 1024;
+  const tile = 128; // 主瓷砖尺寸
   const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 512;
+  canvas.width = size;
+  canvas.height = size;
   const ctx = canvas.getContext('2d');
 
-  // 基础深色背景
-  ctx.fillStyle = '#0c0f1a';
-  ctx.fillRect(0, 0, 512, 512);
+  // ① 基底：深海蓝
+  ctx.fillStyle = '#101b2e';
+  ctx.fillRect(0, 0, size, size);
 
-  // 主网格线（发光效果）
-  ctx.strokeStyle = '#1e293b';
+  // ② 磨砂噪点（模拟石材微粒质感）
+  const noiseData = ctx.getImageData(0, 0, size, size);
+  const pixels = noiseData.data;
+  for (let i = 0; i < pixels.length; i += 4) {
+    const noise = (Math.random() - 0.5) * 14;
+    pixels[i] = Math.max(0, Math.min(255, pixels[i] + noise));
+    pixels[i + 1] = Math.max(0, Math.min(255, pixels[i + 1] + noise));
+    pixels[i + 2] = Math.max(0, Math.min(255, pixels[i + 2] + noise * 1.5));
+  }
+  ctx.putImageData(noiseData, 0, 0);
+
+  // ③ 每块瓷砖内部微妙色差（模拟天然石材纹理不均匀）
+  for (let tx = 0; tx < size; tx += tile) {
+    for (let ty = 0; ty < size; ty += tile) {
+      const variation = (Math.random() - 0.5) * 0.06;
+      if (variation > 0) {
+        ctx.fillStyle = `rgba(96, 165, 250, ${variation})`;
+      } else {
+        ctx.fillStyle = `rgba(0, 0, 0, ${-variation})`;
+      }
+      ctx.fillRect(tx + 2, ty + 2, tile - 4, tile - 4);
+    }
+  }
+
+  // ④ 中心径向高光（模拟天花板灯光映射在地面）
+  const grad = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size * 0.7);
+  grad.addColorStop(0, 'rgba(96, 165, 250, 0.12)');
+  grad.addColorStop(0.5, 'rgba(96, 165, 250, 0.04)');
+  grad.addColorStop(1, 'transparent');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
+
+  // ⑤ 瓷砖接缝 - 双线凹槽效果（暗线 + 亮边）
+  // 暗线（凹槽底部）
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
+  ctx.lineWidth = 2;
+  for (let i = 0; i <= size; i += tile) {
+    ctx.beginPath();
+    ctx.moveTo(i, 0);
+    ctx.lineTo(i, size);
+    ctx.moveTo(0, i);
+    ctx.lineTo(size, i);
+    ctx.stroke();
+  }
+  // 亮边（凹槽高光边缘）
+  ctx.strokeStyle = 'rgba(96, 165, 250, 0.12)';
   ctx.lineWidth = 1;
-  for (let i = 0; i <= 512; i += 64) {
+  for (let i = 1; i <= size; i += tile) {
     ctx.beginPath();
     ctx.moveTo(i, 0);
-    ctx.lineTo(i, 512);
+    ctx.lineTo(i, size);
     ctx.moveTo(0, i);
-    ctx.lineTo(512, i);
+    ctx.lineTo(size, i);
     ctx.stroke();
   }
 
-  // 细分网格线（更淡）
-  ctx.strokeStyle = '#151b2d';
+  // ⑥ 细分线（每块瓷砖内 4 等分）
+  ctx.strokeStyle = 'rgba(96, 165, 250, 0.04)';
   ctx.lineWidth = 0.5;
-  for (let i = 0; i <= 512; i += 16) {
+  const subTile = tile / 4;
+  for (let i = 0; i <= size; i += subTile) {
+    if (i % tile === 0) continue;
     ctx.beginPath();
     ctx.moveTo(i, 0);
-    ctx.lineTo(i, 512);
+    ctx.lineTo(i, size);
     ctx.moveTo(0, i);
-    ctx.lineTo(512, i);
+    ctx.lineTo(size, i);
     ctx.stroke();
   }
 
-  // 交叉点发光点
-  ctx.fillStyle = '#2563eb';
-  for (let x = 0; x <= 512; x += 64) {
-    for (let y = 0; y <= 512; y += 64) {
-      ctx.beginPath();
-      ctx.arc(x, y, 2, 0, Math.PI * 2);
-      ctx.fill();
+  // ⑦ 接缝交叉点发光（瓷砖四角微光）
+  for (let x = 0; x <= size; x += tile) {
+    for (let y = 0; y <= size; y += tile) {
+      const dotGrad = ctx.createRadialGradient(x, y, 0, x, y, 4);
+      dotGrad.addColorStop(0, 'rgba(96, 165, 250, 0.3)');
+      dotGrad.addColorStop(1, 'transparent');
+      ctx.fillStyle = dotGrad;
+      ctx.fillRect(x - 4, y - 4, 8, 8);
     }
   }
 
   cachedFloorTexture = new THREE.CanvasTexture(canvas);
   cachedFloorTexture.wrapS = THREE.RepeatWrapping;
   cachedFloorTexture.wrapT = THREE.RepeatWrapping;
+  cachedFloorTexture.anisotropy = 4;
 
   return cachedFloorTexture;
 }
 
 /**
- * 渲染室内地板（科技风格）
+ * 渲染室内地板（蓝图风格 - 深海蓝磨砂面）
  */
 export function renderFloor(layerGroup, metadata, yOffset, centerX, centerY) {
   const floorWidth = metadata.width || 100;
   const floorHeight = metadata.height || 100;
 
-  // 创建地板几何体
   const floorGeometry = new THREE.PlaneGeometry(floorWidth, floorHeight);
 
-  // 创建地板材质 - 科技感网格
   const floorTexture = createFloorTexture();
   floorTexture.repeat.set(floorWidth / 50, floorHeight / 50);
 
   const floorMaterial = new THREE.MeshStandardMaterial({
-    color: 0x0c0f1a,
-    roughness: 0.7,
-    metalness: 0.3,
+    color: 0x1a2744,
+    roughness: 0.8,
+    metalness: 0.2,
     map: floorTexture,
+    emissive: 0x0e1525,
+    emissiveIntensity: 0.6,
+    emissiveMap: floorTexture,
     transparent: false,
     side: THREE.DoubleSide,
   });
@@ -303,6 +354,53 @@ export function renderFloor(layerGroup, metadata, yOffset, centerX, centerY) {
   floorMesh.name = 'floor';
 
   layerGroup.add(floorMesh);
+
+  // 地板边缘发光带（蓝图边界 - 用窄面片实现真实发光宽度）
+  const hw = floorWidth / 2;
+  const hh = floorHeight / 2;
+  const y = yOffset - 0.5;
+  const stripW = 1.5; // 发光带宽度
+
+  const borderMat = new THREE.MeshBasicMaterial({
+    color: 0x3b82f6,
+    transparent: true,
+    opacity: 0.5,
+    side: THREE.DoubleSide,
+  });
+  const glowMat = new THREE.MeshBasicMaterial({
+    color: 0x60a5fa,
+    transparent: true,
+    opacity: 0.15,
+    side: THREE.DoubleSide,
+  });
+
+  // 四条边的发光带
+  const edges = [
+    { pos: [0, y, -hh], rot: 0, len: floorWidth },
+    { pos: [0, y,  hh], rot: 0, len: floorWidth },
+    { pos: [-hw, y, 0], rot: Math.PI / 2, len: floorHeight },
+    { pos: [ hw, y, 0], rot: Math.PI / 2, len: floorHeight },
+  ];
+
+  edges.forEach(({ pos, rot, len }) => {
+    // 内层亮线
+    const geo = new THREE.PlaneGeometry(len, stripW);
+    const mesh = new THREE.Mesh(geo, borderMat);
+    mesh.position.set(pos[0], pos[1], pos[2]);
+    mesh.rotation.x = -Math.PI / 2;
+    if (rot) mesh.rotation.z = rot;
+    mesh.name = 'floorBorder';
+    layerGroup.add(mesh);
+
+    // 外层光晕（更宽更淡）
+    const glowGeo = new THREE.PlaneGeometry(len + 2, stripW * 4);
+    const glowMesh = new THREE.Mesh(glowGeo, glowMat);
+    glowMesh.position.set(pos[0], pos[1] - 0.1, pos[2]);
+    glowMesh.rotation.x = -Math.PI / 2;
+    if (rot) glowMesh.rotation.z = rot;
+    glowMesh.name = 'floorGlow';
+    layerGroup.add(glowMesh);
+  });
 }
 
 export function renderGrid(layerGroup, metadata, yOffset) {

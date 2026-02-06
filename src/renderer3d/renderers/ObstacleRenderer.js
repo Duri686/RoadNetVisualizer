@@ -146,54 +146,54 @@ function createRoundedBoxGeometry(width, height, depth, radius) {
  */
 function createObstacleMaterials(config) {
   return {
-    // 主要障碍物材质 - 数据晶体风格
+    // 主要障碍物材质 - 蓝色磨砂玻璃
     primary: new THREE.MeshStandardMaterial({
-      color: 0x8b5cf6, // Violet 500 主色
-      roughness: 0.25,
-      metalness: 0.7, // 高金属感
-      emissive: 0xa78bfa, // Violet 400 边缘发光
-      emissiveIntensity: 0.35, // 增强发光
+      color: 0x3b82f6, // Blue 500
+      roughness: 0.3,
+      metalness: 0.5,
+      emissive: 0x60a5fa, // Blue 400 柔和发光
+      emissiveIntensity: 0.2,
       transparent: true,
-      opacity: 0.55, // 更透明的晶体效果
+      opacity: 0.45,
       depthWrite: true,
       side: THREE.FrontSide,
     }),
 
-    // 商店/房间材质 - 深紫调
+    // 商店/房间材质 - 深蓝玻璃
     shop: new THREE.MeshStandardMaterial({
-      color: 0x7c3aed, // Violet 600
-      roughness: 0.3,
-      metalness: 0.65,
-      emissive: 0x8b5cf6, // Violet 500
-      emissiveIntensity: 0.3,
-      transparent: true,
-      opacity: 0.6,
-      depthWrite: true,
-      side: THREE.FrontSide,
-    }),
-
-    // 柱子材质 - 更有金属感的紫色
-    pillar: new THREE.MeshStandardMaterial({
-      color: 0x7c3aed, // Violet 600
-      roughness: 0.3,
-      metalness: 0.6,
-      emissive: 0x6d28d9, // Violet 700
-      emissiveIntensity: 0.25,
-      transparent: true,
-      opacity: 0.8,
-      depthWrite: true,
-      side: THREE.FrontSide,
-    }),
-
-    // 特殊区域材质 - 浅蓝紫玻璃
-    special: new THREE.MeshStandardMaterial({
-      color: 0x818cf8, // Indigo 400
+      color: 0x2563eb, // Blue 600
       roughness: 0.35,
-      metalness: 0.55,
-      emissive: 0x6366f1, // Indigo 500
+      metalness: 0.45,
+      emissive: 0x3b82f6, // Blue 500
       emissiveIntensity: 0.18,
       transparent: true,
-      opacity: 0.65, // 更透明
+      opacity: 0.5,
+      depthWrite: true,
+      side: THREE.FrontSide,
+    }),
+
+    // 柱子材质 - 实心蓝色
+    pillar: new THREE.MeshStandardMaterial({
+      color: 0x1d4ed8, // Blue 700
+      roughness: 0.4,
+      metalness: 0.4,
+      emissive: 0x2563eb, // Blue 600
+      emissiveIntensity: 0.15,
+      transparent: true,
+      opacity: 0.7,
+      depthWrite: true,
+      side: THREE.FrontSide,
+    }),
+
+    // 特殊区域材质 - 浅蓝透明玻璃
+    special: new THREE.MeshStandardMaterial({
+      color: 0x60a5fa, // Blue 400
+      roughness: 0.25,
+      metalness: 0.55,
+      emissive: 0x93c5fd, // Blue 300
+      emissiveIntensity: 0.12,
+      transparent: true,
+      opacity: 0.35,
       depthWrite: true,
       side: THREE.FrontSide,
     }),

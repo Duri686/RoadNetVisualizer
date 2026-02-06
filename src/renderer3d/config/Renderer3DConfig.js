@@ -41,23 +41,23 @@ export const Renderer3DConfig = {
   // 颜色配置 - iOS 26 Monochrome Blue
   colors: {
     background: 0x0c1929, // 深海蓝背景
-    floor: 0x162033, // 深蓝地板
-    node: 0x38bdf8, // Sky 400 网络节点
-    nodeEmissive: 0x60a5fa, // Blue 400 发光
-    edge: 0x38bdf8, // Sky 400 主网络边
+    floor: 0x0e1525, // 深蓝磨砂地板
+    node: 0x60a5fa, // Blue 400 网络节点
+    nodeEmissive: 0x93c5fd, // Blue 300 柔和发光
+    edge: 0x3b82f6, // Blue 500 主网络边
     voronoiEdge: 0x818cf8, // Indigo 400 Voronoi骨架
-    triangulation: 0x475569, // Slate 600 基础三角化
-    obstacle: 0x6366f1, // Indigo 500 障碍物
-    obstacleEmissive: 0x818cf8, // Indigo 400 发光
-    pathActive: 0x60a5fa, // Blue 400 能量色
-    pathBurned: 0x38bdf8, // Sky 400 保持可见
+    triangulation: 0x334155, // Slate 700 基础三角化
+    obstacle: 0x3b82f6, // Blue 500 障碍物
+    obstacleEmissive: 0x60a5fa, // Blue 400 发光
+    pathActive: 0x22d3ee, // Cyan 400 路径能量色
+    pathBurned: 0x67e8f9, // Cyan 300 已走过
     startNode: 0x34d399, // Emerald 400 起点
     startNodeEmissive: 0x10b981,
-    endNode: 0xf87171, // Red 400 终点
-    endNodeEmissive: 0xef4444,
+    endNode: 0xfb923c, // Orange 400 终点
+    endNodeEmissive: 0xf97316,
     grid: {
       primary: 0x1e3a5f, // 蓝色网格
-      secondary: 0x162033, // 深蓝次要网格
+      secondary: 0x0e1525, // 深蓝次要网格
     },
   },
 
