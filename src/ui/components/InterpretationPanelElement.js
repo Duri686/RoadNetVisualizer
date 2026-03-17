@@ -185,7 +185,7 @@ class InterpretationPanelElement extends HTMLElement {
                 <span class="stat-value block text-[20px] text-[var(--text-primary)] font-mono font-medium tracking-tight" id="path-smooth-ms">--</span>
               </div>
             </div>
-            <div id="path-info" class="path-detail mt-[var(--space-md)] p-[var(--space-md)] bg-[rgba(255,255,255,0.1)] backdrop-blur-sm rounded-[var(--radius-md)] border border-[rgba(147,197,253,0.15)] text-[12px] text-[var(--text-secondary)] leading-[1.6] flex gap-2 group-[.collapsed]:hidden">
+            <div id="path-info" class="path-detail mt-[var(--space-md)] p-[var(--space-md)] bg-[rgba(255,255,255,0.04)] backdrop-blur-sm rounded-[var(--radius-md)] border border-[rgba(94,106,210,0.12)] text-[12px] text-[var(--text-secondary)] leading-[1.6] flex gap-2 group-[.collapsed]:hidden">
               <span class="text-[var(--info-color)]">💡</span>
               <p class="m-0">左键点击节点设置起点/终点，系统将自动计算最短路径。</p>
             </div>

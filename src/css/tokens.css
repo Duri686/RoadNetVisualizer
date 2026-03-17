@@ -1,76 +1,76 @@
-/* 设计令牌（变量）- iOS 26 Liquid Glass · Monochrome Blue */
+/* 设计令牌（变量）- Linear Dark Cinematic */
 :root {
-  /* 主色系 - Monochrome Blue 单色方案 */
-  --primary-color: #2563EB;
-  --primary-hover: #1d4ed8;
-  --primary-active: #1e40af;
+  /* 主色系 - Indigo Accent */
+  --primary-color: #5E6AD2;
+  --primary-hover: #4E5AC2;
+  --primary-active: #4850B2;
 
-  /* 强调色 - 与主色同系，保持单色一致性 */
-  --accent-color: #3b82f6;
-  --accent-hover: #2563eb;
+  /* 强调色 */
+  --accent-color: #7C8AE2;
+  --accent-hover: #5E6AD2;
 
-  /* 背景色 - iOS 26 Liquid Glass 真通透 */
-  --bg-page: linear-gradient(160deg, #e0eaff 0%, #d6e4ff 40%, #ede9fe 100%);
-  --bg-card: rgba(255, 255, 255, 0.18);
-  --bg-input: rgba(255, 255, 255, 0.15);
-  --bg-input-hover: rgba(255, 255, 255, 0.28);
-  --bg-glass: rgba(255, 255, 255, 0.15);
+  /* 背景色 - 近黑深色系统 */
+  --bg-page: #050506;
+  --bg-card: rgba(255, 255, 255, 0.04);
+  --bg-input: rgba(255, 255, 255, 0.05);
+  --bg-input-hover: rgba(255, 255, 255, 0.08);
+  --bg-glass: rgba(255, 255, 255, 0.04);
 
-  /* 文字色 - Monochrome Blue 色阶 */
-  --text-primary: #1e3a5f;
-  --text-secondary: #4b6a94;
-  --text-muted: #93adc6;
+  /* 文字色 - 亮色系 */
+  --text-primary: rgba(255, 255, 255, 0.92);
+  --text-secondary: rgba(255, 255, 255, 0.56);
+  --text-muted: rgba(255, 255, 255, 0.32);
   --text-white: #ffffff;
-  --text-glow: transparent;
+  --text-glow: rgba(94, 106, 210, 0.6);
 
-  /* 边框色 - iOS 26 折射高光边框 */
-  --border-light: rgba(255, 255, 255, 0.5);
-  --border-input: rgba(255, 255, 255, 0.25);
-  --border-focus: #60a5fa;
-  --border-glass: rgba(255, 255, 255, 0.35);
+  /* 边框色 - 微白透明 */
+  --border-light: rgba(255, 255, 255, 0.08);
+  --border-input: rgba(255, 255, 255, 0.08);
+  --border-focus: #5E6AD2;
+  --border-glass: rgba(255, 255, 255, 0.06);
 
-  /* 状态色 - Monochrome Blue 统一色调 */
+  /* 状态色 */
   --success-color: #34d399;
   --error-color: #f87171;
   --warning-color: #fbbf24;
-  --info-color: #60a5fa;
+  --info-color: #7C8AE2;
 
-  /* 统计图标色 - 蓝色单色梯度 */
-  --stat-node-color: #60a5fa;
-  --stat-edge-color: #818cf8;
+  /* 统计图标色 - 靛蓝梯度 */
+  --stat-node-color: #7C8AE2;
+  --stat-edge-color: #5E6AD2;
   --stat-layer-color: #f87171;
 
-  /* 可视化元素色 - 与 3D 渲染器同步 */
+  /* 可视化元素色 */
   --viz-start-point: #34d399;
   --viz-end-point: #fb923c;
   --viz-path: #22d3ee;
 
-  /* 网络元素 - Blue Mono 主题 */
-  --viz-network-edge: #3b82f6;
-  --viz-network-edge-secondary: #334155;
-  --viz-node: #60a5fa;
-  --viz-node-glow: rgba(96, 165, 250, 0.35);
+  /* 网络元素 - Indigo 主题 */
+  --viz-network-edge: #5E6AD2;
+  --viz-network-edge-secondary: rgba(255, 255, 255, 0.08);
+  --viz-node: #7C8AE2;
+  --viz-node-glow: rgba(94, 106, 210, 0.35);
 
-  /* 3D 障碍物 - Blue 磨砂玻璃 */
-  --viz-obstacle: #3b82f6;
-  --viz-obstacle-border: #60a5fa;
+  /* 3D 障碍物 - Indigo 磨砂 */
+  --viz-obstacle: #5E6AD2;
+  --viz-obstacle-border: #7C8AE2;
 
-  /* Voronoi 骨架 - Indigo */
+  /* Voronoi 骨架 */
   --viz-voronoi: #818cf8;
   --viz-canvas-bg: transparent;
 
-  /* 阴影 - iOS 26 柔和分层阴影 */
-  --shadow-sm: 0 1px 3px 0 rgba(37, 99, 235, 0.04);
-  --shadow-md: 0 4px 12px -2px rgba(37, 99, 235, 0.08);
-  --shadow-lg: 0 12px 28px -6px rgba(37, 99, 235, 0.12);
-  --shadow-glow: 0 0 0 transparent;
-  --shadow-glass: none;
+  /* 阴影 - 深层黑色 + accent 辉光 */
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 12px 28px -6px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 20px rgba(94, 106, 210, 0.15);
+  --shadow-glass: 0 0 0 1px rgba(255, 255, 255, 0.06);
 
-  /* 圆角 - iOS 26 Liquid Glass 大圆角 */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
-  --radius-xl: 22px;
+  /* 圆角 - Linear 精致风格 */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
   --radius-full: 9999px;
 
   /* 间距 */
@@ -81,11 +81,11 @@
   --space-xl: 20px;
   --space-2xl: 24px;
 
-  /* 模糊 - iOS 26 增强模糊 */
-  --backdrop-blur: blur(40px);
+  /* 模糊 */
+  --backdrop-blur: blur(24px);
 
-  /* iOS 26 专属令牌 */
-  --liquid-border-width: 0.5px;
-  --liquid-transition: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --liquid-duration: 0.4s;
+  /* Linear 动效令牌 */
+  --liquid-border-width: 1px;
+  --liquid-transition: cubic-bezier(0.16, 1, 0.3, 1);
+  --liquid-duration: 0.25s;
 }

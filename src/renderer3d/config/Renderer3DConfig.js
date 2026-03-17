@@ -38,17 +38,17 @@ export const Renderer3DConfig = {
     opacity: 0.5, // 增强可见度
   },
 
-  // 颜色配置 - iOS 26 Monochrome Blue
+  // 颜色配置 - Linear Dark Cinematic · Indigo
   colors: {
-    background: 0x0c1929, // 深海蓝背景
-    floor: 0x0e1525, // 深蓝磨砂地板
-    node: 0x60a5fa, // Blue 400 网络节点
-    nodeEmissive: 0x93c5fd, // Blue 300 柔和发光
-    edge: 0x3b82f6, // Blue 500 主网络边
+    background: 0x050506, // 近黑背景（与页面背景融合）
+    floor: 0x0a0a0c, // 深色地板
+    node: 0x7c8ae2, // Indigo 节点
+    nodeEmissive: 0x5e6ad2, // Indigo accent 发光
+    edge: 0x5e6ad2, // Indigo 主网络边
     voronoiEdge: 0x818cf8, // Indigo 400 Voronoi骨架
     triangulation: 0x334155, // Slate 700 基础三角化
-    obstacle: 0x3b82f6, // Blue 500 障碍物
-    obstacleEmissive: 0x60a5fa, // Blue 400 发光
+    obstacle: 0x5e6ad2, // Indigo 障碍物
+    obstacleEmissive: 0x7c8ae2, // Indigo 发光
     pathActive: 0x22d3ee, // Cyan 400 路径能量色
     pathBurned: 0x67e8f9, // Cyan 300 已走过
     startNode: 0x34d399, // Emerald 400 起点
@@ -56,8 +56,8 @@ export const Renderer3DConfig = {
     endNode: 0xfb923c, // Orange 400 终点
     endNodeEmissive: 0xf97316,
     grid: {
-      primary: 0x1e3a5f, // 蓝色网格
-      secondary: 0x0e1525, // 深蓝次要网格
+      primary: 0x1a1a2e, // 靛蓝网格
+      secondary: 0x0a0a0c, // 深色次要网格
     },
   },
 
@@ -80,16 +80,16 @@ export const Renderer3DConfig = {
     },
   },
 
-  // 光照配置 - 现代科技风格
+  // 光照配置 - 深色影院风格
   lighting: {
     ambient: {
-      color: 0x1e293b, // 与背景协调的环境光
-      intensity: 0.7, // 增加环境光强度
+      color: 0x12121a, // 暗靛蓝环境光
+      intensity: 0.7,
     },
     hemisphere: {
-      skyColor: 0x60a5fa, // Blue 400 天光
-      groundColor: 0x0c1929, // 与背景协调的深蓝地光
-      intensity: 0.9, // 增强半球光
+      skyColor: 0x5e6ad2, // Indigo 天光
+      groundColor: 0x050506, // 与背景协调的深色地光
+      intensity: 0.9,
     },
     directional: {
       color: 0xffffff, // 主光源（模拟天花板射灯）
@@ -133,12 +133,12 @@ export const Renderer3DConfig = {
     bias: -0.0001,
   },
 
-  // 后期处理配置
+  // 后期处理配置 - 增强深色背景辉光
   postProcessing: {
     bloom: {
-      strength: 1.5,
+      strength: 1.8,
       radius: 0.4,
-      threshold: 0.85,
+      threshold: 0.75,
     },
   },
 

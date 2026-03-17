@@ -148,10 +148,10 @@ function createObstacleMaterials(config) {
   return {
     // 主要障碍物材质 - 蓝色磨砂玻璃
     primary: new THREE.MeshStandardMaterial({
-      color: 0x3b82f6, // Blue 500
+      color: 0x5e6ad2, // Blue 500
       roughness: 0.3,
       metalness: 0.5,
-      emissive: 0x60a5fa, // Blue 400 柔和发光
+      emissive: 0x7c8ae2, // Blue 400 柔和发光
       emissiveIntensity: 0.2,
       transparent: true,
       opacity: 0.45,
@@ -164,7 +164,7 @@ function createObstacleMaterials(config) {
       color: 0x2563eb, // Blue 600
       roughness: 0.35,
       metalness: 0.45,
-      emissive: 0x3b82f6, // Blue 500
+      emissive: 0x5e6ad2, // Blue 500
       emissiveIntensity: 0.18,
       transparent: true,
       opacity: 0.5,
@@ -187,7 +187,7 @@ function createObstacleMaterials(config) {
 
     // 特殊区域材质 - 浅蓝透明玻璃
     special: new THREE.MeshStandardMaterial({
-      color: 0x60a5fa, // Blue 400
+      color: 0x7c8ae2, // Blue 400
       roughness: 0.25,
       metalness: 0.55,
       emissive: 0x93c5fd, // Blue 300

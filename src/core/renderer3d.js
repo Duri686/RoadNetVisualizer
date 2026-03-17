@@ -223,7 +223,7 @@ class Renderer3D {
 
       const xMaterial = new THREE.MeshBasicMaterial({ color: 0xf87171 });
       const yMaterial = new THREE.MeshBasicMaterial({ color: 0x34d399 });
-      const zMaterial = new THREE.MeshBasicMaterial({ color: 0x60a5fa });
+      const zMaterial = new THREE.MeshBasicMaterial({ color: 0x7c8ae2 });
       const originMaterial = new THREE.MeshBasicMaterial({ color: 0x94a3b8 });
 
       const sphereGeo = new THREE.SphereGeometry(axisRadius, 16, 16);

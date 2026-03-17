@@ -231,7 +231,7 @@ function createFloorTexture() {
   const ctx = canvas.getContext('2d');
 
   // ① 基底：深海蓝
-  ctx.fillStyle = '#101b2e';
+  ctx.fillStyle = '#0a0a0c';
   ctx.fillRect(0, 0, size, size);
 
   // ② 磨砂噪点（模拟石材微粒质感）
@@ -250,7 +250,7 @@ function createFloorTexture() {
     for (let ty = 0; ty < size; ty += tile) {
       const variation = (Math.random() - 0.5) * 0.06;
       if (variation > 0) {
-        ctx.fillStyle = `rgba(96, 165, 250, ${variation})`;
+        ctx.fillStyle = `rgba(94, 106, 210, ${variation})`;
       } else {
         ctx.fillStyle = `rgba(0, 0, 0, ${-variation})`;
       }
@@ -260,8 +260,8 @@ function createFloorTexture() {
 
   // ④ 中心径向高光（模拟天花板灯光映射在地面）
   const grad = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size * 0.7);
-  grad.addColorStop(0, 'rgba(96, 165, 250, 0.12)');
-  grad.addColorStop(0.5, 'rgba(96, 165, 250, 0.04)');
+  grad.addColorStop(0, 'rgba(94, 106, 210, 0.10)');
+  grad.addColorStop(0.5, 'rgba(94, 106, 210, 0.03)');
   grad.addColorStop(1, 'transparent');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, size, size);
@@ -279,7 +279,7 @@ function createFloorTexture() {
     ctx.stroke();
   }
   // 亮边（凹槽高光边缘）
-  ctx.strokeStyle = 'rgba(96, 165, 250, 0.12)';
+  ctx.strokeStyle = 'rgba(94, 106, 210, 0.10)';
   ctx.lineWidth = 1;
   for (let i = 1; i <= size; i += tile) {
     ctx.beginPath();
@@ -291,7 +291,7 @@ function createFloorTexture() {
   }
 
   // ⑥ 细分线（每块瓷砖内 4 等分）
-  ctx.strokeStyle = 'rgba(96, 165, 250, 0.04)';
+  ctx.strokeStyle = 'rgba(94, 106, 210, 0.03)';
   ctx.lineWidth = 0.5;
   const subTile = tile / 4;
   for (let i = 0; i <= size; i += subTile) {
@@ -308,7 +308,7 @@ function createFloorTexture() {
   for (let x = 0; x <= size; x += tile) {
     for (let y = 0; y <= size; y += tile) {
       const dotGrad = ctx.createRadialGradient(x, y, 0, x, y, 4);
-      dotGrad.addColorStop(0, 'rgba(96, 165, 250, 0.3)');
+      dotGrad.addColorStop(0, 'rgba(94, 106, 210, 0.25)');
       dotGrad.addColorStop(1, 'transparent');
       ctx.fillStyle = dotGrad;
       ctx.fillRect(x - 4, y - 4, 8, 8);
@@ -336,11 +336,11 @@ export function renderFloor(layerGroup, metadata, yOffset, centerX, centerY) {
   floorTexture.repeat.set(floorWidth / 50, floorHeight / 50);
 
   const floorMaterial = new THREE.MeshStandardMaterial({
-    color: 0x1a2744,
+    color: 0x12121a,
     roughness: 0.8,
     metalness: 0.2,
     map: floorTexture,
-    emissive: 0x0e1525,
+    emissive: 0x0a0a0c,
     emissiveIntensity: 0.6,
     emissiveMap: floorTexture,
     transparent: false,
@@ -362,13 +362,13 @@ export function renderFloor(layerGroup, metadata, yOffset, centerX, centerY) {
   const stripW = 1.5; // 发光带宽度
 
   const borderMat = new THREE.MeshBasicMaterial({
-    color: 0x3b82f6,
+    color: 0x5e6ad2,
     transparent: true,
     opacity: 0.5,
     side: THREE.DoubleSide,
   });
   const glowMat = new THREE.MeshBasicMaterial({
-    color: 0x60a5fa,
+    color: 0x7c8ae2,
     transparent: true,
     opacity: 0.15,
     side: THREE.DoubleSide,

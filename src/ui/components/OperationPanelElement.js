@@ -19,7 +19,7 @@ class OperationPanelElement extends HTMLElement {
   render() {
     this.innerHTML = `
         <div class="control-panel flex flex-col gap-[var(--space-lg)] pb-4">
-          <div class="input-section glass-panel rounded-[var(--radius-xl)] p-[var(--space-xl)] px-[var(--space-lg)]">
+          <div class="input-section glass-panel spotlight-card rounded-[var(--radius-xl)] p-[var(--space-xl)] px-[var(--space-lg)]">
             <h3 class="text-[15px] font-bold text-[var(--accent-color)] uppercase tracking-wider mb-[var(--space-lg)] flex items-center gap-2">
               <span class="w-1 h-4 bg-[var(--accent-color)] rounded-full"></span>
               基础参数
@@ -121,7 +121,7 @@ class OperationPanelElement extends HTMLElement {
             </div>
           </div>
 
-          <div class="input-section glass-panel rounded-[var(--radius-xl)] p-[var(--space-xl)] px-[var(--space-lg)]">
+          <div class="input-section glass-panel spotlight-card rounded-[var(--radius-xl)] p-[var(--space-xl)] px-[var(--space-lg)]">
             <h3 class="text-[15px] font-bold text-[var(--accent-color)] uppercase tracking-wider mb-[var(--space-lg)] flex items-center gap-2">
               <span class="w-1 h-4 bg-[var(--accent-color)] rounded-full"></span>
               生成模式
@@ -129,7 +129,7 @@ class OperationPanelElement extends HTMLElement {
             <div class="mode-group flex flex-col gap-[var(--space-sm)] mb-[var(--space-md)]" id="mode-group">
               <label class="mode-item relative">
                 <input type="checkbox" name="mode-option" class="mode-option peer sr-only" data-value="centroid" checked />
-                <div class="flex items-center justify-between px-4 py-3 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-[var(--radius-md)] cursor-pointer transition-all peer-checked:bg-[rgba(59,130,246,0.1)] peer-checked:border-[var(--primary-color)] peer-checked:shadow-[0_0_12px_rgba(59,130,246,0.2)] peer-checked:[&_.indicator]:opacity-100 hover:bg-[var(--bg-input-hover)]">
+                <div class="flex items-center justify-between px-4 py-3 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-[var(--radius-md)] cursor-pointer transition-all peer-checked:bg-[rgba(94,106,210,0.08)] peer-checked:border-[var(--primary-color)] peer-checked:shadow-[0_0_12px_rgba(94,106,210,0.15)] peer-checked:[&_.indicator]:opacity-100 hover:bg-[var(--bg-input-hover)]">
                   <span class="text-[14px] font-medium text-[var(--text-primary)]">质心网络</span>
                   <div class="w-4 h-4 rounded-full border border-[var(--text-muted)] peer-checked:border-[var(--primary-color)] peer-checked:bg-[var(--primary-color)] flex items-center justify-center">
                     <span class="indicator w-2 h-2 rounded-full bg-[var(--primary-color)] opacity-0 transition-opacity"></span>
@@ -138,7 +138,7 @@ class OperationPanelElement extends HTMLElement {
               </label>
               <label class="mode-item relative">
                 <input type="checkbox" name="mode-option" class="mode-option peer sr-only" data-value="portal" />
-                <div class="flex items-center justify-between px-4 py-3 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-[var(--radius-md)] cursor-pointer transition-all peer-checked:bg-[rgba(59,130,246,0.1)] peer-checked:border-[var(--primary-color)] peer-checked:shadow-[0_0_12px_rgba(59,130,246,0.2)] peer-checked:[&_.indicator]:opacity-100 hover:bg-[var(--bg-input-hover)]">
+                <div class="flex items-center justify-between px-4 py-3 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-[var(--radius-md)] cursor-pointer transition-all peer-checked:bg-[rgba(94,106,210,0.08)] peer-checked:border-[var(--primary-color)] peer-checked:shadow-[0_0_12px_rgba(94,106,210,0.15)] peer-checked:[&_.indicator]:opacity-100 hover:bg-[var(--bg-input-hover)]">
                   <span class="text-[14px] font-medium text-[var(--text-primary)]">Portal 中点</span>
                   <div class="w-4 h-4 rounded-full border border-[var(--text-muted)] peer-checked:border-[var(--primary-color)] peer-checked:bg-[var(--primary-color)] flex items-center justify-center">
                     <span class="indicator w-2 h-2 rounded-full bg-[var(--primary-color)] opacity-0 transition-opacity"></span>
@@ -147,7 +147,7 @@ class OperationPanelElement extends HTMLElement {
               </label>
               <label class="mode-item relative">
                 <input type="checkbox" name="mode-option" class="mode-option peer sr-only" data-value="voronoi" />
-                <div class="flex items-center justify-between px-4 py-3 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-[var(--radius-md)] cursor-pointer transition-all peer-checked:bg-[rgba(59,130,246,0.1)] peer-checked:border-[var(--primary-color)] peer-checked:shadow-[0_0_12px_rgba(59,130,246,0.2)] peer-checked:[&_.indicator]:opacity-100 hover:bg-[var(--bg-input-hover)]">
+                <div class="flex items-center justify-between px-4 py-3 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-[var(--radius-md)] cursor-pointer transition-all peer-checked:bg-[rgba(94,106,210,0.08)] peer-checked:border-[var(--primary-color)] peer-checked:shadow-[0_0_12px_rgba(94,106,210,0.15)] peer-checked:[&_.indicator]:opacity-100 hover:bg-[var(--bg-input-hover)]">
                   <span class="text-[14px] font-medium text-[var(--text-primary)]">Voronoi 骨架</span>
                   <div class="w-4 h-4 rounded-full border border-[var(--text-muted)] peer-checked:border-[var(--primary-color)] peer-checked:bg-[var(--primary-color)] flex items-center justify-center">
                     <span class="indicator w-2 h-2 rounded-full bg-[var(--primary-color)] opacity-0 transition-opacity"></span>
@@ -199,25 +199,25 @@ class OperationPanelElement extends HTMLElement {
           </details>
 
           <div class="action-buttons flex flex-col mt-auto pt-[var(--space-lg)]">
-            <button id="generate-btn" class="group relative overflow-hidden flex flex-col items-center gap-1 px-6 py-4 bg-[linear-gradient(135deg,#3b82f6_0%,#2563EB_100%)] border border-[rgba(147,197,253,0.25)] shadow-[0_4px_20px_rgba(37,99,235,0.2)] hover:shadow-[0_8px_28px_rgba(37,99,235,0.3)] hover:border-[rgba(147,197,253,0.4)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-[400ms] rounded-[var(--radius-lg)]" style="transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);">
-              <div class="absolute inset-0 bg-[linear-gradient(to_right,transparent,rgba(255,255,255,0.2),transparent)] -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
+            <button id="generate-btn" class="group relative overflow-hidden flex flex-col items-center gap-1 px-6 py-4 bg-[linear-gradient(135deg,#5E6AD2_0%,#4E5AC2_100%)] border border-[rgba(94,106,210,0.20)] shadow-[0_4px_20px_rgba(94,106,210,0.15)] hover:shadow-[0_8px_28px_rgba(94,106,210,0.2)] hover:border-[rgba(94,106,210,0.3)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-[400ms] rounded-[var(--radius-lg)]" style="transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);">
+              <div class="absolute inset-0 bg-[linear-gradient(to_right,transparent,rgba(255,255,255,0.06),transparent)] -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
               <span class="btn__text text-[16px] font-bold tracking-wide text-white drop-shadow-md z-10">GENERATE SYSTEM</span>
               <span class="btn__subtitle text-[10px] font-medium uppercase tracking-[2px] text-[rgba(255,255,255,0.7)] z-10">Initialize / Reset</span>
             </button>
             <div class="button-group flex gap-[var(--space-md)] mt-[var(--space-lg)]">
-              <button id="download-btn" class="btn-action flex-1 inline-flex items-center justify-center gap-[var(--space-sm)] px-[var(--space-md)] py-[var(--space-md)] border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-secondary)] rounded-[var(--radius-md)] text-[13px] font-medium cursor-pointer transition-all hover:bg-[var(--bg-input-hover)] hover:text-[var(--text-primary)] hover:border-[var(--primary-color)] hover:shadow-[0_0_15px_rgba(59,130,246,0.15)]">
+              <button id="download-btn" class="btn-action flex-1 inline-flex items-center justify-center gap-[var(--space-sm)] px-[var(--space-md)] py-[var(--space-md)] border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-secondary)] rounded-[var(--radius-md)] text-[13px] font-medium cursor-pointer transition-all hover:bg-[var(--bg-input-hover)] hover:text-[var(--text-primary)] hover:border-[var(--primary-color)] hover:shadow-[0_0_15px_rgba(94,106,210,0.12)]">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
                 <span>Download</span>
               </button>
-              <button id="share-btn" class="btn-action flex-1 inline-flex items-center justify-center gap-[var(--space-sm)] px-[var(--space-md)] py-[var(--space-md)] border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-secondary)] rounded-[var(--radius-md)] text-[13px] font-medium cursor-pointer transition-all hover:bg-[var(--bg-input-hover)] hover:text-[var(--text-primary)] hover:border-[var(--primary-color)] hover:shadow-[0_0_15px_rgba(59,130,246,0.15)]">
+              <button id="share-btn" class="btn-action flex-1 inline-flex items-center justify-center gap-[var(--space-sm)] px-[var(--space-md)] py-[var(--space-md)] border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-secondary)] rounded-[var(--radius-md)] text-[13px] font-medium cursor-pointer transition-all hover:bg-[var(--bg-input-hover)] hover:text-[var(--text-primary)] hover:border-[var(--primary-color)] hover:shadow-[0_0_15px_rgba(94,106,210,0.12)]">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" /></svg>
                 <span>Share</span>
               </button>
             </div>
           </div>
 
-          <div id="status-message" class="status-message mt-[var(--space-lg)] p-[var(--space-md)] bg-[rgba(255,255,255,0.12)] backdrop-blur-[40px] rounded-[var(--radius-lg)] border border-[rgba(255,255,255,0.3)] flex items-start gap-3">
-            <div class="w-2 h-2 rounded-full bg-[var(--info-color)] mt-1.5 shadow-[0_0_6px_rgba(96,165,250,0.4)] animate-pulse"></div>
+          <div id="status-message" class="status-message mt-[var(--space-lg)] p-[var(--space-md)] bg-[rgba(255,255,255,0.04)] backdrop-blur-[40px] rounded-[var(--radius-lg)] border border-[rgba(255,255,255,0.08)] flex items-start gap-3">
+            <div class="w-2 h-2 rounded-full bg-[var(--info-color)] mt-1.5 shadow-[0_0_6px_rgba(94,106,210,0.4)] animate-pulse"></div>
             <div>
               <p class="status-text text-[13px] text-[var(--text-primary)] font-medium mb-0.5">
                 System Ready

@@ -357,31 +357,105 @@ class WorkerManager {
     try {
       if (!this._bootLoadingEnabled) return; // 首轮之外不再展示
       if (!this._loadingEl) {
+        // 注入动画关键帧（仅一次）
+        if (!document.getElementById('loading-keyframes')) {
+          const style = document.createElement('style');
+          style.id = 'loading-keyframes';
+          style.textContent = `
+            @keyframes loading-fade-in { from { opacity: 0 } to { opacity: 1 } }
+            @keyframes loading-spin { to { transform: rotate(360deg) } }
+            @keyframes loading-pulse-ring {
+              0% { transform: scale(0.8); opacity: 0.6 }
+              50% { transform: scale(1.15); opacity: 0 }
+              100% { transform: scale(0.8); opacity: 0 }
+            }
+            @keyframes loading-text-shimmer {
+              0% { background-position: -200% center }
+              100% { background-position: 200% center }
+            }
+          `;
+          document.head.appendChild(style);
+        }
+
         const el = document.createElement('div');
         el.id = 'global-loading-overlay';
-        el.setAttribute(
-          'style',
-          [
-            'position:fixed',
-            'inset:0',
-            'display:flex',
-            'align-items:center',
-            'justify-content:center',
-            'background:rgba(15,23,42,0.85)',
-            'backdrop-filter:saturate(1.1) blur(2px)',
-            'z-index:9999',
-            'color:#cbd5e1',
-            'font-family: ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial,Apple Color Emoji,Segoe UI Emoji',
-            'font-weight:600',
-            'letter-spacing:.3px',
-          ].join(';'),
-        );
+        Object.assign(el.style, {
+          position: 'fixed',
+          inset: '0',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'rgba(5,5,6,0.88)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          zIndex: '9999',
+          fontFamily: "'Inter',ui-sans-serif,system-ui,sans-serif",
+          animation: 'loading-fade-in 0.3s ease',
+        });
+
+        // 中心容器
+        const container = document.createElement('div');
+        Object.assign(container.style, {
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '24px',
+        });
+
+        // 旋转指示器 + 脉冲光环
+        const spinnerWrap = document.createElement('div');
+        Object.assign(spinnerWrap.style, {
+          position: 'relative',
+          width: '48px',
+          height: '48px',
+        });
+
+        // 外圈脉冲光环
+        const pulseRing = document.createElement('div');
+        Object.assign(pulseRing.style, {
+          position: 'absolute',
+          inset: '-8px',
+          borderRadius: '50%',
+          border: '1.5px solid rgba(94,106,210,0.3)',
+          animation: 'loading-pulse-ring 2s ease-in-out infinite',
+        });
+
+        // 旋转弧线
+        const spinner = document.createElement('div');
+        Object.assign(spinner.style, {
+          width: '48px',
+          height: '48px',
+          borderRadius: '50%',
+          border: '2px solid rgba(255,255,255,0.06)',
+          borderTopColor: '#5E6AD2',
+          borderRightColor: 'rgba(94,106,210,0.3)',
+          animation: 'loading-spin 1s cubic-bezier(0.4,0,0.2,1) infinite',
+          boxShadow: '0 0 20px rgba(94,106,210,0.15)',
+        });
+
+        spinnerWrap.appendChild(pulseRing);
+        spinnerWrap.appendChild(spinner);
+
+        // 文字 - 渐变微光
         const txt = document.createElement('div');
         txt.id = 'global-loading-text';
         txt.textContent = text;
-        txt.style.fontSize = '14px';
-        txt.style.opacity = '0.9';
-        el.appendChild(txt);
+        Object.assign(txt.style, {
+          fontSize: '13px',
+          fontWeight: '500',
+          letterSpacing: '1.5px',
+          textTransform: 'uppercase',
+          background: 'linear-gradient(90deg, rgba(255,255,255,0.4), rgba(255,255,255,0.8), rgba(255,255,255,0.4))',
+          backgroundSize: '200% auto',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+          animation: 'loading-text-shimmer 2.5s linear infinite',
+        });
+
+        container.appendChild(spinnerWrap);
+        container.appendChild(txt);
+        el.appendChild(container);
         document.body.appendChild(el);
         this._loadingEl = el;
       } else {
@@ -403,7 +477,12 @@ class WorkerManager {
   hideGlobalLoading() {
     try {
       if (this._loadingEl) {
-        this._loadingEl.remove();
+        const el = this._loadingEl;
+        el.style.transition = 'opacity 0.4s ease';
+        el.style.opacity = '0';
+        setTimeout(() => {
+          el.remove();
+        }, 400);
         this._loadingEl = null;
       }
       // 关闭首轮 Loading 开关，后续不再展示
